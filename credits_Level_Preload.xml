@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Instances>
+	<Object type="cLevelSettings" id="2144911945">
+		<Attribute name="mNumPlayers" type="sUInt32" elements="1">
+			<Item>1</Item>
+		</Attribute>
+		<Pointer name="gameHUDs" type="cHUD" elements="4">
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+		</Pointer>
+		<Enum name="mLevelType" type="eLevelType" elements="1">
+			<Item>eFrontend</Item>
+		</Enum>
+		<Attribute name="mMipBias" type="sFloat" elements="1">
+			<Item>0.000000</Item>
+		</Attribute>
+		<Attribute name="mLuaScriptMemory" type="sUInt32" elements="1">
+			<Item>1600</Item>
+		</Attribute>
+		<Attribute name="mRenderToTextureMemory" type="sUInt32" elements="1">
+			<Item>7500</Item>
+		</Attribute>
+		<Enum name="mbRenderToTextureUseMem1" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Attribute name="miMaxTerrainMemorySize" type="sUInt32" elements="1">
+			<Item>150</Item>
+		</Attribute>
+		<Attribute name="miPhysicsMemorySize" type="sUInt32" elements="1">
+			<Item>64</Item>
+		</Attribute>
+		<Attribute name="miActionHeapMemorySize" type="sUInt32" elements="1">
+			<Item>128</Item>
+		</Attribute>
+		<Pointer name="mpRenderParams" type="cRenderParams" elements="1">
+			<Item>2144911946</Item>
+		</Pointer>
+		<Pointer name="mpFreelistSettings" type="cWorldFreeListSizeLoader" elements="1">
+			<Item>2144911947</Item>
+		</Pointer>
+		<Pointer name="mpSkuSpecificData" type="cSKUSpecificData" elements="1">
+			<Item>2144911948</Item>
+		</Pointer>
+		<Attribute name="mfQuadtreeRadiusSmallSize" type="sFloat" elements="1">
+			<Item>20.000000</Item>
+		</Attribute>
+		<Attribute name="mfQuadtreeRadiusMediumSize" type="sFloat" elements="1">
+			<Item>50.000000</Item>
+		</Attribute>
+		<Enum name="mAlliedFireDamage" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Attribute name="mDayLight" type="sFloat" elements="1">
+			<Item>1.000000</Item>
+		</Attribute>
+		<Pointer name="mTopObjective" type="cObjective" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mDamageArmourBonus" type="cDamageArmourBonus" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mBailOutData" type="cBailOutData" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mpActionParameters" type="cActionParameters" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mHomeButtonSoundBlock" type="cHomeButtonSoundBlock" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="mTransferInvulnerableTime" type="sFloat" elements="1">
+			<Item>5.000000</Item>
+		</Attribute>
+		<Enum name="mPlayerArmy1" type="eArmy" elements="1">
+			<Item>eNoArmy</Item>
+		</Enum>
+		<Enum name="mPlayerArmy2" type="eArmy" elements="1">
+			<Item>eNoArmy</Item>
+		</Enum>
+		<Enum name="mPlayerArmy3" type="eArmy" elements="1">
+			<Item>eNoArmy</Item>
+		</Enum>
+		<Enum name="mPlayerArmy4" type="eArmy" elements="1">
+			<Item>eNoArmy</Item>
+		</Enum>
+		<Enum name="mLoadAllArmyDependentHudGraphics" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Pointer name="mpMapSpriteTL" type="cSprite" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mpMapSpriteTR" type="cSprite" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mpMapSpriteBL" type="cSprite" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mpMapSpriteBR" type="cSprite" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mMapScreenLimits" type="cMapZone" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="mMapScreenMainMapZoom" type="sFloat" elements="1">
+			<Item>2.000000</Item>
+		</Attribute>
+		<Attribute name="mTequilaMemoryHeap" type="sUInt32" elements="1">
+			<Item>200</Item>
+		</Attribute>
+		<Attribute name="mCloudStartHeight" type="sFloat" elements="1">
+			<Item>0.400000</Item>
+		</Attribute>
+		<Attribute name="mCloudFullHeight" type="sFloat" elements="1">
+			<Item>0.600000</Item>
+		</Attribute>
+		<Enum name="mAllowBreathingAttachment" type="eBoolean" elements="1">
+			<Item>eTrue</Item>
+		</Enum>
+		<Attribute name="mCloudLayer1RotateSpeed" type="sFloat" elements="1">
+			<Item>0.100000</Item>
+		</Attribute>
+		<Attribute name="mCloudLayer2RotateSpeed" type="sFloat" elements="1">
+			<Item>0.100000</Item>
+		</Attribute>
+		<Attribute name="mCloudLayer3RotateSpeed" type="sFloat" elements="1">
+			<Item>0.100000</Item>
+		</Attribute>
+		<Attribute name="mCloudLayer4RotateSpeed" type="sFloat" elements="1">
+			<Item>0.100000</Item>
+		</Attribute>
+		<Attribute name="mCloudLayer5RotateSpeed" type="sFloat" elements="1">
+			<Item>0.100000</Item>
+		</Attribute>
+		<Attribute name="mCloudLayer6RotateSpeed" type="sFloat" elements="1">
+			<Item>0.100000</Item>
+		</Attribute>
+		<Attribute name="mCloudLayer7RotateSpeed" type="sFloat" elements="1">
+			<Item>0.100000</Item>
+		</Attribute>
+		<Attribute name="mCloudLayer8RotateSpeed" type="sFloat" elements="1">
+			<Item>0.100000</Item>
+		</Attribute>
+		<Attribute name="mLevelAmbiencePath" type="cFxString8" elements="1">
+			<Item></Item>
+		</Attribute>
+		<Attribute name="mLevelAmbienceFile" type="cFxString8" elements="1">
+			<Item></Item>
+		</Attribute>
+		<Attribute name="mLevelAmbienceVolume" type="sFloat" elements="1">
+			<Item>0.000000</Item>
+		</Attribute>
+		<Attribute name="mLevelIntroPath" type="cFxString8" elements="1">
+			<Item></Item>
+		</Attribute>
+		<Attribute name="mLevelIntroFile" type="cFxString8" elements="1">
+			<Item></Item>
+		</Attribute>
+		<Attribute name="mLevelMusicPath" type="cFxString8" elements="1">
+			<Item></Item>
+		</Attribute>
+		<Attribute name="mLevelMusicFile" type="cFxString8" elements="1">
+			<Item></Item>
+		</Attribute>
+		<Attribute name="mLevelOutroPath" type="cFxString8" elements="1">
+			<Item></Item>
+		</Attribute>
+		<Attribute name="mLevelOutroFile" type="cFxString8" elements="1">
+			<Item></Item>
+		</Attribute>
+		<Attribute name="mLevelMusicVolume" type="sFloat" elements="1">
+			<Item>1.000000</Item>
+		</Attribute>
+		<Pointer name="mWesternFrontierAllegiance" type="cArmyAllegiance" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mXylvanianAllegiance" type="cArmyAllegiance" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mTundranTerritoriesAllegiance" type="cArmyAllegiance" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mSolarEmpireAllegiance" type="cArmyAllegiance" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mUnderWorldAllegiance" type="cArmyAllegiance" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mAngloIslesAllegiance" type="cArmyAllegiance" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Enum name="mWesternFrontierAI" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mXylvanianAI" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mTundranTerritoriesAI" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mSolarEmpireAI" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mUnderWorldAI" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mAngloIslesAI" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Attribute name="mDesigner" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Attribute name="mArtist" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Attribute name="mPathfinding_GradientGentle" type="sFloat" elements="1">
+			<Item>10.000000</Item>
+		</Attribute>
+		<Attribute name="mPathfinding_GradientMedium" type="sFloat" elements="1">
+			<Item>20.000000</Item>
+		</Attribute>
+		<Attribute name="mPathfinding_GradientSteep" type="sFloat" elements="1">
+			<Item>42.500000</Item>
+		</Attribute>
+		<Enum name="mCOHeadOneArmy" type="eArmy" elements="1">
+			<Item>eNeutral</Item>
+		</Enum>
+		<Pointer name="mCOHeadOneHappy" type="cScriptSprite" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mCOHeadOneSad" type="cScriptSprite" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Enum name="mCOHeadTwoArmy" type="eArmy" elements="1">
+			<Item>eNeutral</Item>
+		</Enum>
+		<Pointer name="mCOHeadTwoHappy" type="cScriptSprite" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mCOHeadTwoSad" type="cScriptSprite" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="mPlayerKillBonus" type="sUInt32" elements="1">
+			<Item>10</Item>
+		</Attribute>
+		<Attribute name="mFirstKillBonus" type="sUInt32" elements="1">
+			<Item>50</Item>
+		</Attribute>
+		<Attribute name="mCaptureBonus" type="sUInt32" elements="1">
+			<Item>50</Item>
+		</Attribute>
+	</Object>
+	<Object type="cWorldFreeListSizeLoader" id="2144911947">
+		<Attribute name="numQuadtreeNodes" type="sUInt32" elements="1">
+			<Item>32</Item>
+		</Attribute>
+		<Attribute name="numQuadtreeObjLists" type="sUInt32" elements="1">
+			<Item>32</Item>
+		</Attribute>
+		<Attribute name="numNodeHierarchies" type="sUInt32" elements="1">
+			<Item>48</Item>
+		</Attribute>
+		<Attribute name="numShadowVolumes" type="sUInt32" elements="1">
+			<Item>1</Item>
+		</Attribute>
+		<Attribute name="numPolynodes" type="sUInt32" elements="1">
+			<Item>1100</Item>
+		</Attribute>
+		<Attribute name="numObjInstances" type="sUInt32" elements="1">
+			<Item>64</Item>
+		</Attribute>
+		<Attribute name="numObjAnimInstances" type="sUInt32" elements="1">
+			<Item>128</Item>
+		</Attribute>
+		<Attribute name="numJoints" type="sUInt32" elements="1">
+			<Item>800</Item>
+		</Attribute>
+		<Attribute name="numJointAnims" type="sUInt32" elements="1">
+			<Item>800</Item>
+		</Attribute>
+		<Attribute name="numBanJoints" type="sUInt32" elements="1">
+			<Item>8</Item>
+		</Attribute>
+		<Attribute name="numAnimationBlends" type="sUInt32" elements="1">
+			<Item>8</Item>
+		</Attribute>
+		<Attribute name="numMaxTerrainMaterials" type="sUInt32" elements="1">
+			<Item>1</Item>
+		</Attribute>
+		<Attribute name="numMaxTroopVoiceMessageQueueItems" type="sUInt32" elements="1">
+			<Item>8</Item>
+		</Attribute>
+	</Object>
+</Instances>
