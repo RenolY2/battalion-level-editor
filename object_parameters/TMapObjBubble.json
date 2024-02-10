@@ -1,0 +1,12 @@
+{
+  "Object Parameters":
+          ["Unknown 1",
+            "Cycle",
+            "Unknown 3",
+            "Vertical Distance",
+            "Forward Distance",
+            "Unused",
+            "Unused",
+            "Unused"],
+  "Assets": ["bubble1.bmd", "bubble1.btk"]
+}

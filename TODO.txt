@@ -1,0 +1,3 @@
+fix win7/8 support
+don't forget superbmd
+don't forget temp folder

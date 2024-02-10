@@ -1,0 +1,12 @@
+{
+  "Object Parameters":
+          ["Color ID",
+            "Throw Power",
+            "Unknown 3",
+            "Unknown 4",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused"],
+  "Assets": ["poihana1.bmd", "poihana1.btp", "poihana1_damamge.bck", "poihana1_throw.bck", "poihana1_wait.bck", "poihana1shadow.bmd"]
+}

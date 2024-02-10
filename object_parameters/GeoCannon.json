@@ -1,0 +1,12 @@
+{
+  "Object Parameters":
+          ["Respawn ID",
+            "Unknown 2",
+            "Invisibility",
+            "Unknown 4",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused"],
+  "Assets": ["cannon1.bca", "cannon1.bmd", "cannon1.brk"]
+}

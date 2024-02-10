@@ -1,0 +1,12 @@
+{
+  "Object Parameters":
+          ["Number of back segments",
+            "Unknown 2",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused"],
+  "Assets": ["babyjet.bck", "babyjet_body.bmd", "babyjet_head.bmd"]
+}

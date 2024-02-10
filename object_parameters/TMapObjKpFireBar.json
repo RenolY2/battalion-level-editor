@@ -1,0 +1,12 @@
+{
+  "Object Parameters":
+          ["Number of Fireballs",
+            "Unknown 2",
+            "Unknown 3",
+            "Unknown 4",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused"],
+  "Assets": ["kpfirebar1.bmd", "kpfirebar1.bck", "kpfirebar1fire.bmd", "kpfirebar1fire.brk", "kpfirebar1fire.btk"]
+}

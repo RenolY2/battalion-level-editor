@@ -1,0 +1,12 @@
+{
+  "Object Parameters":
+          ["Unknown 1",
+            "Unknown 2",
+            "Unknown 3",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused"],
+  "Assets": ["pakkun.bmd", "pakkun_attack.bca", "pakkun_damage.bca", "pakkun_wait.bca", "pakkunshadow.bmd"]
+}

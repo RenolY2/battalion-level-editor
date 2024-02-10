@@ -1,0 +1,9 @@
+*.pyc
+.idea/*
+__pycache__/*
+build/*
+/piktool.ini
+object_templates/pikmin3/*
+lib/examples/*
+dist/*
+lib/temp/*

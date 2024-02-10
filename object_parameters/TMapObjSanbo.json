@@ -1,0 +1,13 @@
+{
+  "Object Parameters":
+          ["Unknown 1",
+            "Unknown 2",
+            "Unknown 3",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused"],
+  "Assets": ["sanbo1.bmd", "sanbo1_breack_body.bmd", "sanbo1_breack_head.bmd",
+			"sanbo1_fall_left.bca", "sanbo1_fall_right.bca", "sanbo1_revivie.bca", "sanbo1_wait.bca"]
+}

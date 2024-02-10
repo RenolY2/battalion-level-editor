@@ -1,0 +1,15 @@
+{
+  "Object Parameters":
+          ["Unused",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused",
+            "Unused"],
+  "Assets": ["nossie.bmd", "nossie.bca", "nossie_a1.bca", "nossie_a2.bca", "nossie_a3.bca", "nossie_a4.bca",
+   "nossie_a5.bca", "nossie_a6.bca", "nossie_a7.bca", "nossie_a8.bca", "nossie_b1.bca", "nossie_b2.bca", 
+   "nossie_b3.bca", "nossie_b4.bca" , "nossie_b5.bca", "nossie_b6.bca", "nossie_b7.bca", "nossie_b8.bca",
+   "nossie_ta.bca", "nossiebackshadow.bmd", "nossiefrontshadow.bmd", "nossieshadow.bmd"]
+}

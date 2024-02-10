@@ -1,0 +1,71 @@
+{
+  "Chappy": [
+    "Chappy",
+    "TentenChappy",
+    "Arikui",
+    "KingChappy",
+    "Kochappy",
+    "TenKochappy",
+    "KumaChappy"
+  ],
+  "Generic": [
+    "Awadako",
+    "Billy",
+    "Crystal_frog",
+    "Demejako",
+    "Egg",
+    "Frog",
+    "Futakuchi",
+    "Hambo",
+    "Hiba",
+    "Iwakko",
+    "Kaburi",
+    "Kajiokoshi",
+    "Kogane",
+    "Kokagami",
+    "Kokagamiegg",
+    "Komush",
+    "Kumo",
+    "Marofrog",
+    "Mush",
+    "Panmodoki",
+    "Shako",
+    "Firetank",
+    "Watertank",
+    "Bubbletank",
+    "TobiKaburi",
+    "UjinkoA",
+    "UjinkoB"
+  ],
+  "Flyer": [
+    "Jelly",
+    "Mar",
+    "Mure",
+    "Mureboss",
+    "Ohbakekagami",
+    "Sarai",
+    "Tobinko",
+    "Vamma"
+  ],
+  "Longlegs": [
+    "Damagumo",
+    "Hagedamagumo",
+    "Iwadama",
+    "Shima"
+  ],
+  "Snakecrow": [
+    "Snakecrow",
+    "Tsuyukusa",
+    "Arijigoku",
+    "Daiohmukade",
+    "Pelplant1",
+    "Pelplant5",
+    "Pelplant10"
+  ],
+  "Swimmer": [
+    "Amembo",
+    "Namazu",
+    "Otama",
+    "Tobiuo"
+  ]
+}
