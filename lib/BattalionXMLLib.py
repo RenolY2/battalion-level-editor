@@ -157,6 +157,8 @@ def make_getter(self, attrname):
         return attr.values
     else:
         return None
+
+
 class BattalionObject(object):
     def __init__(self, level: BattalionLevelFile, node: etree.Element):
         self._node = node
