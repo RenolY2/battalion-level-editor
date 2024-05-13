@@ -42,7 +42,7 @@ class BWModelHandler(object):
 
         glPushMatrix()
 
-        glTranslatef(pos.x, -pos.z, y)
+        glTranslatef(pos.x, pos.z, y)
         mtx = bwmatrix.mtx
         """glMultMatrixf([mtx.a1, mtx.a2, mtx.a3, mtx.a4,
                        mtx.b1, mtx.b2, mtx.b3, mtx.b4,

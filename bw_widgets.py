@@ -21,11 +21,13 @@ from PyQt5.QtCore import Qt
 from helper_functions import calc_zoom_in_factor, calc_zoom_out_factor
 from lib.libgen import GeneratorObject
 from lib.collision import Collision
+from lib.bw_types import BWMatrix
 from widgets.editor_widgets import catch_exception, catch_exception_with_dialog
 #from pikmingen import PikminObject
 from opengltext import draw_collision
 from lib.vectors import Matrix4x4, Vector3, Line, Plane, Triangle
 from lib.model_rendering import TexturedPlane, Model, Grid, GenericObject, Material, Minimap
+from lib.shader import create_default_shader
 from gizmo import Gizmo
 from lib.object_models import ObjectModels
 from editor_controls import UserControl
@@ -33,7 +35,7 @@ from lib.libpath import Paths
 from lib.libbol import BOL
 import numpy
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
-from lib.bw_terrain import BWTerrain
+from lib.bw_terrain import BWTerrainV2
 from lib.bw.bwmodelrender import BWModelHandler
 
 MOUSE_MODE_NONE = 0
@@ -229,7 +231,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.minimap = Minimap(Vector3(-1000.0, 0.0, -1000.0), Vector3(1000.0, 0.0, 1000.0), 0,
                                None)
         self.bwterrain = None
-        self.terrianmap = None
+        self.terrainmap = None
         #ith open("lib/MP4.out", "rb") as f:
         #with open("D:/Wii games/BattWars/P-G8WP/files/Data/CompoundFiles/C1_OnPatrol.out", "rb") as f:
         #    self.bwterrain = BWTerrain(f)
@@ -245,30 +247,101 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.doneCurrent()
 
     def reloadTerrain(self, f):
-        self.bwterrain = BWTerrain(f)
+        self.bwterrain = BWTerrainV2(f)
         self.makeCurrent()
 
-        if self.terrianmap is not None:
-            glDeleteLists(self.terrianmap, 1)
-
-        self.terrianmap = glGenLists(1)
-        glNewList(self.terrianmap, GL_COMPILE)
+        if self.terrainmap is not None:
+            for entry in self.terrainmap:
+                glDeleteLists(entry, 1)
+        self.terrainmap = []
         glColor4f(0.0, 0.0, 0.0, 1.0)
-        glBegin(GL_TRIANGLES)
-        for i, tri in enumerate(self.bwterrain.triangles):
-            colors = self.bwterrain.colors[i]
-            glColor3ub(*colors[0])
-            glVertex3f(tri.origin.x, tri.origin.y, tri.origin.z)
-            glColor3ub(*colors[1])
-            glVertex3f(tri.p2.x, tri.p2.y, tri.p2.z)
-            glColor3ub(*colors[2])
-            glVertex3f(tri.p3.x, tri.p3.y, tri.p3.z)
-        glEnd()
-        glEndList()
+        for meshindex, meshes in self.bwterrain.meshes.items():
+            mesh = glGenLists(1)
+            glNewList(mesh, GL_COMPILE)
+            glBegin(GL_QUADS)
+            for tilemesh in meshes:
+                for quad in tilemesh.quads:
+                    vtx = tilemesh.vertices[quad[0]]
+                    glVertexAttrib4f(2, vtx.color.r, vtx.color.g, vtx.color.b, vtx.color.a)
+                    glVertexAttrib2f(3, vtx.uv1.x, vtx.uv1.y)
+                    glVertexAttrib2f(4, vtx.uv2.x, vtx.uv2.y)
+                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
+
+                    vtx = tilemesh.vertices[quad[1]]
+                    glVertexAttrib4f(2, vtx.color.r, vtx.color.g, vtx.color.b, vtx.color.a)
+                    glVertexAttrib2f(3, vtx.uv1.x, vtx.uv1.y)
+                    glVertexAttrib2f(4, vtx.uv2.x, vtx.uv2.y)
+                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
+
+                    vtx = tilemesh.vertices[quad[2]]
+                    glVertexAttrib4f(2, vtx.color.r, vtx.color.g, vtx.color.b, vtx.color.a)
+                    glVertexAttrib2f(3, vtx.uv1.x, vtx.uv1.y)
+                    glVertexAttrib2f(4, vtx.uv2.x, vtx.uv2.y)
+                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
+
+                    vtx = tilemesh.vertices[quad[3]]
+                    glVertexAttrib4f(2, vtx.color.r, vtx.color.g, vtx.color.b, vtx.color.a)
+                    glVertexAttrib2f(3, vtx.uv1.x, vtx.uv1.y)
+                    glVertexAttrib2f(4, vtx.uv2.x, vtx.uv2.y)
+                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
+
+
+            glEnd()
+
+            glEndList()
+            self.terrainmap.append(mesh)
+
+        """
+        for meshindex, meshes in self.bwterrain.meshes.items():
+            #colors = self.bwterrain.colors[i]
+            #glColor3ub(*colors[0])
+            for mesh in meshes:
+                for quad in mesh.quads:
+                    vtx = mesh.vertices[quad[0]]
+                    glColor3f(vtx.color.r, vtx.color.g, vtx.color.b)
+                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
+
+                    vtx = mesh.vertices[quad[1]]
+                    glColor3f(vtx.color.r, vtx.color.g, vtx.color.b)
+                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
+
+                    vtx = mesh.vertices[quad[2]]
+                    glColor3f(vtx.color.r, vtx.color.g, vtx.color.b)
+                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
+
+                    vtx = mesh.vertices[quad[3]]
+                    glColor3f(vtx.color.r, vtx.color.g, vtx.color.b)
+                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
+        """
+
         self.doneCurrent()
+
+    def render_terrain_immediate(self):
+        glUseProgram(self.shader)
+        glDisable(GL_ALPHA_TEST)
+        for meshindex, displist in zip(self.bwterrain.meshes, self.terrainmap):
+            material = self.bwterrain.materials[meshindex]
+            tex1 = self.bwmodelhandler.textures.get_texture(material.mat1)
+            tex2 = self.bwmodelhandler.textures.get_texture(material.mat2)
+
+            texvar = glGetUniformLocation(self.shader, "tex")
+            # print(texvar, self.shader, type(self.shader))
+            glUniform1i(texvar, 0)
+            texvar2 = glGetUniformLocation(self.shader, "tex2")
+            glUniform1i(texvar2, 1)
+
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, tex1[1])
+            glActiveTexture(GL_TEXTURE1)
+            glBindTexture(GL_TEXTURE_2D, tex2[1])
+            glCallList(displist)
+        glEnable(GL_ALPHA_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glUseProgram(0)
 
     @catch_exception_with_dialog
     def initializeGL(self):
+        self.shader = create_default_shader()
         self.rotation_visualizer = glGenLists(1)
         glNewList(self.rotation_visualizer, GL_COMPILE)
         glColor4f(0.0, 0.0, 1.0, 1.0)
@@ -739,8 +812,13 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         glColor4f(1.0, 1.0, 1.0, 1.0)
         glDisable(GL_TEXTURE_2D)
         glDisable(GL_CULL_FACE)
-        if self.terrianmap is not None:
-            glCallList(self.terrianmap)
+        if self.terrainmap is not None:
+            #glCallList(self.terrainmap)
+            self.render_terrain_immediate()
+        if self.mode == MODE_TOPDOWN:
+            glClear(GL_DEPTH_BUFFER_BIT)
+
+
         """if self.main_model is not None:
             if self.alternative_mesh is None:
                 glCallList(self.main_model)
@@ -774,6 +852,15 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         else:
             self.cam_x = self.offset_x
             self.cam_z = self.offset_z
+
+
+        matrix = BWMatrix(0, 0, 0, 0,
+                           0, 0, 0, 0,
+                           0, 0, 0, 0,
+                           0, 0, 0, 0)
+        glPushMatrix()
+        glUseProgram(0)
+        #glScale(1.0, -1.0, 1.0)
         #self.models.render_generic_position(Vector3(self.cam_x, self.camera_height-5, -self.cam_z), False)
         if self.level_file is not None:
             selected = self.selected
@@ -782,24 +869,33 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             select_optimize = {x:True for x in selected}
             #objects = self.pikmin_generators.generators
             glDisable(GL_CULL_FACE)
-            for objectid, object in self.level_file.objects.items():
+            self.models.cubev2.bind()
+            for objectid, object in self.level_file.objects_with_positions.items():
 
-                glColor3f(1.0, 1.0, 1.0)
-                glDisable(GL_TEXTURE_2D)
+                #glColor3f(1.0, 1.0, 1.0)
+                #glDisable(GL_TEXTURE_2D)
                 object: BattalionObject
                 bwmatrix = None
                 modelname = None
 
-
-                if object.hasattr("spawnMatrix"):
+                """if object.hasattr("spawnMatrix"):
                     bwmatrix = object.spawnMatrix
                     modelname = object.modelname
 
                 elif object.hasattr("Mat"):
                     bwmatrix = object.Mat
-                    modelname = object.modelname
+                    modelname = object.modelname"""
+                bwmatrix = object.getposition()
+                #modelname = None #object.modelname# object.modelname
+                #modelname = None
+                if True:#bwmatrix is not None:
+                    glPushMatrix()
+                    glTranslatef(bwmatrix.position.x, bwmatrix.position.z, bwmatrix.position.y)
+                    #glTranslatef(0, 0, 0)
+                    self.models.cubev2.render()
 
-                if modelname is not None:
+                    glPopMatrix()
+                """if modelname is not None and False:
                     if (self.cam_x - bwmatrix.position.x)**2 + (-self.cam_z - bwmatrix.position.z)**2 > 250**2:
                         x, z = int((bwmatrix.position.x + 2048) * 0.25), int((bwmatrix.position.z + 2048) * 0.25)
                         if bwmatrix.position.y != 0.0:
@@ -813,10 +909,10 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                     else:
                         self.bwmodelhandler.rendermodel(modelname, bwmatrix, self.bwterrain, 0)
                 elif bwmatrix is not None:
-                    self.models.render_generic_position(bwmatrix.position, False)
+                    self.models.render_generic_position(bwmatrix.position, False)"""
 
             vismenu = self.visibility_menu
-
+        glPopMatrix()
         glColor4f(0.0, 1.0, 1.0, 1.0)
         """for points in self.paths.wide_paths:
             glBegin(GL_LINE_LOOP)
@@ -860,7 +956,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         glEnable(GL_DEPTH_TEST)
         glFinish()
         now = default_timer() - start
-        #print("Frame time:", now, 1/now, "fps")
+        print("Frame time:", now, 1/now, "fps")
 
     @catch_exception
     def mousePressEvent(self, event):

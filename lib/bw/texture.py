@@ -949,6 +949,9 @@ class TextureArchive(object):
             name = bytes(texture.res_name).lower()
             self.textures[name] = texture
 
+            name2 = name.strip(b"\x00").decode("ascii")
+            self.textures[name2] = texture
+
         self._cached = {}
         self.tex = glGenTextures(1)
 

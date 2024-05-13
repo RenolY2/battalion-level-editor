@@ -103,17 +103,23 @@ class BattalionLevelFile(object):
         self._tree = etree.parse(fileobj)
         self._root = self._tree.getroot()
         self.objects = {}
+        self.objects_with_positions = {}
         
         for child in self._root:
             if child.tag == "Object":
                 bwobject = BattalionObject(self, child)
-                self.add_object(bwobject)
+                if bwobject.hasattr("spawnMatrix") or bwobject.hasattr("Mat"):
+                    self.add_object(bwobject, position=True)
+                else:
+                    self.add_object(bwobject, position=False)
 
-    def add_object(self, bwobject):
+    def add_object(self, bwobject, position):
         if bwobject in self.objects:
             raise ObjectIDAlreadyExists()
             
         self.objects[bwobject.id] = bwobject
+        if position:
+            self.objects_with_positions[bwobject.id] = bwobject
                 
 
 class BattalionFilePaths(object):
@@ -173,6 +179,13 @@ class BattalionObject(object):
                 self._attributes[attr_node.attrib["name"]] = Attribute.from_node(attr_node, self._level)
 
         self.updatemodelname()
+        setattr = super().__setattr__
+        if self.hasattr("spawnMatrix"):
+            setattr("getposition", lambda: self.spawnMatrix)
+        elif self.hasattr("Mat"):
+            setattr("getposition", lambda: self.Mat)
+        else:
+            setattr("getposition", lambda: None)
 
     def updatemodelname(self):
         self._modelname = None
@@ -199,9 +212,9 @@ class BattalionObject(object):
     def modelname(self):
         return self._modelname
 
-    @property
-    def position(self):
-        return None
+    #@property
+    #def position(self):
+    #    return None
 
     @property
     def id(self):

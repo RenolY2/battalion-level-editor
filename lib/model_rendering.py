@@ -36,9 +36,10 @@ class Mesh(object):
         self.triangles = []
         self.lines = []
 
-        self._displist = None
+        self._vbo = None
 
         self.texture = None
+        self._displist = None
 
     def generate_displist(self):
         if self._displist is not None:
@@ -54,13 +55,6 @@ class Mesh(object):
             glVertex3f(*self.vertices[v1i])
             glVertex3f(*self.vertices[v2i])
             glVertex3f(*self.vertices[v3i])
-        glEnd()
-        glBegin(GL_LINES)
-        for v1, v2 in self.lines:
-            v1i = v1
-            v2i = v2
-            glVertex3f(*self.vertices[v1i])
-            glVertex3f(*self.vertices[v2i])
         glEnd()
         glEndList()
         self._displist = displist

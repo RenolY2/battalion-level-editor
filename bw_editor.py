@@ -1010,11 +1010,6 @@ class LevelEditor(QMainWindow):
                     position.x = middle.x + length * sin(angle)
                     position.z = middle.z + length * cos(angle)
 
-        """
-        if len(self.pikmin_gen_view.selected) == 1:
-            obj = self.pikmin_gen_view.selected[0]
-            self.pik_control.set_info(obj, obj.position, obj.rotation)
-        """
         #self.pikmin_gen_view.update()
         self.level_view.do_redraw()
         self.set_has_unsaved_changes(True)
@@ -1321,10 +1316,9 @@ def splitnowhitespace(line):
 
 
 if __name__ == "__main__":
-    with cProfile.Profile() as pr:
-        #with None as pr:
-        #if True:
-        #pr = None
+    #with cProfile.Profile() as pr:
+    if True:
+        pr = None
         #import sys
         import platform
         import argparse
@@ -1364,40 +1358,68 @@ if __name__ == "__main__":
             err_code = app.exec()
 
         if pr is not None:
-            with open("stats.txt", "w") as f:
-                stats = pstats.Stats(pr, stream=f)
-                stats.f8 = f8_alt
-                stats.sort_stats("ncalls")
-                stats.print_stats(100)
-                stats.print_callees(100)
-                stats.print_callers(100)
-                """a = pr.create_stats()
-                print(a)
-                pr.sort_stats("calls")
-                pr.print_stats()
-                pr.print_callers()"""
+            for sortedby in ("ncalls", "tottime", "cumtime"):
+                statsname = "stats_{0}.txt".format(sortedby)
+                statsmorename = "statsmore_{0}.txt".format(sortedby)
 
-            with open("stats.txt", "r") as f:
-                with open("statsmore.txt", "w") as g:
-                    noprocess = True
+                with open(statsname, "w") as f:
+                    stats = pstats.Stats(pr, stream=f)
+                    stats.f8 = f8_alt
+                    stats.sort_stats(sortedby)
+                    stats.print_stats(200)
+                    stats.print_callees(200)
+                    stats.print_callers(200)
+                    """a = pr.create_stats()
+                    print(a)
+                    pr.sort_stats("calls")
+                    pr.print_stats()
+                    pr.print_callers()"""
 
-                    for line in f:
-                        parts = splitnowhitespace(line)
-                        if parts:
-                            if noprocess:
-                                if parts[0] == "ncalls":
-                                    noprocess = False
-                            else:
-                                ncalls, tottime = parts[0], parts[1]
-                                if "/" in ncalls:
-                                    ncalls = ncalls.split("/")[0]
-                                cumtime = parts[3]
-                                parts[2] = "{:.7f}".format(float(tottime)/float(ncalls))
-                                parts[4] = "{:.7f}".format(float(cumtime)/float(ncalls))
-                                g.write(" ".join(parts))
-                                g.write("\n")
-                        elif noprocess == False:
-                            break
+                with open(statsname, "r") as f:
+                    with open(statsmorename, "w") as g:
+                        noprocess = True
+
+                        for line in f:
+                            parts = splitnowhitespace(line)
+                            if parts:
+                                if noprocess:
+                                    if parts[0] == "ncalls":
+                                        noprocess = False
+                                else:
+                                    ncalls, tottime = parts[0], parts[1]
+                                    if "/" in ncalls:
+                                        ncalls = ncalls.split("/")[0]
+                                    cumtime = parts[3]
+                                    parts[2] = "{:.7f}".format(float(tottime)/float(ncalls))
+                                    parts[4] = "{:.7f}".format(float(cumtime)/float(ncalls))
+
+                                    linestart = g.tell()
+                                    tab = 16
+
+                                    """g.write(parts[0])
+                                    g.write(((g.tell()-linestart+tab)%tab)*" ")
+                                    g.write(parts[1])
+                                    g.write(((g.tell() - linestart+tab) % tab) * " ")
+                                    g.write(parts[2])
+                                    g.write(((g.tell() - linestart+tab) % tab) * " ")
+                                    g.write(parts[3])
+                                    g.write(((g.tell() - linestart+tab) % tab) * " ")"""
+                                    g.write(parts[0])
+                                    g.write((tab - (g.tell() - linestart) % tab) * " ")
+                                    g.write(parts[1])
+                                    g.write((tab - (g.tell() - linestart) % tab) * " ")
+                                    g.write(parts[2])
+                                    g.write((tab - (g.tell() - linestart) % tab) * " ")
+                                    g.write(parts[3])
+                                    g.write((tab - (g.tell() - linestart) % tab) * " ")
+                                    g.write(parts[4])
+                                    g.write((tab - (g.tell() - linestart) % tab) * " ")
+                                    g.write(" ".join(parts[5:]))
+
+                                    #g.write("\t\t\t".join(parts))
+                                    g.write("\n")
+                            elif noprocess == False:
+                                break
 
 
 

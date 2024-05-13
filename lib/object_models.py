@@ -4,7 +4,7 @@ from OpenGL.GL import *
 from .model_rendering import (GenericObject, Model, TexturedModel,
                               GenericFlyer, GenericCrystallWall, GenericLongLegs, GenericChappy, GenericSnakecrow,
                               GenericSwimmer, Cube)
-
+from lib.render.model_renderingv2 import ModelV2
 with open("lib/color_coding.json", "r") as f:
     colors = json.load(f)
 
@@ -19,6 +19,10 @@ class ObjectModels(object):
         self.generic_snakecrow = GenericSnakecrow()
         self.generic_swimmer = GenericSwimmer()
         self.cube = Cube()
+
+        with open("resources/cubev2.obj", "r") as f:
+            self.cubev2 = ModelV2.from_obj(f, scale=10)
+
         self.checkpointleft = Cube(colors["CheckpointLeft"])
         self.checkpointright = Cube(colors["CheckpointRight"])
         self.itempoint = Cube(colors["ItemRoutes"])
@@ -185,7 +189,7 @@ class ObjectModels(object):
 
     def _render_generic_position(self, cube, position, selected):
         glPushMatrix()
-        glTranslatef(position.x, -position.z, position.y)
+        glTranslatef(position.x, position.z, position.y)
         cube.render(selected=selected)
 
         glPopMatrix()
