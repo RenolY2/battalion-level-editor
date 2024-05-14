@@ -878,25 +878,25 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 bwmatrix = None
                 modelname = None
 
-                """if object.hasattr("spawnMatrix"):
+                if hasattr(object, "spawnMatrix"):
                     bwmatrix = object.spawnMatrix
                     modelname = object.modelname
 
-                elif object.hasattr("Mat"):
+                elif hasattr(object, "Mat"):
                     bwmatrix = object.Mat
-                    modelname = object.modelname"""
-                bwmatrix = object.getposition()
+                    modelname = object.modelname
+                #bwmatrix = object.getposition()
                 #modelname = None #object.modelname# object.modelname
                 #modelname = None
-                if True:#bwmatrix is not None:
+                if bwmatrix is not None:
                     glPushMatrix()
                     glTranslatef(bwmatrix.position.x, bwmatrix.position.z, bwmatrix.position.y)
                     #glTranslatef(0, 0, 0)
                     self.models.cubev2.render()
 
                     glPopMatrix()
-                """if modelname is not None and False:
-                    if (self.cam_x - bwmatrix.position.x)**2 + (-self.cam_z - bwmatrix.position.z)**2 > 250**2:
+                if False and modelname is not None:
+                    """if (self.cam_x - bwmatrix.position.x)**2 + (-self.cam_z - bwmatrix.position.z)**2 > 250**2:
                         x, z = int((bwmatrix.position.x + 2048) * 0.25), int((bwmatrix.position.z + 2048) * 0.25)
                         if bwmatrix.position.y != 0.0:
                             y = bwmatrix.position.y
@@ -906,10 +906,10 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                         else:
                             y = bwmatrix.position.y
                         self.models.render_generic_position(Vector3(bwmatrix.position.x, y, bwmatrix.position.z), False)
-                    else:
-                        self.bwmodelhandler.rendermodel(modelname, bwmatrix, self.bwterrain, 0)
+                    else:"""
+                    self.bwmodelhandler.rendermodel(modelname, bwmatrix, self.bwterrain, 0)
                 elif bwmatrix is not None:
-                    self.models.render_generic_position(bwmatrix.position, False)"""
+                    self.models.render_generic_position(bwmatrix.position, False)
 
             vismenu = self.visibility_menu
         glPopMatrix()

@@ -80,6 +80,16 @@ class EditorFileMenu(QMenu):
                     else:
                         with open(os.path.join(base, levelpaths.objectpath), "rb") as g:
                             level_data = BattalionLevelFile(g)
+
+                    if levelpaths.preloadpath.endswith(".gz"):
+                        with gzip.open(os.path.join(base, levelpaths.preloadpath), "rb") as g:
+                            preload_data = BattalionLevelFile(g)
+                    else:
+                        with open(os.path.join(base, levelpaths.preloadpath), "rb") as g:
+                            preload_data = BattalionLevelFile(g)
+
+                    level_data.resolve_pointers(preload_data)
+                    preload_data.resolve_pointers(level_data)
                     
                     if levelpaths.resourcepath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.resourcepath), "rb") as g:

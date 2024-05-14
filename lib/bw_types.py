@@ -82,7 +82,7 @@ CONVERTERS_TO = {
 }
 
 
-def convert_from(valuetype, values):
+def convert_from(valuetype, value):
     if valuetype not in TYPES:
         TYPES.append(valuetype)
     if valuetype in CONVERTERS_FROM:
@@ -90,7 +90,7 @@ def convert_from(valuetype, values):
     else:
         conv = default_from 
     
-    return (conv(val) for val in values)
+    return conv(value)#(conv(val) for val in values)
 
 
 def convert_to(valuetype, value):

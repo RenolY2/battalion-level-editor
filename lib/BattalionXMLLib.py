@@ -9,6 +9,11 @@ except: # cElementTree not available
 from lib.bw_types import convert_from, get_types, BWMatrix
 
 
+class PointerPlaceholder(object):
+    def __init__(self, pointer):
+        self.pointer = pointer
+
+
 class PointerAttribute(MutableSequence, Iterable):
     def __init__(self, tag, name, type, values, bwlevel):
         self.tag = tag
@@ -99,7 +104,7 @@ class AttributeList(MutableSequence, Iterable):
     
         
 class BattalionLevelFile(object):
-    def __init__(self, fileobj):
+    def __init__(self, fileobj, preload=None):
         self._tree = etree.parse(fileobj)
         self._root = self._tree.getroot()
         self.objects = {}
@@ -108,10 +113,14 @@ class BattalionLevelFile(object):
         for child in self._root:
             if child.tag == "Object":
                 bwobject = BattalionObject(self, child)
-                if bwobject.hasattr("spawnMatrix") or bwobject.hasattr("Mat"):
+                if hasattr(bwobject, "spawnMatrix") or hasattr(bwobject, "Mat"):
                     self.add_object(bwobject, position=True)
                 else:
                     self.add_object(bwobject, position=False)
+
+    def resolve_pointers(self, other):
+        for bwobject in self.objects.values():
+            bwobject.resolve_pointers(self, other)
 
     def add_object(self, bwobject, position):
         if bwobject in self.objects:
@@ -131,6 +140,7 @@ class BattalionFilePaths(object):
         self.stringpaths = {}
         self.resourcepath = None
         self.objectpath = None
+        self.preloadpath = None
 
         for child in self._tree.getroot():
             print(child.tag)
@@ -145,24 +155,8 @@ class BattalionFilePaths(object):
             elif child.tag == "strings":
                 for lang in child:
                     self.stringpaths[lang.attrib["name"]] = lang.attrib["file"]
-
-
-def make_getter(self, attrname):
-    attr = self._attributes[attrname]
-    if attr.elements == 1:
-        if attr.tag in ("Pointer", "Resource"):
-
-            def getter(self, attr):
-                if attr.values[0] == "0":
-                    return None
-                else:
-                    return self._level.objects[attr.values[0]]
-        else:
-            return attr.values[0]
-    elif attr.elements > 1:
-        return attr.values
-    else:
-        return None
+            elif child.tag == "preload":
+                self.preloadpath = child[0].attrib["name"]
 
 
 class BattalionObject(object):
@@ -174,40 +168,80 @@ class BattalionObject(object):
         self._custom_name = ""
         for attr_node in node:
             if attr_node.tag in ("Pointer", "Resource"):
-                self._attributes[attr_node.attrib["name"]] = PointerAttribute.from_node(attr_node, self._level)
+                elementcount = int(attr_node.attrib["elements"])
+                if elementcount == 1:
+                    setattr(self, attr_node.attrib["name"], PointerPlaceholder(attr_node[0].text))
+                else:
+                    setattr(self, attr_node.attrib["name"], [PointerPlaceholder(subnode.text for subnode in attr_node)])
             else:
-                self._attributes[attr_node.attrib["name"]] = Attribute.from_node(attr_node, self._level)
+                elementcount = int(attr_node.attrib["elements"])
+                if elementcount == 1:
+                    setattr(self,
+                            attr_node.attrib["name"],
+                            convert_from(attr_node.attrib["type"], attr_node[0].text))
+                else:
+                    setattr(self,
+                            attr_node.attrib["name"],
+                            [convert_from(attr_node.attrib["type"], subnode.text) for subnode in attr_node])
+                #self._attributes[attr_node.attrib["name"]] = Attribute.from_node(attr_node, self._level)
 
-        self.updatemodelname()
-        setattr = super().__setattr__
+
+        """setattr = super().__setattr__
         if self.hasattr("spawnMatrix"):
             setattr("getposition", lambda: self.spawnMatrix)
         elif self.hasattr("Mat"):
             setattr("getposition", lambda: self.Mat)
         else:
-            setattr("getposition", lambda: None)
+            setattr("getposition", lambda: None)"""
+    
+    def resolve_pointers(self, level, other=None):
+        for attr_node in self._node:
+            if attr_node.tag in ("Pointer", "Resource"):
+                elementcount = int(attr_node.attrib["elements"])
+                print(elementcount)
+                result = []
+                for subnode in attr_node:
+                    if subnode.text == "0":
+                        result.append(None)
+                    else:
+                        if subnode.text not in level.objects:
+                            if other is None or subnode.text not in other.objects:
+                                raise RuntimeError("ID {0} not found in level or preload".format(subnode.text))
+                            else:
+                                obj = other.objects[subnode.text]
+                        else:
+                            obj = level.objects[subnode.text]
+                        result.append(obj)
+
+                if elementcount == 1:
+                    setattr(self, attr_node.attrib["name"], result[0])
+                else:
+                    setattr(self, attr_node.attrib["name"], result)
+
+        self.updatemodelname()
 
     def updatemodelname(self):
         self._modelname = None
-        if self.hasattr("mBase") and self.mBase is not None:
-            if self.mBase.hasattr("mpModel"):
+        if hasattr(self, "mBase") and self.mBase is not None:
+            if hasattr(self.mBase, "mpModel"):
                 model = self.mBase.mpModel
                 self._modelname = model.mName
-            elif self.mBase.hasattr("model"):
+            elif hasattr(self.mBase, "model"):
                 # modelname = object.mBase.model.mName
                 model = self.mBase.model
                 self._modelname = model.mName
-            elif self.mBase.hasattr("Model"):
+            elif hasattr(self.mBase, "Model"):
                 # modelname = object.mBase.model.mName
                 model = self.mBase.Model
                 self._modelname = model.mName
-            elif self.mBase.hasattr("mBAN_Model"):
+            elif hasattr(self.mBase, "mBAN_Model"):
                 # modelname = object.mBase.mBAN_Model.mName
                 model = self.mBase.mBAN_Model
                 self._modelname = model.mName
             elif self.type == "cSceneryCluster":
-                id = self.mBase.Element[0]
-                self._modelname = self._level.objects[id].mName
+                model = self.mBase.Element[0]
+                if model is not None:
+                    self._modelname = model.mName
     @property
     def modelname(self):
         return self._modelname
@@ -252,38 +286,9 @@ class BattalionObject(object):
 
     def hasattr(self, attrname):
         return attrname in self._attributes
-
-    def __getattr__(self, attrname):
-        attr = self._attributes[attrname]
-        if attr.elements == 1:
-            """if attr.tag in ("Pointer", "Resource"):
-                if attr.values[0] == "0":
-                    return None
-                else:
-                    return self._level.objects[attr.values[0]]
-            else:
-                return attr.values[0]"""
-            return attr[0]
-        else:
-            return attr.values
-        #elif attr.elements > 1:
-        #    return attr.values
-        #else:
-        #    return None
-
-    def __setattr__(self, attrname, value):
-        if attrname.startswith("_"):
-            super().__setattr__(attrname, value)
-        else:
-            attr = self._attributes[attrname]
-            if attr.elements == 1:
-                attr.values[0] = value
-            elif attr.elements > 1:
-                raise RuntimeError("Direct element assignment to attributes with multiple elements not supported")
-
         
 if __name__ == "__main__":
-    """with open("credits_Level_Preload.xml", "r") as f:
+    """with open("../credits_Level_Preload.xml", "r") as f:
         level = BattalionLevelFile(f)
     
     for objid, obj in level.objects.items():
@@ -294,16 +299,21 @@ if __name__ == "__main__":
             obj.mMipBias = 1
             print(obj.mMipBias)
             print(obj.mCOHeadOneSad)"""
-            
-    """with open("MP2_Level.xml", "r") as f:
+
+    with open("bw/MP2_Level_Preload.xml", "r") as f:
+        preload = BattalionLevelFile(f)
+
+    with open("bw/MP2_Level.xml", "r") as f:
         level = BattalionLevelFile(f)
-    
+    level.resolve_pointers(preload)
+    preload.resolve_pointers(level)
+
     for objid, obj in level.objects.items():
         if obj.type == "cMorphingBuilding":
             print(obj.mBaseTT.mpModel.mName)
             print(obj.spawnMatrix.to_array())
             new = BWMatrix(*obj.spawnMatrix.to_array())
-            print(obj.spawnMatrix.to_array())"""
+            print(obj.spawnMatrix.to_array())
     
     """alltypes = get_types()
     alltypes.sort()
