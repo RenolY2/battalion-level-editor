@@ -44,12 +44,17 @@ class EditorFileMenu(QMenu):
         self.addAction(self.save_file_as_action)
         self.addAction(self.save_file_copy_as_action)
 
-    def button_load_level(self):
-        filepath, chosentype = QFileDialog.getOpenFileName(
-            self, "Open File",
-            self.editor.pathsconfig["bol"],
-            "XML files (*.xml; *.xml.gz);;All files (*)",
-            self.last_chosen_type)
+
+    def button_load_level(self, fpathoverride=None):
+        if fpathoverride:
+            filepath = fpathoverride
+            chosentype = ""
+        else:
+            filepath, chosentype = QFileDialog.getOpenFileName(
+                self, "Open File",
+                self.editor.pathsconfig["bol"],
+                "XML files (*.xml; *.xml.gz);;All files (*)",
+                self.last_chosen_type)
 
         if filepath:
             self.last_chosen_type = chosentype

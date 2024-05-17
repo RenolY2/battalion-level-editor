@@ -1352,9 +1352,10 @@ if __name__ == "__main__":
             print("Python version: ", sys.version)
             editor_gui = LevelEditor()
             editor_gui.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
+            # Debugging
 
             editor_gui.show()
-
+            editor_gui.file_menu.button_load_level(r"D:\Wii games\BW2Folder\files\Data\CompoundFiles\MP4.xml")
             err_code = app.exec()
 
         if pr is not None:
