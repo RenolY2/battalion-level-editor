@@ -21,7 +21,7 @@ class ObjectModels(object):
         self.cube = Cube()
 
         with open("resources/cubev2.obj", "r") as f:
-            self.cubev2 = ModelV2.from_obj(f, scale=10)
+            self.cubev2 = ModelV2.from_obj(f, scale=5)
 
         self.checkpointleft = Cube(colors["CheckpointLeft"])
         self.checkpointright = Cube(colors["CheckpointRight"])
