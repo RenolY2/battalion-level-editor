@@ -1,21 +1,21 @@
 from lib.vectors import Matrix4x4, Vector4, Vector3
-
+from numpy import array, float32, shape, reshape
 TYPES = []
+
+X = 12
+Y = 13
+Z = 14
 
 
 class BWMatrix(object):
     def __init__(self, *values):
-        self.mtx = Matrix4x4(*values)
-        self.mtx.transpose()
-        self.position = Vector3(self.mtx.d1, self.mtx.d2, self.mtx.d3)
-        self.mtx.d1 = self.mtx.d2 = self.mtx.d3 = 0
+        self.mtx = array(values, dtype=float32) #Matrix4x4(*values)
+        #self.mtx.transpose()
+        #self.position = Vector3(self.mtx.d1, self.mtx.d2, self.mtx.d3)
+        #self.mtx.d1 = self.mtx.d2 = self.mtx.d3 = 0
 
     def to_array(self):
-        mtx = self.mtx.transposed()
-        return [self.mtx.a1, self.mtx.a2, self.mtx.a3, self.mtx.a4,
-                self.mtx.b1, self.mtx.b2, self.mtx.b3, self.mtx.b4,
-                self.mtx.c1, self.mtx.c2, self.mtx.c3, self.mtx.c4,
-                self.position.x, self.position.y, self.position.z, self.mtx.d4]
+        return self.mtx
 
 
 def boolean_from(bool):
@@ -104,3 +104,9 @@ def convert_to(valuetype, value):
 
 def get_types():
     return TYPES
+
+
+if __name__ == "__main__":
+    mtx = BWMatrix([1,0,0,0, 0,1,0,0, 0,0,1,0, 1,0,0,0])
+    print(mtx.mtx)
+    print(shape(mtx.mtx))

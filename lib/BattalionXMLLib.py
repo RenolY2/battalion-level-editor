@@ -129,6 +129,7 @@ class BattalionLevelFile(object):
         self.objects[bwobject.id] = bwobject
         if position:
             self.objects_with_positions[bwobject.id] = bwobject
+            assert bwobject.getmatrix() is not None
                 
 
 class BattalionFilePaths(object):
@@ -186,13 +187,13 @@ class BattalionObject(object):
                 #self._attributes[attr_node.attrib["name"]] = Attribute.from_node(attr_node, self._level)
 
 
-        """setattr = super().__setattr__
-        if self.hasattr("spawnMatrix"):
-            setattr("getposition", lambda: self.spawnMatrix)
-        elif self.hasattr("Mat"):
-            setattr("getposition", lambda: self.Mat)
+
+        if hasattr(self, "spawnMatrix"):
+            setattr(self, "getmatrix", lambda: self.spawnMatrix)
+        elif hasattr(self, "Mat"):
+            setattr(self, "getmatrix", lambda: self.Mat)
         else:
-            setattr("getposition", lambda: None)"""
+            setattr(self, "getmatrix", lambda: None)
     
     def resolve_pointers(self, level, other=None):
         for attr_node in self._node:
@@ -261,16 +262,16 @@ class BattalionObject(object):
     @property
     def name(self):
         modelname = ""
-        if self.hasattr("mBase"):
+        if hasattr(self, "mBase"):
             base = self.mBase
         else:
             base = self
 
-        if base.hasattr("mpModel"):
+        if hasattr(base, "mpModel"):
             modelname = base.mpModel.mName
-        elif base.hasattr("model"):
+        elif hasattr(base, "model"):
             modelname = base.model.mName
-        elif base.hasattr("mBAN_Model"):
+        elif hasattr(base, "mBAN_Model"):
             modelname = base.mBAN_Model.mName
 
         if self._custom_name:
@@ -283,9 +284,6 @@ class BattalionObject(object):
                 return "{0}({2},{1})".format(self.type, self.id, modelname)
             else:
                 return "{0}({1})".format(self.type, self.id)
-
-    def hasattr(self, attrname):
-        return attrname in self._attributes
         
 if __name__ == "__main__":
     """with open("../credits_Level_Preload.xml", "r") as f:

@@ -1,5 +1,6 @@
 import traceback
 import os
+from itertools import chain
 from time import sleep
 from timeit import default_timer
 from io import StringIO
@@ -812,9 +813,12 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         glColor4f(1.0, 1.0, 1.0, 1.0)
         glDisable(GL_TEXTURE_2D)
         glDisable(GL_CULL_FACE)
+
+        subtime = default_timer()
         if self.terrainmap is not None:
             #glCallList(self.terrainmap)
             self.render_terrain_immediate()
+        terraintime = default_timer()-subtime
         if self.mode == MODE_TOPDOWN:
             glClear(GL_DEPTH_BUFFER_BIT)
 
@@ -862,15 +866,37 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         glUseProgram(0)
         #glScale(1.0, -1.0, 1.0)
         #self.models.render_generic_position(Vector3(self.cam_x, self.camera_height-5, -self.cam_z), False)
+        subtime = default_timer()
         if self.level_file is not None:
             selected = self.selected
             positions = self.selected_positions
 
             select_optimize = {x:True for x in selected}
             #objects = self.pikmin_generators.generators
-            glDisable(GL_CULL_FACE)
-            self.models.cubev2.bind()
-            for objectid, object in self.level_file.objects_with_positions.items():
+            #glDisable(GL_CULL_FACE)
+            glEnable(GL_CULL_FACE)
+            mtx = numpy.concatenate([obj.getmatrix().mtx for obj in self.level_file.objects_with_positions.values()])
+            self.models.cubev2.mtxdirty = True
+            self.models.cubev2.bind(mtx)
+
+            drawn = 0
+            for i in self.level_file.objects_with_positions.values():
+                object = i
+                break
+
+            """if hasattr(object, "spawnMatrix"):
+                bwmatrix = object.spawnMatrix
+                modelname = object._modelname
+
+            elif hasattr(object, "Mat"):
+                bwmatrix = object.Mat
+                modelname = object._modelname"""
+            bwmatrix = object.getmatrix()
+            modelname = object._modelname
+
+            self.models.cubev2.instancedrender(bwmatrix.mtx, len(self.level_file.objects_with_positions))
+            if False:
+                #for objectid, object in self.level_file.objects_with_positions.items():
 
                 #glColor3f(1.0, 1.0, 1.0)
                 #glDisable(GL_TEXTURE_2D)
@@ -880,23 +906,24 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
                 if hasattr(object, "spawnMatrix"):
                     bwmatrix = object.spawnMatrix
-                    modelname = object.modelname
+                    modelname = object._modelname
 
                 elif hasattr(object, "Mat"):
                     bwmatrix = object.Mat
-                    modelname = object.modelname
+                    modelname = object._modelname
                 #bwmatrix = object.getposition()
                 #modelname = None #object.modelname# object.modelname
                 #modelname = None
                 if bwmatrix is not None:
-                    glPushMatrix()
-                    glTranslatef(bwmatrix.position.x, bwmatrix.position.z, bwmatrix.position.y)
+                    #glPushMatrix()
+                    #glTranslatef(bwmatrix.position.x, bwmatrix.position.z, bwmatrix.position.y)
                     #glTranslatef(0, 0, 0)
-                    self.models.cubev2.render()
+                    self.models.cubev2.render(bwmatrix.mtx)
 
-                    glPopMatrix()
-                if False and modelname is not None:
-                    """if (self.cam_x - bwmatrix.position.x)**2 + (-self.cam_z - bwmatrix.position.z)**2 > 250**2:
+                    #glPopMatrix()
+                drawn += 1
+                """if False and modelname is not None:
+                    if (self.cam_x - bwmatrix.position.x)**2 + (-self.cam_z - bwmatrix.position.z)**2 > 250**2:
                         x, z = int((bwmatrix.position.x + 2048) * 0.25), int((bwmatrix.position.z + 2048) * 0.25)
                         if bwmatrix.position.y != 0.0:
                             y = bwmatrix.position.y
@@ -906,12 +933,15 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                         else:
                             y = bwmatrix.position.y
                         self.models.render_generic_position(Vector3(bwmatrix.position.x, y, bwmatrix.position.z), False)
-                    else:"""
+                    else:
                     self.bwmodelhandler.rendermodel(modelname, bwmatrix, self.bwterrain, 0)
-                elif bwmatrix is not None:
-                    self.models.render_generic_position(bwmatrix.position, False)
+                elif False and bwmatrix is not None:
+                    self.models.render_generic_position(bwmatrix.position, False)"""
 
             vismenu = self.visibility_menu
+            print("Drawn:", drawn)
+            self.models.cubev2.unbind()
+        objecttime = default_timer()-subtime
         glPopMatrix()
         glColor4f(0.0, 1.0, 1.0, 1.0)
         """for points in self.paths.wide_paths:
@@ -957,6 +987,8 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         glFinish()
         now = default_timer() - start
         print("Frame time:", now, 1/now, "fps")
+        print("Spent on terrain: {0} {1}%".format(terraintime, round(terraintime/now, 3)*100))
+        print("Spent on objects: {0} {1}%".format(objecttime, round(objecttime/now, 3)*100))
 
     @catch_exception
     def mousePressEvent(self, event):
