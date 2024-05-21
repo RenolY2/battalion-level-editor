@@ -1,5 +1,6 @@
 import traceback
 import os
+import random
 from itertools import chain
 from time import sleep
 from timeit import default_timer
@@ -875,9 +876,34 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             #objects = self.pikmin_generators.generators
             #glDisable(GL_CULL_FACE)
             glEnable(GL_CULL_FACE)
-            mtx = numpy.concatenate([obj.getmatrix().mtx for obj in self.level_file.objects_with_positions.values()])
-            self.models.cubev2.mtxdirty = True
-            self.models.cubev2.bind(mtx)
+            #mtx = numpy.concatenate([obj.getmatrix().mtx for obj in self.level_file.objects_with_positions.values()])
+            matrices = []
+            extradataarray = []
+            if self.models.cubev2.mtxdirty:
+                for obj in self.level_file.objects_with_positions.values():
+                    matrices.append(obj.getmatrix().mtx)
+                    value = 0
+                    if obj in selected:
+                        value |= 0b10000000 << 24
+                    random.seed()
+                    ##value |= random.randint(0, 2**24-1)
+                    if random.random() > 0.5:#obj in selected:
+                        extradataarray.append(255)
+                    else:
+                        extradataarray.append(0)
+                    random.seed(obj.type)
+                    extradataarray.append(random.randint(0, 255))
+                    extradataarray.append(random.randint(0, 255))
+                    extradataarray.append(random.randint(0, 255))
+                mtx = numpy.concatenate(matrices)
+                extradata = numpy.array(extradataarray, dtype=numpy.uint8)
+                random.seed()
+            else:
+                mtx = None
+                extradata = None
+
+            #self.models.cubev2.mtxdirty = True
+            self.models.cubev2.bind(mtx, extradata)
 
             drawn = 0
             for i in self.level_file.objects_with_positions.values():

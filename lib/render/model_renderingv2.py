@@ -179,6 +179,7 @@ class ModelV2(object):
 layout(location = 0) in vec3 vert;
 layout(location = 1) in vec4 color;
 layout(location = 2) in mat4 instanceMatrix;
+layout(location = 6) in vec4 val;
 //layout(location = 2) in vec4 mtxvec1;
 //layout(location = 3) in vec4 mtxvec2;
 //layout(location = 4) in vec4 mtxvec3;
@@ -190,10 +191,29 @@ mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
                 0.0, 0.0, 1.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,
                 0.0, 0.0, 0.0, 1.0);
+                
+void torgb(in uint value, out vec4 result) {
+    result.x = float(((value >> uint(16)) & uint(0xFF))) / 255.0;
+    result.y = float(((value >> uint(8)) & uint(0xFF)))/ 255.0;
+    result.z = float(((value) & uint(0xFF)))/ 255.0;
+    result.w = 1.0;
+}
+
+void torgbint(in int value, out vec4 result) {
+    result.x = float(((value >> 16) & 0xFF)) / 255.0;
+    result.y = float(((value >> 8) & 0xFF))/ 255.0;
+    result.z = float((value & 0xFF))/ 255.0;
+    result.w = 1.0;
+}
 
 void main(void)
-{
-    fragColor = color; //vec4(1.0, 0.0, 0.0, 1.0);
+{   
+    //fragColor = vec4(val, 0.0, 0.0, 1.0);
+    //torgb(val, fragColor);
+    fragColor = color*vec4(val.y, val.z, val.w, 0.0);
+    fragColor += (vec4(1.0, 1.0, 1.0, 0.0)-color)*vec4(1.0*val.x, 1.0*val.x, 0.0, 0.0);
+    fragColor += vec4(0.0, 0.0, 0.0, 1.0);
+    //fragColor = vec4(val>>24, 0.0, 0.0, 1.0); //vec4(1.0, 0.0, 0.0, 1.0);
     //fragColor = mtxvec1+vec4(0.0, 0.0, 0.0, 1.0);
     float offsetx = mod(gl_InstanceID, 100)*20;
     float offsety = (gl_InstanceID / 100)*20;
@@ -217,8 +237,9 @@ void main (void)
         self.program = None
         self.mtxbuffer = None
         self.mtxdirty = True
+        self.extrabuffer = None
 
-    def build_mesh(self, array):
+    def build_mesh(self, array, extradata):
         if self.vbo is not None:
             glDeleteBuffers(self.vbo, 1)
             glDeleteVertexArrays(self.vao, 1)
@@ -237,12 +258,14 @@ void main (void)
 
         glBufferData(GL_ARRAY_BUFFER, len(self._triangles)*4, numpy.array(self._triangles, dtype=numpy.float32), GL_STATIC_DRAW)
 
-        self.rebuild_instance_array(array)
+        self.rebuild_instance_array(array, extradata)
 
-    def rebuild_instance_array(self, array):
+    def rebuild_instance_array(self, array, extradata):
         if self.mtxdirty:
             if self.mtxbuffer is not None:
                 glDeleteBuffers(self.mtxbuffer, 1)
+                glDeleteBuffers(self.extrabuffer, 1)
+
             self.mtxbuffer = glGenBuffers(1)
             glBindBuffer(GL_ARRAY_BUFFER, self.mtxbuffer)
             glBufferData(GL_ARRAY_BUFFER, array, GL_STATIC_DRAW)
@@ -261,11 +284,17 @@ void main (void)
             glVertexAttribDivisor(4, 1)
             glVertexAttribDivisor(5, 1)
 
+            self.extrabuffer = glGenBuffers(1)
+            glBindBuffer(GL_ARRAY_BUFFER, self.extrabuffer)
+            glBufferData(GL_ARRAY_BUFFER, extradata, GL_STATIC_DRAW)
+            glEnableVertexAttribArray(6)
+            glVertexAttribPointer(6, 4,  GL_UNSIGNED_BYTE, GL_TRUE, 4, ctypes.c_void_p(0))
+            glVertexAttribDivisor(6, 1)
             self.mtxdirty = False
 
-    def bind(self, array):
+    def bind(self, array, extradata):
         if self.vao is None:
-            self.build_mesh(array)
+            self.build_mesh(array, extradata)
             self.program = create_shader(self.vertexshader, self.fragshader)
             self.mtxloc = glGetUniformLocation(self.program, "modelmtx")
         glUseProgram(self.program)
