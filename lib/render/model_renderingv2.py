@@ -1,4 +1,5 @@
 import json
+import re
 from time import time
 from OpenGL.GL import *
 from lib.vectors import Vector3
@@ -15,6 +16,18 @@ with open("lib/color_coding.json") as f:
     colors = json.load(f)
 
 selectioncolor = colors["SelectionColor"]
+
+
+def get_location(shaderstring, varname):
+    match = re.search("layout\(location = ([0-9]+)\) in [a-z0-9]+ {0};".format(varname), shaderstring)
+    if match.group(1) is None:
+        raise RuntimeError("Didn't find variable {0} in shader".format(varname))
+
+    return int(match.group(1))
+
+
+def get_locations(shaderstring, varnames):
+    return [get_location(shaderstring, varname) for varname in varnames]
 
 
 def read_vertex(v_data):
@@ -217,14 +230,18 @@ class MatrixBuffer(VertexBuffer):
         self.add_attribute(mtx_attr_index+3, 4, GL_FLOAT, GL_FALSE, 4*16, 3*16, divisor=1)
 
 
+class ExtraBuffer(VertexBuffer):
+    def __init__(self, extra_attr_index):
+        super().__init__()
+        self.add_attribute(extra_attr_index,  4,  GL_UNSIGNED_BYTE, GL_TRUE, 4, 0, divisor=1)
+
+
 class ModelV2(object):
     def __init__(self):
         self.mesh_list = []
         self._triangles = []
 
-        self.vbo = VertexColorBuffer(0, 1)
-        self.vao = None
-        self.mtxloc = None
+
 
         self.vertexshader = """
 #version 330 compatibility
@@ -297,10 +314,14 @@ void main (void)
     finalColor = fragColor;
 }  
 """
+        self.vbo = VertexColorBuffer(*get_locations(self.vertexshader, ("vert", "color")))
+        self.vao = None
+        self.mtxloc = None
         self.program = None
-        self.mtxbuffer = MatrixBuffer(2)
+        self.mtxbuffer = MatrixBuffer(get_location(self.vertexshader, "instanceMatrix"))
         self.mtxdirty = True
-        self.extrabuffer = None
+        self.extrabuffer = ExtraBuffer(get_location(self.vertexshader, "val"))
+        self.coloridbuffer = VertexColorBuffer(*get_locations(self.vertexshader_colorid, ("vert", "color")))
 
     def build_mesh(self, array, extradata):
         if self.vbo.initialized():
@@ -320,35 +341,15 @@ void main (void)
     def rebuild_instance_array(self, array, extradata):
         if self.mtxdirty:
             if self.mtxbuffer.initialized():
-                #glDeleteBuffers(self.mtxbuffer, 1)
                 self.mtxbuffer.free()
-                glDeleteBuffers(self.extrabuffer, 1)
+                self.extrabuffer.free()
 
-            self.mtxbuffer.init() # = glGenBuffers(1)
+            self.mtxbuffer.init()
             self.mtxbuffer.load_data(array)
-            """glBindBuffer(GL_ARRAY_BUFFER, self.mtxbuffer)
-            glBufferData(GL_ARRAY_BUFFER, array, GL_STATIC_DRAW)
 
-            glEnableVertexAttribArray(2)
-            glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 4*16, ctypes.c_void_p(0))
-            glEnableVertexAttribArray(3)
-            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4*16, ctypes.c_void_p(1*16))
-            glEnableVertexAttribArray(4)
-            glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4*16, ctypes.c_void_p(2*16))
-            glEnableVertexAttribArray(5)
-            glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4*16, ctypes.c_void_p(3*16))
+            self.extrabuffer.init()
+            self.extrabuffer.load_data(extradata)
 
-            glVertexAttribDivisor(2, 1)
-            glVertexAttribDivisor(3, 1)
-            glVertexAttribDivisor(4, 1)
-            glVertexAttribDivisor(5, 1)"""
-
-            self.extrabuffer = glGenBuffers(1)
-            glBindBuffer(GL_ARRAY_BUFFER, self.extrabuffer)
-            glBufferData(GL_ARRAY_BUFFER, extradata, GL_STATIC_DRAW)
-            glEnableVertexAttribArray(6)
-            glVertexAttribPointer(6, 4,  GL_UNSIGNED_BYTE, GL_TRUE, 4, ctypes.c_void_p(0))
-            glVertexAttribDivisor(6, 1)
             self.mtxdirty = False
 
     def bind(self, array, extradata):
