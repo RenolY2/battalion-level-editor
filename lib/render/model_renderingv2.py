@@ -170,17 +170,19 @@ class VertexBuffer(object):
         self._buffer = None
         self._attributes = []
 
-    def add_attribute(self, index, count, attrtype, normalize=GL_FALSE, stride=0, offset=0):
+    def add_attribute(self, index, count, attrtype, normalize=GL_FALSE, stride=0, offset=0, divisor=None):
         assert count <= 4
         assert not self.initialized()
-        self._attributes.append((index, count, attrtype, normalize, stride, offset))
+        self._attributes.append((index, count, attrtype, normalize, stride, offset, divisor))
 
     def init(self):
         self._buffer = glGenBuffers(1)
         self.bind()
-        for index, count, attrtype, normalize, stride, offset in self._attributes:
+        for index, count, attrtype, normalize, stride, offset, divisor in self._attributes:
             glEnableVertexAttribArray(index)
             glVertexAttribPointer(index, count, attrtype, normalize, stride, ctypes.c_void_p(offset))
+            if divisor is not None:
+                glVertexAttribDivisor(index, divisor)
 
     def load_data(self, data):
         assert self.initialized()
@@ -204,6 +206,15 @@ class VertexColorBuffer(VertexBuffer):
         super().__init__()
         self.add_attribute(vtx_attr_index, 3, GL_FLOAT, GL_FALSE, 6 * 4, 0*4)
         self.add_attribute(color_attr_index, 3, GL_FLOAT, GL_FALSE, 6 * 4, 3*4)
+
+
+class MatrixBuffer(VertexBuffer):
+    def __init__(self, mtx_attr_index):
+        super().__init__()
+        self.add_attribute(mtx_attr_index, 4, GL_FLOAT, GL_FALSE, 4*16, 0, divisor=1)
+        self.add_attribute(mtx_attr_index+1, 4, GL_FLOAT, GL_FALSE, 4*16, 1*16, divisor=1)
+        self.add_attribute(mtx_attr_index+2, 4, GL_FLOAT, GL_FALSE, 4*16, 2*16, divisor=1)
+        self.add_attribute(mtx_attr_index+3, 4, GL_FLOAT, GL_FALSE, 4*16, 3*16, divisor=1)
 
 
 class ModelV2(object):
@@ -287,7 +298,7 @@ void main (void)
 }  
 """
         self.program = None
-        self.mtxbuffer = None
+        self.mtxbuffer = MatrixBuffer(2)
         self.mtxdirty = True
         self.extrabuffer = None
 
@@ -308,12 +319,14 @@ void main (void)
 
     def rebuild_instance_array(self, array, extradata):
         if self.mtxdirty:
-            if self.mtxbuffer is not None:
-                glDeleteBuffers(self.mtxbuffer, 1)
+            if self.mtxbuffer.initialized():
+                #glDeleteBuffers(self.mtxbuffer, 1)
+                self.mtxbuffer.free()
                 glDeleteBuffers(self.extrabuffer, 1)
 
-            self.mtxbuffer = glGenBuffers(1)
-            glBindBuffer(GL_ARRAY_BUFFER, self.mtxbuffer)
+            self.mtxbuffer.init() # = glGenBuffers(1)
+            self.mtxbuffer.load_data(array)
+            """glBindBuffer(GL_ARRAY_BUFFER, self.mtxbuffer)
             glBufferData(GL_ARRAY_BUFFER, array, GL_STATIC_DRAW)
 
             glEnableVertexAttribArray(2)
@@ -328,7 +341,7 @@ void main (void)
             glVertexAttribDivisor(2, 1)
             glVertexAttribDivisor(3, 1)
             glVertexAttribDivisor(4, 1)
-            glVertexAttribDivisor(5, 1)
+            glVertexAttribDivisor(5, 1)"""
 
             self.extrabuffer = glGenBuffers(1)
             glBindBuffer(GL_ARRAY_BUFFER, self.extrabuffer)
