@@ -52,9 +52,9 @@ MODE_3D = 1
 colors = [(0.0,191/255.0,255/255.0), (30/255.0,144/255.0,255/255.0), (0.0,0.0,255/255.0), (0.0,0.0,139/255.0)]
 
 with open("lib/color_coding.json", "r") as f:
-    colors_json = json.load(f)
-    colors_selection = colors_json["SelectionColor"]
-    colors_area  = colors_json["Areas"]
+    object_colors = json.load(f)
+    #colors_selection = colors_json["SelectionColor"]
+    #colors_area  = colors_json["Areas"]
 
 
 class SelectionQueue(list):
@@ -558,7 +558,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
         self.pikmin_generators = None
 
-        self.mousemode = MOUSE_MODE_NONE
+        # self.mousemode = MOUSE_MODE_NONE
         self.spawnpoint = None
         self.rotation_is_pressed = False
 
@@ -892,9 +892,10 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                     else:
                         extradataarray.append(0)
                     random.seed(obj.type)
-                    extradataarray.append(random.randint(0, 255))
-                    extradataarray.append(random.randint(0, 255))
-                    extradataarray.append(random.randint(0, 255))
+                    r,g,b,a = object_colors[obj.type]
+                    extradataarray.append(int(r*255))
+                    extradataarray.append(int(g*255))
+                    extradataarray.append(int(b*255))
                 mtx = numpy.concatenate(matrices)
                 extradata = numpy.array(extradataarray, dtype=numpy.uint8)
                 random.seed()

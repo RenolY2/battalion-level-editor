@@ -11,7 +11,7 @@ from PyQt5 import QtGui
 with open("lib/color_coding.json") as f:
     colors = json.load(f)
 
-selectioncolor = colors["SelectionColor"]
+#selectioncolor = colors["SelectionColor"]
 
 
 def read_vertex(v_data):

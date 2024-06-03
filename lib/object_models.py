@@ -23,15 +23,15 @@ class ObjectModels(object):
         with open("resources/cubev2.obj", "r") as f:
             self.cubev2 = ModelV2.from_obj(f, scale=5)
 
-        self.checkpointleft = Cube(colors["CheckpointLeft"])
-        self.checkpointright = Cube(colors["CheckpointRight"])
-        self.itempoint = Cube(colors["ItemRoutes"])
-        self.enemypoint = Cube(colors["EnemyRoutes"])
-        self.camera = GenericObject(colors["Camera"])
-        self.areas = GenericObject(colors["Areas"])
-        self.objects = GenericObject(colors["Objects"])
-        self.respawn = GenericObject(colors["Respawn"])
-        self.startpoints = GenericObject(colors["StartPoints"])
+        #self.checkpointleft = Cube(colors["CheckpointLeft"])
+        #self.checkpointright = Cube(colors["CheckpointRight"])
+        #self.itempoint = Cube(colors["ItemRoutes"])
+        #self.enemypoint = Cube(colors["EnemyRoutes"])
+        #self.camera = GenericObject(colors["Camera"])
+        #self.areas = GenericObject(colors["Areas"])
+        #self.objects = GenericObject(colors["Objects"])
+        #self.respawn = GenericObject(colors["Respawn"])
+        #self.startpoints = GenericObject(colors["StartPoints"])
         #self.purplecube = Cube((0.7, 0.7, 1.0, 1.0))
 
         self.playercolors = [Cube(color) for color in ((1.0, 0.0, 0.0, 1.0),
@@ -78,14 +78,14 @@ class ObjectModels(object):
                     filename = os.path.basename(file)
                     objectname = filename.rsplit(".", 1)[0]
                     self.models[objectname] = TexturedModel.from_obj_path(os.path.join(dirpath, file), rotate=True)
-        for cube in (self.cube, self.checkpointleft, self.checkpointright, self.itempoint, self.enemypoint,
+        """for cube in (self.cube, self.checkpointleft, self.checkpointright, self.itempoint, self.enemypoint,
                      self.objects, self.areas, self.respawn, self.startpoints, self.camera):
             cube.generate_displists()
 
         for cube in self.playercolors:
             cube.generate_displists()
-
-        self.generic.generate_displists()
+        """
+        #self.generic.generate_displists()
 
         # self.generic_wall = TexturedModel.from_obj_path("resources/generic_object_wall2.obj", rotate=True, scale=20.0)
 
