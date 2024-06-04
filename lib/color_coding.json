@@ -2,7 +2,7 @@
   "cAirVehicle": 					[1.0, 1.0, 0.0, 1.0],
   "cAmbientAreaPointSoundBox": 		[0.929, 0.576, 0.576, 1.0],
   "cAmbientAreaPointSoundSphere": 	[0.929, 0.576, 0.576, 1.0],
-  "cBuilding": 						[0.0, 0.0, 0.0, 1.0],
+  "cBuilding": 						[0.549, 1.0, 0.0, 1.0],
   "cCamera": 						[0.21, 0.509, 0.933, 1.0],
   "cCapturePoint": 					[0.4, 0.769, 1.0, 1.0],
   "cCoastZone": 					[1.0, 1.0, 1.0, 1.0],
