@@ -16,8 +16,8 @@
   "cPickupReflected": 				[0.671, 0.012, 0.012, 1.0],
   "cReflectedUnitGroup": 			[0.0, 0.341, 0.216, 1.0],
   "cSceneryCluster": 				[0.352, 0.156, 0.156, 1.0],
-  "cTroop": 						[0.0, 0.58, 0.0, 1.0],
-  "cWaterVehicle": 					[0.0, 0.0, 1.0, 1.0],
+  "cTroop": 						[0.0, 0.0, 1.0, 1.0],
+  "cWaterVehicle": 					[0.0, 0.58, 0.0, 1.0],
   "cWaypoint": 						[0.0, 1.0, 1.0, 1.0],
   "SelectionColor":					[1.0, 0.0, 0.0, 1.0]
 }
