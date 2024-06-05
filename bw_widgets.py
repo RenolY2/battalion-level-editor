@@ -524,9 +524,12 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
     def do_redraw(self, force=False):
         self._frame_invalid = True
+        self.models.cubev2.mtxdirty = True
         if force:
             self._lastrendertime = 0
             self.update()
+
+
 
     def reset(self, keep_collision=False):
         self.highlight_colltype = None
