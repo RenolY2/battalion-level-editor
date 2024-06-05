@@ -850,15 +850,11 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 for obj in self.level_file.objects_with_positions.values():
                     matrices.append(obj.getmatrix().mtx)
                     value = 0
-                    if obj in selected:
-                        value |= 0b10000000 << 24
-                    random.seed()
                     ##value |= random.randint(0, 2**24-1)
-                    if random.random() > 0.5:#obj in selected:
+                    if obj in selected:
                         extradataarray.append(255)
                     else:
                         extradataarray.append(0)
-                    random.seed(obj.type)
                     r,g,b,a = object_colors[obj.type]
                     extradataarray.append(int(r*255))
                     extradataarray.append(int(g*255))
@@ -871,7 +867,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 extradata = None
 
             #self.models.cubev2.mtxdirty = True
-            self.models.cubev2.bind(mtx, extradata)
+
 
             drawn = 0
             for i in self.level_file.objects_with_positions.values():
@@ -887,8 +883,9 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 modelname = object._modelname"""
             bwmatrix = object.getmatrix()
             modelname = object._modelname
-
+            self.models.cubev2.bind(mtx, extradata)
             self.models.cubev2.instancedrender(bwmatrix.mtx, len(self.level_file.objects_with_positions))
+            self.models.cubev2.unbind()
             if False:
                 #for objectid, object in self.level_file.objects_with_positions.items():
 
