@@ -39,6 +39,7 @@ import numpy
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
 from lib.bw_terrain import BWTerrainV2
 from lib.bw.bwmodelrender import BWModelHandler
+from lib.graphics import Graphics
 
 MOUSE_MODE_NONE = 0
 MOUSE_MODE_MOVEWP = 1
@@ -100,7 +101,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
+        self.graphics = Graphics(self)
         self.bwmodelhandler = BWModelHandler()
 
         self._zoom_factor = 80
@@ -361,8 +362,6 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                                "resources/arrow.png")
 
 
-
-
     def resizeGL(self, width, height):
         # Called upon window resizing: reinitialize the viewport.
         # update the window size
@@ -548,6 +547,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.selectionbox_end = None
 
         self.selected = []
+        self.models.cubev2.mtxdirty = True
 
         if not keep_collision:
             # Potentially: Clear collision object too?
@@ -647,42 +647,9 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         width, height = self.canvas_width, self.canvas_height
 
         if self.mode == MODE_TOPDOWN:
-            glMatrixMode(GL_PROJECTION)
-            glLoadIdentity()
-            zf = self.zoom_factor
-            #glOrtho(-6000.0, 6000.0, -6000.0, 6000.0, -3000.0, 2000.0)
-            camera_width = width*zf
-            camera_height = height*zf
-
-            glOrtho(-camera_width / 2 - offset_x, camera_width / 2 - offset_x,
-                    -camera_height / 2 + offset_z, camera_height / 2 + offset_z, -120000.0, 80000.0)
-
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
+            self.graphics.setup_ortho(width, height, offset_x, offset_z)
         else:
-            #glEnable(GL_CULL_FACE)
-            # set yellow color for subsequent drawing rendering calls
-
-            glMatrixMode(GL_PROJECTION)
-            glLoadIdentity()
-            gluPerspective(75, width / height, 0.1, 4000.0)
-
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
-
-            look_direction = Vector3(cos(self.camera_horiz), sin(self.camera_horiz), sin(self.camera_vertical))
-            # look_direction.unify()
-            fac = 1.01 - abs(look_direction.z)
-            # print(fac, look_direction.z, look_direction)
-
-            gluLookAt(self.offset_x, self.offset_z, self.camera_height,
-                      self.offset_x + look_direction.x * fac, self.offset_z + look_direction.y * fac,
-                      self.camera_height + look_direction.z,
-                      0, 0, 1)
-
-            self.camera_direction = Vector3(look_direction.x * fac, look_direction.y * fac, look_direction.z)
-
-            #print(self.camera_direction)
+            self.graphics.setup_perspective(width, height)
 
         self.modelviewmatrix = numpy.transpose(numpy.reshape(glGetFloatv(GL_MODELVIEW_MATRIX), (4,4)))
         self.projectionmatrix = numpy.transpose(numpy.reshape(glGetFloatv(GL_PROJECTION_MATRIX), (4,4)))
@@ -693,7 +660,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.campos = campos
 
         if self.mode == MODE_TOPDOWN:
-            gizmo_scale = 3*zf
+            gizmo_scale = 3*self.zoom_factor
         else:
             gizmo_scale = (self.gizmo.position - campos).norm() / 130.0
 
