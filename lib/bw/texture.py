@@ -90,6 +90,14 @@ class Texture(object):
     def is_loaded(self):
         return self._loaded
 
+    def generate_dummy(self, x, y):
+        self.size_x = x
+        self.size_y = y
+
+        self.rgba = bytearray(self.size_x * self.size_y * 4*b"\x00")
+        self.success = True
+        self._loaded = True
+
     def from_file(self, f):
         start = default_timer()
 
@@ -962,12 +970,19 @@ class TextureArchive(object):
         self._cached = {}
 
     def initialize_texture(self, texname):
+        dummy = False
+
         if texname in self._cached:
             return self._cached[texname]
 
         if texname not in self.textures:
             print("Texture not found:", texname)
-            return None
+
+            # Sometimes level terrain uses a dummy texture
+            if texname == "Dummy":
+                dummy = True
+            else:
+                return None
 
 
         # f = self.textures[texname].fileobj
@@ -975,10 +990,10 @@ class TextureArchive(object):
         #tex.from_file(f)
         ID = glGenTextures(1)
         self._cached[texname] = (tex, ID)
-        self.load_texture(texname)
+        self.load_texture(texname, dummy)
         return self._cached[texname]
 
-    def load_texture(self, texname):
+    def load_texture(self, texname, dummy=False):
         if texname not in self._cached:
             return None
 
@@ -989,14 +1004,18 @@ class TextureArchive(object):
         if tex.is_loaded():
             return self._cached[texname]
 
-        f = self.textures[texname].fileobj
+        if dummy:
+            print("Generating dummy texture")
+            tex.generate_dummy(32, 32)
+        else:
+            f = self.textures[texname].fileobj
 
-        if self.game == "BW1":
-            tex.from_file_bw1(f)
-        elif self.game == "BW2":
-            tex.from_file(f)
-        elif self.game == "AQ":
-            tex.from_file_aragorn(f)
+            if self.game == "BW1":
+                tex.from_file_bw1(f)
+            elif self.game == "BW2":
+                tex.from_file(f)
+            elif self.game == "AQ":
+                tex.from_file_aragorn(f)
 
         if tex.success:
             #tex.dump_to_file(str(texname.strip(b"\x00"), encoding="ascii")+".png")
