@@ -169,47 +169,24 @@ class LevelEditor(QMainWindow):
         if obj is None:
             return
 
-        if obj.hasattr("spawnMatrix"):
-            bwmatrix = obj.spawnMatrix
-            modelname = obj.modelname
-
-        elif obj.hasattr("Mat"):
-            bwmatrix = obj.Mat
-            modelname = obj.modelname
+        bwmatrix = obj.getmatrix()
 
         if bwmatrix is not None:
-            position = bwmatrix.position
+            x,y,z = bwmatrix.mtx[12:15]
+            print(x,y,z)
 
             if self.level_view.mode == MODE_TOPDOWN:
-                self.level_view.offset_z = -position.z
-                self.level_view.offset_x = -position.x
+                self.level_view.offset_z = z
+                self.level_view.offset_x = -x
             else:
                 look = self.level_view.camera_direction.copy()
 
-                pos = position.copy()
                 fac = 100
-                self.level_view.offset_z = -(pos.z + look.y * fac)
-                self.level_view.offset_x = pos.x - look.x * fac
-                self.level_view.camera_height = pos.y - look.z * fac
-            print("heyyy")
+                self.level_view.offset_z = (z + look.y * fac)
+                self.level_view.offset_x = x - look.x * fac
+                self.level_view.camera_height = y - look.z * fac
+            print("teleported to object")
             self.level_view.do_redraw()
-
-        """if len(self.level_view.selected_positions) > 0:
-            position = self.level_view.selected_positions[0]
-
-            if self.level_view.mode == MODE_TOPDOWN:
-                self.level_view.offset_z = -position.z
-                self.level_view.offset_x = -position.x
-            else:
-                look = self.level_view.camera_direction.copy()
-
-                pos = position.copy()
-                fac = 5000
-                self.level_view.offset_z = -(pos.z + look.y*fac)
-                self.level_view.offset_x = pos.x - look.x*fac
-                self.level_view.camera_height = pos.y - look.z*fac
-            print("heyyy")
-            self.level_view.do_redraw()"""
 
     def tree_select_arrowkey(self):
         current = self.leveldatatreeview.selectedItems()
@@ -226,8 +203,9 @@ class LevelEditor(QMainWindow):
         self.level_view.selected = []
         self.level_view.selected_positions = []
         self.level_view.selected_rotations = []
-
-        if isinstance(item, (tree_view.CameraEntry, tree_view.RespawnEntry, tree_view.AreaEntry, tree_view.ObjectEntry,
+        if hasattr(item, "bound_to"):
+            self.level_view.selected = [item.bound_to]
+        """if isinstance(item, (tree_view.CameraEntry, tree_view.RespawnEntry, tree_view.AreaEntry, tree_view.ObjectEntry,
                              tree_view.KartpointEntry, tree_view.EnemyRoutePoint, tree_view.ObjectRoutePoint)):
             bound_to = item.bound_to
             self.level_view.selected = [bound_to]
@@ -245,7 +223,7 @@ class LevelEditor(QMainWindow):
         elif isinstance(item, tree_view.BolHeader) and self.level_file is not None:
             self.level_view.selected = [self.level_file]
         elif isinstance(item, (tree_view.LightParamEntry, tree_view.MGEntry)):
-            self.level_view.selected = [item.bound_to]
+            self.level_view.selected = [item.bound_to]"""
 
         self.level_view.gizmo.move_to_average(self.level_view.selected_positions)
         self.level_view.do_redraw()
@@ -1201,7 +1179,7 @@ class LevelEditor(QMainWindow):
             selected = self.level_view.selected
             if len(selected) == 1:
                 currentobj = selected[0]
-                if isinstance(currentobj, Route):
+                """if isinstance(currentobj, Route):
                     objects = []
                     index = self.level_file.routes.index(currentobj)
                     for object in self.level_file.objects.objects:
@@ -1212,8 +1190,8 @@ class LevelEditor(QMainWindow):
                             objects.append("Camera {0}".format(i))
 
                     self.pik_control.set_info(currentobj, self.update_3d, objects)
-                else:
-                    self.pik_control.set_info(currentobj, self.update_3d)
+                else:"""
+                self.pik_control.set_info(currentobj, self.update_3d)
 
                 self.pik_control.update_info()
             else:

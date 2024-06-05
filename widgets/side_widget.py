@@ -129,10 +129,10 @@ class PikminSideWidget(QWidget):
 
     def set_info(self, obj, update3d, usedby=[]):
         if usedby:
-            self.name_label.setText("Selected: {}\nUsed by: {}".format(type(obj).__name__,
+            self.name_label.setText("Selected: {}\nUsed by: {}".format(obj.type,
                                     ", ".join(usedby)))
         else:
-            self.name_label.setText("Selected: {}".format(type(obj).__name__))
+            self.name_label.setText("Selected: {}".format(obj.type))
         #self.identifier_label.setText(obj.get_identifier())
         if self.object_data_edit is not None:
             #self.verticalLayout.removeWidget(self.object_data_edit)
