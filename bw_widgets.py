@@ -698,10 +698,19 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 glDisable(GL_TEXTURE_2D)
                 #for i, pikminobject in enumerate(objects):
                 #    self.models.render_object_coloredid(pikminobject, i)
+                extradataarray = []
+                objlist = list(self.level_file.objects_with_positions.values())
+                if len(objlist) > 0xFFFF:
+                    raise RuntimeError("More than 64k objects, cannot select.")
 
+                for i, obj in enumerate(objlist):
+                    extradataarray.append((0x10000000 + (i << 12)))
+                extradata = numpy.array(extradataarray, dtype=numpy.uint32)
+                self.models.cubev2.bind_colorid(extradata)
+                self.models.cubev2.instancedrender(len(self.level_file.objects_with_positions))
+                self.models.cubev2.unbind()
                 id = 0x100000
 
-                objlist = []
                 offset = 0
 
                 assert len(objlist)*4 < id
@@ -715,34 +724,12 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 start = default_timer()
 
                 for i in range(0, clickwidth*clickheight, 13):
-                        # | (pixels[i*3+0] << 16)
-                        if pixels[i * 3] != 0xFF:
-                            upper = pixels[i * 3] & 0x0F
-                            index = (upper << 16)| (pixels[i*3 + 1] << 8) | pixels[i*3 + 2]
-                            if index & 0b1:
-                                # second position
-                                entry = objlist[index//4]
-                                if entry[0] not in selected:
-                                    selected[entry[0]] = 2
-
-                                    selected_positions.append(entry[2])
-                                elif selected[entry[0]] == 1:
-                                    selected[entry[0]] = 3
-                                    selected_positions.append(entry[2])
-                            else:
-                                entry = objlist[index // 4]
-                                if entry[0] not in selected:
-                                    selected[entry[0]] = 1
-
-                                    selected_positions.append(entry[1])
-
-                                    if index & 0b10:
-                                        print("found a rotation")
-                                        selected_rotations.append(entry[3])
-
-                                elif selected[entry[0]] == 2:
-                                    selected[entry[0]] = 3
-                                    selected_positions.append(entry[1])
+                    # | (pixels[i*3+0] << 16)
+                    if pixels[i * 3] != 0xFF:
+                        value = pixels[i*3] | pixels[i*3+1]<<8 | pixels[i*3+2]<<16
+                        index = (value >> 4) & 0xFFFF
+                        misc = value & 0xFF
+                        selected[objlist[index]] = True
 
                 #print("select time taken", default_timer() - start)
                 #print("result:", selected)
@@ -776,6 +763,8 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 #print("total time taken", default_timer() - start)
         #print("gizmo status", self.gizmo.was_hit_at_all)
         #glClearColor(1.0, 1.0, 1.0, 0.0)
+        #glFinish()
+        #return
         glClearColor(*self.backgroundcolor)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
@@ -849,6 +838,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             #mtx = numpy.concatenate([obj.getmatrix().mtx for obj in self.level_file.objects_with_positions.values()])
             matrices = []
             extradataarray = []
+            self.models.cubev2.mtxdirty = True
             if self.models.cubev2.mtxdirty:
                 for obj in self.level_file.objects_with_positions.values():
                     matrices.append(obj.getmatrix().mtx)
@@ -873,21 +863,12 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
 
             drawn = 0
-            for i in self.level_file.objects_with_positions.values():
-                object = i
-                break
 
-            """if hasattr(object, "spawnMatrix"):
-                bwmatrix = object.spawnMatrix
-                modelname = object._modelname
-
-            elif hasattr(object, "Mat"):
-                bwmatrix = object.Mat
-                modelname = object._modelname"""
-            bwmatrix = object.getmatrix()
-            modelname = object._modelname
             self.models.cubev2.bind(mtx, extradata)
-            self.models.cubev2.instancedrender(bwmatrix.mtx, len(self.level_file.objects_with_positions))
+            self.models.cubev2.instancedrender(len(self.level_file.objects_with_positions))
+            self.models.cubev2.unbind()
+            self.models.cubev2.bind_colorid(extradata)
+
             self.models.cubev2.unbind()
             if False:
                 #for objectid, object in self.level_file.objects_with_positions.items():
