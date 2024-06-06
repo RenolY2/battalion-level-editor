@@ -144,17 +144,21 @@ class VertexBuffer(object):
         assert not self.initialized()
         self._attributes.append((index, count, attrtype, normalize, stride, offset, divisor))
 
-    def init(self):
+    def init(self, keepbuffer=False):
         if not self.initialized():
-            self._buffer = glGenBuffers(1)
+            if not keepbuffer:
+                self._buffer = glGenBuffers(1)
             self.bind()
-            for index, count, attrtype, normalize, stride, offset, divisor in self._attributes:
-                glEnableVertexAttribArray(index)
-                glVertexAttribPointer(index, count, attrtype, normalize, stride, ctypes.c_void_p(offset))
-                if divisor is not None:
-                    glVertexAttribDivisor(index, divisor)
+            self.attr_init()
         else:
             self.bind()
+
+    def attr_init(self):
+        for index, count, attrtype, normalize, stride, offset, divisor in self._attributes:
+            glEnableVertexAttribArray(index)
+            glVertexAttribPointer(index, count, attrtype, normalize, stride, ctypes.c_void_p(offset))
+            if divisor is not None:
+                glVertexAttribDivisor(index, divisor)
 
     def load_data(self, data):
         assert self.initialized()
@@ -190,9 +194,9 @@ class MatrixBuffer(VertexBuffer):
 
 
 class ExtraBuffer(VertexBuffer):
-    def __init__(self, extra_attr_index):
+    def __init__(self, extra_attr_index, normalize=GL_TRUE):
         super().__init__()
-        self.add_attribute(extra_attr_index,  4,  GL_UNSIGNED_BYTE, GL_TRUE, 4, 0, divisor=1)
+        self.add_attribute(extra_attr_index,  4,  GL_UNSIGNED_BYTE, normalize, 4, 0, divisor=1)
 
 
 class ModelV2(object):
@@ -251,7 +255,6 @@ layout(location = 1) in vec4 color;
 layout(location = 2) in mat4 instanceMatrix;
 layout(location = 6) in vec4 data;
 
-uniform mat4 modelmtx;
 out vec4 fragColor;
 
 mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
@@ -262,8 +265,10 @@ mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
 
 void main(void)
 {   
-    fragColor = vec4(data.g, data.b, data.a, 1.0);
+    fragColor = vec4(data.g/255, data.b/255, data.a/255, 1.0);
+    //fragColor = vec4(1.0, 0.0, 0.0, 1.0);
     gl_Position = gl_ModelViewProjectionMatrix* mtx*instanceMatrix*vec4(vert, 1.0);
+    //gl_Position = gl_ModelViewProjectionMatrix* mtx*vec4(vert, 1.0);
 }   """
         self.fragshader = """
 #version 330
@@ -277,22 +282,16 @@ void main (void)
 """
         self.vbo = VertexColorBuffer(*get_locations(self.vertexshader, ("vert", "color")))
         self.vao = None
+        self.vao_colorid = None
         self.mtxloc = None
         self.program = None
         self.program_colorid = None
         self.mtxbuffer = MatrixBuffer(get_location(self.vertexshader, "instanceMatrix"))
         self.mtxdirty = True
         self.extrabuffer = ExtraBuffer(get_location(self.vertexshader, "val"))
-        self.coloridbuffer = ExtraBuffer(get_location(self.vertexshader, "val"))
+        self.coloridbuffer = ExtraBuffer(get_location(self.vertexshader, "val"), normalize=GL_FALSE)
 
     def build_mesh(self, array, extradata):
-        """if self.vbo.initialized():
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-            glBindVertexArray(0)
-
-            self.vbo.free()
-            glDeleteVertexArrays(self.vao, 1)"""
-
         assert len(self._triangles) % 3 * 3 == 0
         if self.vao is None:
             self.vao = glGenVertexArrays(1)
@@ -319,8 +318,6 @@ void main (void)
     def bind(self, array, extradata):
         if self.program is None:
             self.program = create_shader(self.vertexshader, self.fragshader)
-        if self.program_colorid is None:
-            self.program_colorid = create_shader(self.vertexshader_colorid, self.fragshader)
 
         if self.vao is None or self.mtxdirty:
             self.build_mesh(array, extradata)
@@ -329,6 +326,30 @@ void main (void)
         glUseProgram(self.program)
 
         glBindVertexArray(self.vao)
+
+    def bind_colorid(self, extradata):
+        if self.program_colorid is None:
+            self.program_colorid = create_shader(self.vertexshader_colorid, self.fragshader)
+
+        if self.vao_colorid is None:
+            self.vao_colorid = glGenVertexArrays(1)
+            glBindVertexArray(self.vao_colorid)
+            self.vbo.bind()
+            self.vbo.attr_init()
+            self.mtxbuffer.bind()
+            self.mtxbuffer.attr_init()
+
+        glBindVertexArray(self.vao_colorid)
+
+        #self.vbo.init()
+        #self.vbo.load_data(numpy.array(self._triangles, dtype=numpy.float32))
+        self.vbo.bind()
+        self.mtxbuffer.bind()
+        self.coloridbuffer.init()
+        self.coloridbuffer.load_data(extradata)
+        glUseProgram(self.program_colorid)
+
+        glBindVertexArray(self.vao_colorid)
 
     def unbind(self):
         glUseProgram(0)
@@ -340,7 +361,7 @@ void main (void)
         for offset, vertexcount in self.mesh_list:
             glDrawArrays(GL_TRIANGLES, offset, vertexcount)
 
-    def instancedrender(self, mtx, count):
+    def instancedrender(self, count):
         #glUniformMatrix4fv(self.mtxloc, 1, False, mtx)
         for offset, vertexcount in self.mesh_list:
             glDrawArraysInstanced(GL_TRIANGLES, offset, vertexcount, count)
