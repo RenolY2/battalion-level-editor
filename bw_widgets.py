@@ -52,10 +52,7 @@ MODE_3D = 1
 #colors = [(1.0, 0.0, 0.0), (0.0, 0.5, 0.0), (0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]
 colors = [(0.0,191/255.0,255/255.0), (30/255.0,144/255.0,255/255.0), (0.0,0.0,255/255.0), (0.0,0.0,139/255.0)]
 
-with open("lib/color_coding.json", "r") as f:
-    object_colors = json.load(f)
-    #colors_selection = colors_json["SelectionColor"]
-    #colors_area  = colors_json["Areas"]
+
 
 
 class SelectionQueue(list):
@@ -101,7 +98,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.graphics = Graphics(self)
+
         self.bwmodelhandler = BWModelHandler()
 
         self._zoom_factor = 80
@@ -225,6 +222,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
         #self.generic_object = GenericObject()
         self.models = ObjectModels()
+        self.graphics = Graphics(self)
         self.grid = Grid(2048, 2048, 128)
 
         self.modelviewmatrix = None
@@ -293,29 +291,6 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
             glEndList()
             self.terrainmap.append(mesh)
-
-        """
-        for meshindex, meshes in self.bwterrain.meshes.items():
-            #colors = self.bwterrain.colors[i]
-            #glColor3ub(*colors[0])
-            for mesh in meshes:
-                for quad in mesh.quads:
-                    vtx = mesh.vertices[quad[0]]
-                    glColor3f(vtx.color.r, vtx.color.g, vtx.color.b)
-                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
-
-                    vtx = mesh.vertices[quad[1]]
-                    glColor3f(vtx.color.r, vtx.color.g, vtx.color.b)
-                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
-
-                    vtx = mesh.vertices[quad[2]]
-                    glColor3f(vtx.color.r, vtx.color.g, vtx.color.b)
-                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
-
-                    vtx = mesh.vertices[quad[3]]
-                    glColor3f(vtx.color.r, vtx.color.g, vtx.color.b)
-                    glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
-        """
 
         self.doneCurrent()
 
@@ -524,12 +499,10 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
     def do_redraw(self, force=False):
         self._frame_invalid = True
-        self.models.cubev2.mtxdirty = True
+        self.graphics.set_dirty()
         if force:
             self._lastrendertime = 0
             self.update()
-
-
 
     def reset(self, keep_collision=False):
         self.highlight_colltype = None
@@ -698,23 +671,12 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 glDisable(GL_TEXTURE_2D)
                 #for i, pikminobject in enumerate(objects):
                 #    self.models.render_object_coloredid(pikminobject, i)
-                extradataarray = []
-                objlist = list(self.level_file.objects_with_positions.values())
-                if len(objlist) > 0xFFFF:
-                    raise RuntimeError("More than 64k objects, cannot select.")
 
-                for i, obj in enumerate(objlist):
-                    extradataarray.append((0x10000000 + (i << 12)))
-                extradata = numpy.array(extradataarray, dtype=numpy.uint32)
-                self.models.cubev2.bind_colorid(extradata)
-                self.models.cubev2.instancedrender(len(self.level_file.objects_with_positions))
-                self.models.cubev2.unbind()
                 id = 0x100000
 
                 offset = 0
-
-                assert len(objlist)*4 < id
-                print("We queued up", len(objlist))
+                objlist = list(self.level_file.objects_with_positions.values())
+                self.graphics.render_select(objlist)
                 pixels = glReadPixels(click_x, click_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
                 #print(pixels, click_x, click_y, clickwidth, clickheight)
                 selected = {}
@@ -760,6 +722,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                     self.gizmo.hidden = True
                 if self.mode == MODE_3D: # In case of 3D mode we need to update scale due to changed gizmo position
                     gizmo_scale = (self.gizmo.position - campos).norm() / 130.0
+                self.do_redraw()
                 #print("total time taken", default_timer() - start)
         #print("gizmo status", self.gizmo.was_hit_at_all)
         #glClearColor(1.0, 1.0, 1.0, 0.0)
@@ -834,42 +797,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             select_optimize = {x:True for x in selected}
             #objects = self.pikmin_generators.generators
             #glDisable(GL_CULL_FACE)
-            glEnable(GL_CULL_FACE)
-            #mtx = numpy.concatenate([obj.getmatrix().mtx for obj in self.level_file.objects_with_positions.values()])
-            matrices = []
-            extradataarray = []
-            self.models.cubev2.mtxdirty = True
-            if self.models.cubev2.mtxdirty:
-                for obj in self.level_file.objects_with_positions.values():
-                    matrices.append(obj.getmatrix().mtx)
-                    value = 0
-                    ##value |= random.randint(0, 2**24-1)
-                    if obj in selected:
-                        extradataarray.append(255)
-                    else:
-                        extradataarray.append(0)
-                    r,g,b,a = object_colors[obj.type]
-                    extradataarray.append(int(r*255))
-                    extradataarray.append(int(g*255))
-                    extradataarray.append(int(b*255))
-                mtx = numpy.concatenate(matrices)
-                extradata = numpy.array(extradataarray, dtype=numpy.uint8)
-                random.seed()
-            else:
-                mtx = None
-                extradata = None
-
-            #self.models.cubev2.mtxdirty = True
-
-
-            drawn = 0
-
-            self.models.cubev2.bind(mtx, extradata)
-            self.models.cubev2.instancedrender(len(self.level_file.objects_with_positions))
-            self.models.cubev2.unbind()
-            self.models.cubev2.bind_colorid(extradata)
-
-            self.models.cubev2.unbind()
+            self.graphics.render_scene()
             if False:
                 #for objectid, object in self.level_file.objects_with_positions.items():
 
@@ -914,7 +842,6 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                     self.models.render_generic_position(bwmatrix.position, False)"""
 
             vismenu = self.visibility_menu
-            print("Drawn:", drawn)
             self.models.cubev2.unbind()
         objecttime = default_timer()-subtime
         glPopMatrix()

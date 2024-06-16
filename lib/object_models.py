@@ -23,6 +23,9 @@ class ObjectModels(object):
         with open("resources/cubev2.obj", "r") as f:
             self.cubev2 = ModelV2.from_obj(f, scale=2.5)
 
+        with open("resources/camera.obj", "r") as f:
+            self.camera = ModelV2.from_obj(f, scale=2.5)
+
         #self.checkpointleft = Cube(colors["CheckpointLeft"])
         #self.checkpointright = Cube(colors["CheckpointRight"])
         #self.itempoint = Cube(colors["ItemRoutes"])

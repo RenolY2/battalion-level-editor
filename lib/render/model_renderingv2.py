@@ -290,6 +290,7 @@ void main (void)
         self.mtxdirty = True
         self.extrabuffer = ExtraBuffer(get_location(self.vertexshader, "val"))
         self.coloridbuffer = ExtraBuffer(get_location(self.vertexshader, "val"), normalize=GL_FALSE)
+        self._count = None
 
     def build_mesh(self, array, extradata):
         assert len(self._triangles) % 3 * 3 == 0
@@ -316,6 +317,8 @@ void main (void)
             self.mtxdirty = False
 
     def bind(self, array, extradata):
+        if array is not None:
+            self._count = len(array)//16
         if self.program is None:
             self.program = create_shader(self.vertexshader, self.fragshader)
 
@@ -361,10 +364,10 @@ void main (void)
         for offset, vertexcount in self.mesh_list:
             glDrawArrays(GL_TRIANGLES, offset, vertexcount)
 
-    def instancedrender(self, count):
+    def instancedrender(self):
         #glUniformMatrix4fv(self.mtxloc, 1, False, mtx)
         for offset, vertexcount in self.mesh_list:
-            glDrawArraysInstanced(GL_TRIANGLES, offset, vertexcount, count)
+            glDrawArraysInstanced(GL_TRIANGLES, offset, vertexcount, self._count)
 
     def render_coloredid(self, id):
         glColor3ub((id >> 16) & 0xFF, (id >> 8) & 0xFF, (id >> 0) & 0xFF)
@@ -372,14 +375,7 @@ void main (void)
 
     @classmethod
     def from_obj(cls, f, scale=1.0, rotate=False):
-
-
         model = cls()
-        """model.mesh_list.append((0, 9))
-        model._triangles = [0.0, 0.5, 0.0,
-                            0.5, -0.5, -0.0,
-                            -0.5, -0.5, 0.0]
-        return model"""
 
 
         vertices = []
