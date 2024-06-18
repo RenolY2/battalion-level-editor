@@ -1,3 +1,5 @@
+import json
+
 from functools import partial
 from collections.abc import MutableSequence, Iterable
 try:
@@ -8,6 +10,8 @@ except: # cElementTree not available
 #import xml.etree.ElementTree.Element as Element
 from lib.bw_types import convert_from, get_types, BWMatrix
 
+with open("resources/BattalionWarsIcons.json", "r") as f:
+    BWICONS = json.load(f)
 
 class PointerPlaceholder(object):
     def __init__(self, pointer):
@@ -186,7 +190,6 @@ class BattalionObject(object):
                             [convert_from(attr_node.attrib["type"], subnode.text) for subnode in attr_node])
                 #self._attributes[attr_node.attrib["name"]] = Attribute.from_node(attr_node, self._level)
 
-
         if hasattr(self, "spawnMatrix"):
             setattr(self, "getmatrix", lambda: self.spawnMatrix)
         elif hasattr(self, "Mat"):
@@ -224,6 +227,7 @@ class BattalionObject(object):
 
     def updatemodelname(self):
         self._modelname = None
+        self._iconoffset = None
         if hasattr(self, "mBase") and self.mBase is not None:
             if hasattr(self.mBase, "mpModel"):
                 model = self.mBase.mpModel
@@ -244,9 +248,20 @@ class BattalionObject(object):
                 model = self.mBase.Element[0]
                 if model is not None:
                     self._modelname = model.mName
+
+            if self.type in ("cAirVehicle", "cGroundVehicle", "cTroop", "cWaterVehicle",
+                             "cBuilding", "cCapturePoint", "cMorphingBuilding"):
+                icon = self.mBase.mUnitSprite.mBase.texture.mName
+                x,y = BWICONS[icon.lower()]
+                self._iconoffset = (x,y)
+
     @property
     def modelname(self):
         return self._modelname
+
+    @property
+    def iconoffset(self):
+        return self._iconoffset
 
     #@property
     #def position(self):

@@ -534,7 +534,9 @@ class Billboard(ModelV2):
         
         void main(void)
         {   
-            texCoord = vec2(uv.x/16, (1-uv.y)/16);
+            //texCoord = vec2(uv.x/16, (1-uv.y)/16) + vec2((val.y*255)*(1/16), (val.z*255)*(1/16));
+            texCoord = vec2((uv.x + val.y*255)/16, (1-(uv.y-val.z*255))/16);// + vec2(10*(1/16), 0*(1/16));
+            
             texMask = color;
             mat4 tmp = mat4(instanceMatrix);
             tmp[3].xyz += vec3(0.0, 10.0, 0.0);

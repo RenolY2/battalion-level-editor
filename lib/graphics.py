@@ -144,25 +144,32 @@ class Graphics(object):
                     mtx, extradata = default_matrices, default_extradata
 
                 mtx.append(obj.getmatrix().mtx)
-                globalmtx.append(obj.getmatrix().mtx)
+                iconoffset = obj.iconoffset
+
 
 
                 value = 0
                 if obj in selected:
                     extradata.append(255)
-                    globalextradata.append(255)
+
                 else:
                     extradata.append(0)
-                    globalextradata.append(0)
 
                 r, g, b, a = object_colors[obj.type]
                 extradata.append(int(r * 255))
                 extradata.append(int(g * 255))
                 extradata.append(int(b * 255))
 
-                globalextradata.append(int(r * 255))
-                globalextradata.append(int(g * 255))
-                globalextradata.append(int(b * 255))
+                if iconoffset is not None:
+                    globalmtx.append(obj.getmatrix().mtx)
+                    if obj in selected:
+                        globalextradata.append(255)
+                    else:
+                        globalextradata.append(0)
+                    x,y = iconoffset
+                    globalextradata.append(int(x))
+                    globalextradata.append(int(y))
+                    globalextradata.append(int(b * 255))
 
         # self.models.cubev2.mtxdirty = True
 
