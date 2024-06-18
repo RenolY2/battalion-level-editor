@@ -36,7 +36,7 @@ def read_vertex(v_data):
         if split[1] == "":
             texcoord = None
         else:
-            texcoord = int(split[1]) - 1
+            texcoord = int(split[1])-1
     else:
         texcoord = None
     v = int(split[0])
@@ -189,7 +189,7 @@ class VertexColorUVBuffer(VertexBuffer):
         super().__init__()
         self.add_attribute(vtx_attr_index,      3, GL_FLOAT, GL_FALSE, 8 * 4, 0 * 4)
         self.add_attribute(color_attr_index,    3, GL_FLOAT, GL_FALSE, 8 * 4, 3 * 4)
-        self.add_attribute(uv_attr_index,       3, GL_FLOAT, GL_FALSE, 8 * 4, 6 * 4)
+        self.add_attribute(uv_attr_index,       2, GL_FLOAT, GL_FALSE, 8 * 4, 6 * 4)
 
 
 class MatrixBuffer(VertexBuffer):
@@ -442,6 +442,7 @@ void main (void)
                         triangles.extend(vertices[v2i])
                         triangles.extend(texcoords[v2u])
 
+
                         triangles.extend(vertices[v3i])
                         triangles.extend(texcoords[v3u])
 
@@ -466,7 +467,7 @@ void main (void)
                     v1, v2, v3 = map(read_vertex, args[1:4])
                     v1i, v2i, v3i = v1[0] - 1, v2[0] - 1, v3[0] - 1
                     if model._uvcoords:
-                        v1u, v2u, v3u = v1[1] - 1, v2[1] - 1, v3[1] - 1
+                        v1u, v2u, v3u = v1[1], v2[1], v3[1]
                         triangles.extend(vertices[v1i])
                         triangles.extend(texcoords[v1u])
                         triangles.extend(vertices[v3i])
@@ -491,6 +492,7 @@ void main (void)
 class Billboard(ModelV2):
     def __init__(self, uvcoords):
         super().__init__(uvcoords=True)
+        self.ID = None
         self.vertexshader = """
         #version 330 compatibility
         layout(location = 0) in vec3 vert;
@@ -501,6 +503,8 @@ class Billboard(ModelV2):
         uniform mat4 mvmtx;
         uniform mat4 proj;
         out vec4 fragColor;
+        out vec4 texMask;
+        out vec2 texCoord;
 
         mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
                         0.0, 0.0, 1.0, 0.0,
@@ -530,6 +534,8 @@ class Billboard(ModelV2):
         
         void main(void)
         {   
+            texCoord = vec2(uv.x/16, (1-uv.y)/16);
+            texMask = color;
             mat4 tmp = mat4(instanceMatrix);
             tmp[3].xyz += vec3(0.0, 10.0, 0.0);
             tmp[0].xyz = vec3(1.0, 0.0, 0.0);
@@ -538,15 +544,9 @@ class Billboard(ModelV2):
             
             
             mat4 tmp2 = mat4(mvmtx);
-            //tmp2[0].xyz = vec3(1.0, 0.0, 0.0);
-            //tmp2[1].xyz = vec3(0.0, 0.0, 1.0);
-            //tmp2[2].xyz = vec3(0.0, 1.0, 0.0);
             tmp2[3].xyz = vec3(0.0, 0.0, 0.0);
-            
-            //instanceMatrix[3].xyz += vec3(200.0, 200.0, 200.0);
-            //fragColor = vec4(val, 0.0, 0.0, 1.0);
-            //torgb(val, fragColor);
-            fragColor = color*vec4(val.y, val.z, val.w, 0.0);
+
+            fragColor = color*vec4(1.0, 1.0, 1.0, 0.0);
             fragColor += (vec4(1.0, 1.0, 1.0, 0.0)-color)*vec4(1.0*val.x, 1.0*val.x, 0.0, 0.0);
             fragColor += vec4(0.0, 0.0, 0.0, 1.0);
             float offsetx = mod(gl_InstanceID, 100)*20;
@@ -556,6 +556,41 @@ class Billboard(ModelV2):
 
 
         """
+
+        self.fragshader = """
+        #version 330
+        in vec4 fragColor;
+        out vec4 finalColor;
+        uniform sampler2D tex;
+        
+        in vec4 texMask;
+        in vec2 texCoord;
+        
+        
+        void main (void)
+        {   
+            //vec4 texcolor = vec4(texCoord.x, texCoord.y, 0.0, 1.0);//texture(tex, texCoord);
+            vec4 texcolor = texture(tex, texCoord);
+            finalColor = texcolor;
+        }  
+        """
+
+    def set_texture(self, path):
+        if self.ID is not None:
+            glDeleteTextures(1, int(self.ID))
+
+        qimage = QtGui.QImage(path, "png")
+        qimage = qimage.convertToFormat(QtGui.QImage.Format_ARGB32)
+        ID = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, ID)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
+
+        imgdata = bytes(qimage.bits().asarray(qimage.width() * qimage.height() * 4))
+        glTexImage2D(GL_TEXTURE_2D, 0, 4, qimage.width(), qimage.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, imgdata)
+        self.ID = ID
+
 
 class TexturedModel(object):
     def __init__(self):
