@@ -147,6 +147,11 @@
     "icon_obelisk": [1, 9],
     "icon_exttower": [2, 9],
     "browning": [3, 9],
-    "icon_barrier": [4, 9]
+    "icon_barrier": [4, 9],
+    "icon_dock1": [5, 9],
+    "icon_hq": [6, 9],
+    "icon_airbase1": [7, 9],
+    "icon_factory1": [8, 9],
+    "icon_barracks1": [9, 9]
 }
 
