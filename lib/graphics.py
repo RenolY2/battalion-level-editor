@@ -181,11 +181,19 @@ class Graphics(object):
 
 
         glDisable(GL_CULL_FACE)
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, rw.models.billboard.ID)
+
         if not globalmtx:
             rw.models.billboard.bind(None, None)
         else:
             rw.models.billboard.bind(numpy.concatenate(globalmtx),
                                      numpy.array(globalextradata, dtype=numpy.uint8))
+        texuniform = glGetUniformLocation(rw.models.billboard.program, "tex")
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, rw.models.billboard.ID)
+        glUniform1i(texuniform, 0)
+
         mtxuniform = glGetUniformLocation(rw.models.billboard.program, "mvmtx")
         projuniform = glGetUniformLocation(rw.models.billboard.program, "proj")
         glUniformMatrix4fv(mtxuniform, 1, False, glGetFloatv(GL_MODELVIEW_MATRIX))
@@ -193,3 +201,6 @@ class Graphics(object):
 
         rw.models.billboard.instancedrender()
         rw.models.billboard.unbind()
+
+        glUseProgram(0)
+        glDisable(GL_TEXTURE_2D)
