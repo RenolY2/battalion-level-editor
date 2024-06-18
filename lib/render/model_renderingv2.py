@@ -184,6 +184,14 @@ class VertexColorBuffer(VertexBuffer):
         self.add_attribute(color_attr_index, 3, GL_FLOAT, GL_FALSE, 6 * 4, 3*4)
 
 
+class VertexColorUVBuffer(VertexBuffer):
+    def __init__(self, vtx_attr_index, color_attr_index, uv_attr_index):
+        super().__init__()
+        self.add_attribute(vtx_attr_index,      3, GL_FLOAT, GL_FALSE, 8 * 4, 0 * 4)
+        self.add_attribute(color_attr_index,    3, GL_FLOAT, GL_FALSE, 8 * 4, 3 * 4)
+        self.add_attribute(uv_attr_index,       3, GL_FLOAT, GL_FALSE, 8 * 4, 6 * 4)
+
+
 class MatrixBuffer(VertexBuffer):
     def __init__(self, mtx_attr_index):
         super().__init__()
@@ -200,9 +208,10 @@ class ExtraBuffer(VertexBuffer):
 
 
 class ModelV2(object):
-    def __init__(self):
+    def __init__(self, uvcoords=False):
         self.mesh_list = []
         self._triangles = []
+        self._uvcoords = uvcoords  #Whether to use UV coordinates or not
 
 
 
@@ -212,6 +221,7 @@ layout(location = 0) in vec3 vert;
 layout(location = 1) in vec4 color;
 layout(location = 2) in mat4 instanceMatrix;
 layout(location = 6) in vec4 val;
+layout(location = 7) in vec2 uv;
 uniform mat4 modelmtx;
 out vec4 fragColor;
 
@@ -280,7 +290,11 @@ void main (void)
     finalColor = fragColor;
 }  
 """
-        self.vbo = VertexColorBuffer(*get_locations(self.vertexshader, ("vert", "color")))
+        if uvcoords:
+            self.vbo = VertexColorUVBuffer(*get_locations(self.vertexshader, ("vert", "color", "uv")))
+        else:
+            self.vbo = VertexColorBuffer(*get_locations(self.vertexshader, ("vert", "color")))
+
         self.vao = None
         self.vao_colorid = None
         self.mtxloc = None
@@ -325,7 +339,6 @@ void main (void)
         if self.vao is None or self.mtxdirty:
             self.build_mesh(array, extradata)
 
-            self.mtxloc = glGetUniformLocation(self.program, "modelmtx")
         glUseProgram(self.program)
 
         glBindVertexArray(self.vao)
@@ -374,9 +387,8 @@ void main (void)
         self.render()
 
     @classmethod
-    def from_obj(cls, f, scale=1.0, rotate=False):
-        model = cls()
-
+    def from_obj(cls, f, scale=1.0, rotate=False, uvcoords=False):
+        model = cls(uvcoords)
 
         vertices = []
         texcoords = []
@@ -411,21 +423,41 @@ void main (void)
                 else:
                     vertices.append((x * scale, z * scale, y * scale, r, g, b))
 
-            elif cmd == "f":
-                #if curr_mesh is None:
-                #    curr_mesh = Mesh("")
-                #    curr_mesh.vertices = vertices
+            elif cmd == "vt":
+                u, v = map(float, args[1:3])
+                texcoords.append((u, v))
 
+            elif cmd == "f":
                 if len(args) == 5:
                     v1, v2, v3, v4 = map(read_vertex, args[1:5])
                     v1i, v2i, v3i, v4i = v1[0]-1, v2[0]-1, v3[0]-1, v4[0]-1
-                    triangles.extend(vertices[v1i])
-                    triangles.extend(vertices[v3i])
-                    triangles.extend(vertices[v2i])
+                    if model._uvcoords:
+                        v1u, v2u, v3u, v4u = v1[1]-1, v2[1]-1, v3[1]-1, v4[1]-1
+                        triangles.extend(vertices[v1i])
+                        triangles.extend(texcoords[v1u])
 
-                    triangles.extend(vertices[v3i])
-                    triangles.extend(vertices[v1i])
-                    triangles.extend(vertices[v4i])
+                        triangles.extend(vertices[v3i])
+                        triangles.extend(texcoords[v3u])
+
+                        triangles.extend(vertices[v2i])
+                        triangles.extend(texcoords[v2u])
+
+                        triangles.extend(vertices[v3i])
+                        triangles.extend(texcoords[v3u])
+
+                        triangles.extend(vertices[v1i])
+                        triangles.extend(texcoords[v1u])
+
+                        triangles.extend(vertices[v4i])
+                        triangles.extend(texcoords[v4u])
+                    else:
+                        triangles.extend(vertices[v1i])
+                        triangles.extend(vertices[v3i])
+                        triangles.extend(vertices[v2i])
+
+                        triangles.extend(vertices[v3i])
+                        triangles.extend(vertices[v1i])
+                        triangles.extend(vertices[v4i])
                     count += 6
                     #curr_mesh.triangles.append(((v1[0] - 1, None), (v3[0] - 1, None), (v2[0] - 1, None)))
                     #curr_mesh.triangles.append(((v3[0] - 1, None), (v1[0] - 1, None), (v4[0] - 1, None)))
@@ -433,9 +465,18 @@ void main (void)
                 elif len(args) == 4:
                     v1, v2, v3 = map(read_vertex, args[1:4])
                     v1i, v2i, v3i = v1[0] - 1, v2[0] - 1, v3[0] - 1
-                    triangles.extend(vertices[v1i])
-                    triangles.extend(vertices[v3i])
-                    triangles.extend(vertices[v2i])
+                    if model._uvcoords:
+                        v1u, v2u, v3u = v1[1] - 1, v2[1] - 1, v3[1] - 1
+                        triangles.extend(vertices[v1i])
+                        triangles.extend(texcoords[v1u])
+                        triangles.extend(vertices[v3i])
+                        triangles.extend(texcoords[v3u])
+                        triangles.extend(vertices[v2i])
+                        triangles.extend(texcoords[v2u])
+                    else:
+                        triangles.extend(vertices[v1i])
+                        triangles.extend(vertices[v3i])
+                        triangles.extend(vertices[v2i])
                     count += 3
                     #curr_mesh.triangles.append(((v1[0] - 1, None), (v3[0] - 1, None), (v2[0] - 1, None)))
         #model.add_mesh(curr_mesh)
@@ -446,6 +487,75 @@ void main (void)
         #    nx, ny, nz = map(float, args[1:4])
         #    normals.append((nx, ny, nz))
 
+
+class Billboard(ModelV2):
+    def __init__(self, uvcoords):
+        super().__init__(uvcoords=True)
+        self.vertexshader = """
+        #version 330 compatibility
+        layout(location = 0) in vec3 vert;
+        layout(location = 1) in vec4 color;
+        layout(location = 2) in mat4 instanceMatrix;
+        layout(location = 6) in vec4 val;
+        layout(location = 7) in vec2 uv;
+        uniform mat4 mvmtx;
+        uniform mat4 proj;
+        out vec4 fragColor;
+
+        mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 1.0);
+        
+        mat4 offset = mat4(1.0, 0.0, 0.0, 0.0,
+                        0.0, 1.0, 0.0, 0.0,
+                        0.0, 0.0, 1.0, 5.0,
+                        0.0, 0.0, 0.0, 1.0);
+
+        void torgb(in uint value, out vec4 result) {
+            result.x = float(((value >> uint(16)) & uint(0xFF))) / 255.0;
+            result.y = float(((value >> uint(8)) & uint(0xFF)))/ 255.0;
+            result.z = float(((value) & uint(0xFF)))/ 255.0;
+            result.w = 1.0;
+        }
+
+        void torgbint(in int value, out vec4 result) {
+            result.x = float(((value >> 16) & 0xFF)) / 255.0;
+            result.y = float(((value >> 8) & 0xFF))/ 255.0;
+            result.z = float((value & 0xFF))/ 255.0;
+            result.w = 1.0;
+        }
+        
+        
+        
+        void main(void)
+        {   
+            mat4 tmp = mat4(instanceMatrix);
+            tmp[3].xyz += vec3(0.0, 10.0, 0.0);
+            tmp[0].xyz = vec3(1.0, 0.0, 0.0);
+            tmp[1].xyz = vec3(0.0, 0.0, 1.0);
+            tmp[2].xyz = vec3(0.0, 1.0, 0.0);
+            
+            
+            mat4 tmp2 = mat4(mvmtx);
+            //tmp2[0].xyz = vec3(1.0, 0.0, 0.0);
+            //tmp2[1].xyz = vec3(0.0, 0.0, 1.0);
+            //tmp2[2].xyz = vec3(0.0, 1.0, 0.0);
+            tmp2[3].xyz = vec3(0.0, 0.0, 0.0);
+            
+            //instanceMatrix[3].xyz += vec3(200.0, 200.0, 200.0);
+            //fragColor = vec4(val, 0.0, 0.0, 1.0);
+            //torgb(val, fragColor);
+            fragColor = color*vec4(val.y, val.z, val.w, 0.0);
+            fragColor += (vec4(1.0, 1.0, 1.0, 0.0)-color)*vec4(1.0*val.x, 1.0*val.x, 0.0, 0.0);
+            fragColor += vec4(0.0, 0.0, 0.0, 1.0);
+            float offsetx = mod(gl_InstanceID, 100)*20;
+            float offsety = (gl_InstanceID / 100)*20;
+            gl_Position = proj*mvmtx* mtx*tmp*inverse(tmp2)*vec4(vert, 1.0);
+        }   
+
+
+        """
 
 class TexturedModel(object):
     def __init__(self):

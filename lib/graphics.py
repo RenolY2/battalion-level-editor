@@ -48,6 +48,7 @@ class Graphics(object):
     def set_dirty(self):
         self.rw.models.cubev2.mtxdirty = True
         self.rw.models.camera.mtxdirty = True
+        self.rw.models.billboard.mtxdirty = True
         self._dirty = True
 
     def reset_dirty(self):
@@ -132,6 +133,9 @@ class Graphics(object):
         default_matrices, default_extradata = self.scene.objects["generic"]
 
         # self.models.cubev2.mtxdirty = True
+        globalmtx = []
+        globalextradata = []
+
         if self.is_dirty():
             for obj in rw.level_file.objects_with_positions.values():
                 if obj.type in self.scene.objects:
@@ -140,15 +144,25 @@ class Graphics(object):
                     mtx, extradata = default_matrices, default_extradata
 
                 mtx.append(obj.getmatrix().mtx)
+                globalmtx.append(obj.getmatrix().mtx)
+
+
                 value = 0
                 if obj in selected:
                     extradata.append(255)
+                    globalextradata.append(255)
                 else:
                     extradata.append(0)
+                    globalextradata.append(0)
+
                 r, g, b, a = object_colors[obj.type]
                 extradata.append(int(r * 255))
                 extradata.append(int(g * 255))
                 extradata.append(int(b * 255))
+
+                globalextradata.append(int(r * 255))
+                globalextradata.append(int(g * 255))
+                globalextradata.append(int(b * 255))
 
         # self.models.cubev2.mtxdirty = True
 
@@ -164,3 +178,18 @@ class Graphics(object):
             model.bind(mtx, extradata)
             model.instancedrender()
             model.unbind()
+
+
+        glDisable(GL_CULL_FACE)
+        if not globalmtx:
+            rw.models.billboard.bind(None, None)
+        else:
+            rw.models.billboard.bind(numpy.concatenate(globalmtx),
+                                     numpy.array(globalextradata, dtype=numpy.uint8))
+        mtxuniform = glGetUniformLocation(rw.models.billboard.program, "mvmtx")
+        projuniform = glGetUniformLocation(rw.models.billboard.program, "proj")
+        glUniformMatrix4fv(mtxuniform, 1, False, glGetFloatv(GL_MODELVIEW_MATRIX))
+        glUniformMatrix4fv(projuniform, 1, False, glGetFloatv(GL_PROJECTION_MATRIX))
+
+        rw.models.billboard.instancedrender()
+        rw.models.billboard.unbind()

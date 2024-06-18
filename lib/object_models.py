@@ -2,9 +2,9 @@ import os
 import json
 from OpenGL.GL import *
 from .model_rendering import (GenericObject, Model, TexturedModel,
-                              GenericFlyer, GenericCrystallWall, GenericLongLegs, GenericChappy, GenericSnakecrow,
+                              GenericFlyer, GenericLongLegs, GenericChappy, GenericSnakecrow,
                               GenericSwimmer, Cube)
-from lib.render.model_renderingv2 import ModelV2
+from lib.render.model_renderingv2 import ModelV2, Billboard
 with open("lib/color_coding.json", "r") as f:
     colors = json.load(f)
 
@@ -25,6 +25,9 @@ class ObjectModels(object):
 
         with open("resources/camera.obj", "r") as f:
             self.camera = ModelV2.from_obj(f, scale=2.5)
+
+        with open("resources/billboard.obj", "r") as f:
+            self.billboard = Billboard.from_obj(f, scale=5.5, uvcoords=True)
 
         #self.checkpointleft = Cube(colors["CheckpointLeft"])
         #self.checkpointright = Cube(colors["CheckpointRight"])
