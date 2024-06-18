@@ -198,7 +198,7 @@ class Graphics(object):
             rw.models.billboard.bind(numpy.concatenate(globalmtx),
                                      numpy.array(globalextradata, dtype=numpy.uint8))
         texuniform = glGetUniformLocation(rw.models.billboard.program, "tex")
-        
+
         glUniform1i(texuniform, 0)
 
         mtxuniform = glGetUniformLocation(rw.models.billboard.program, "mvmtx")

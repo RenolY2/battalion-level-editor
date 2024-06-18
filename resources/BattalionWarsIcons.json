@@ -146,6 +146,7 @@
     "icon_vladstatue": [0, 9],
     "icon_obelisk": [1, 9],
     "icon_exttower": [2, 9],
-    "browning": [3, 9]
+    "browning": [3, 9],
+    "icon_barrier": [4, 9]
 }
 

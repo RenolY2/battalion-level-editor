@@ -251,8 +251,13 @@ class BattalionObject(object):
 
             if self.type in ("cAirVehicle", "cGroundVehicle", "cTroop", "cWaterVehicle",
                              "cBuilding", "cCapturePoint", "cMorphingBuilding"):
-                icon = self.mBase.mUnitSprite.mBase.texture.mName
-                x,y = BWICONS[icon.lower()]
+                try:
+                    icon = self.mBase.mUnitSprite.mBase.texture.mName
+                except Exception as err:
+                    print("{0}-{1} has no defined unit sprite".format(self.type, self.id))
+                    x,y = 15, 15
+                else:
+                    x,y = BWICONS[icon.lower()]
                 self._iconoffset = (x,y)
 
     @property
