@@ -335,7 +335,8 @@ class LevelDataTreeView(QTreeWidget):
         return group
 
     def reset(self):
-        for section in (self.other, self.units):
+        for section in (self.other, self.units, self.components, self.mapobjects, self.scenery,
+                        self.assets, self.hud, self.scripts, self.effects):
             section.remove_children()
 
     def choose_category(self, objecttype):
