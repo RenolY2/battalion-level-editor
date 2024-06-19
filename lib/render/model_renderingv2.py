@@ -223,33 +223,21 @@ layout(location = 2) in mat4 instanceMatrix;
 layout(location = 6) in vec4 val;
 layout(location = 7) in vec2 uv;
 uniform mat4 modelmtx;
+uniform vec4 selectioncolor;
 out vec4 fragColor;
 
 mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
                 0.0, 0.0, 1.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,
                 0.0, 0.0, 0.0, 1.0);
-                
-void torgb(in uint value, out vec4 result) {
-    result.x = float(((value >> uint(16)) & uint(0xFF))) / 255.0;
-    result.y = float(((value >> uint(8)) & uint(0xFF)))/ 255.0;
-    result.z = float(((value) & uint(0xFF)))/ 255.0;
-    result.w = 1.0;
-}
-
-void torgbint(in int value, out vec4 result) {
-    result.x = float(((value >> 16) & 0xFF)) / 255.0;
-    result.y = float(((value >> 8) & 0xFF))/ 255.0;
-    result.z = float((value & 0xFF))/ 255.0;
-    result.w = 1.0;
-}
 
 void main(void)
 {   
     //fragColor = vec4(val, 0.0, 0.0, 1.0);
     //torgb(val, fragColor);
-    fragColor = color*vec4(val.y, val.z, val.w, 0.0);
-    fragColor += (vec4(1.0, 1.0, 1.0, 0.0)-color)*vec4(1.0*val.x, 1.0*val.x, 0.0, 0.0);
+    fragColor = color*vec4(val.y/255.0, val.z/255.0, val.w/255.0, 0.0);
+    float highlight = float(int(val.x) & 0x1)*1.0;
+    fragColor += (vec4(1.0, 1.0, 1.0, 0.0)-color)*(vec4(selectioncolor.r, selectioncolor.g, selectioncolor.b, 0.0)*highlight);
     fragColor += vec4(0.0, 0.0, 0.0, 1.0);
     float offsetx = mod(gl_InstanceID, 100)*20;
     float offsety = (gl_InstanceID / 100)*20;
@@ -302,7 +290,7 @@ void main (void)
         self.program_colorid = None
         self.mtxbuffer = MatrixBuffer(get_location(self.vertexshader, "instanceMatrix"))
         self.mtxdirty = True
-        self.extrabuffer = ExtraBuffer(get_location(self.vertexshader, "val"))
+        self.extrabuffer = ExtraBuffer(get_location(self.vertexshader, "val"), normalize=GL_FALSE)
         self.coloridbuffer = ExtraBuffer(get_location(self.vertexshader, "val"), normalize=GL_FALSE)
         self._count = None
 
@@ -502,9 +490,10 @@ class Billboard(ModelV2):
         layout(location = 7) in vec2 uv;
         uniform mat4 mvmtx;
         uniform mat4 proj;
+        uniform vec4 selectioncolor;
         out vec4 fragColor;
-        out vec4 texMask;
         out vec2 texCoord;
+        out float dohighlight;
 
         mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
                         0.0, 0.0, 1.0, 0.0,
@@ -515,29 +504,12 @@ class Billboard(ModelV2):
                         0.0, 1.0, 0.0, 0.0,
                         0.0, 0.0, 1.0, 5.0,
                         0.0, 0.0, 0.0, 1.0);
-
-        void torgb(in uint value, out vec4 result) {
-            result.x = float(((value >> uint(16)) & uint(0xFF))) / 255.0;
-            result.y = float(((value >> uint(8)) & uint(0xFF)))/ 255.0;
-            result.z = float(((value) & uint(0xFF)))/ 255.0;
-            result.w = 1.0;
-        }
-
-        void torgbint(in int value, out vec4 result) {
-            result.x = float(((value >> 16) & 0xFF)) / 255.0;
-            result.y = float(((value >> 8) & 0xFF))/ 255.0;
-            result.z = float((value & 0xFF))/ 255.0;
-            result.w = 1.0;
-        }
-        
-        
+                        
         
         void main(void)
         {   
-            //texCoord = vec2(uv.x/16, (1-uv.y)/16) + vec2((val.y*255)*(1/16), (val.z*255)*(1/16));
-            texCoord = vec2((uv.x + val.y*255)/16, (1-(uv.y-val.z*255))/16);// + vec2(10*(1/16), 0*(1/16));
-            
-            texMask = color;
+            //texCoord = vec2(uv.x/16, (1-uv.y)/16) + vec2((val.y)*(1/16), (val.z)*(1/16));
+            texCoord = vec2((uv.x + val.y)/16, (1-(uv.y-val.z))/16);// + vec2(10*(1/16), 0*(1/16));
             mat4 tmp = mat4(instanceMatrix);
             tmp[3].xyz += vec3(0.0, 10.0, 0.0);
             tmp[0].xyz = vec3(1.0, 0.0, 0.0);
@@ -549,8 +521,10 @@ class Billboard(ModelV2):
             tmp2[3].xyz = vec3(0.0, 0.0, 0.0);
 
             fragColor = color*vec4(1.0, 1.0, 1.0, 0.0);
-            fragColor += (vec4(1.0, 1.0, 1.0, 0.0)-color)*vec4(1.0*val.x, 1.0*val.x, 0.0, 0.0);
-            fragColor += vec4(0.0, 0.0, 0.0, 1.0);
+            float highlight = float(int(val.x) & 0x1)*0.5;
+            //fragColor += (vec4(1.0, 1.0, 1.0, 0.0)-color)*vec4(1.0*highlight, 1.0*highlight, 0.0, 0.0);
+            //fragColor += vec4(0.0, 0.0, 0.0, 1.0);
+            fragColor = vec4(1.0, 1.0, 1.0, 1.0)*(1.0 - highlight) +  selectioncolor*highlight;
             float offsetx = mod(gl_InstanceID, 100)*20;
             float offsety = (gl_InstanceID / 100)*20;
             gl_Position = proj*mvmtx* mtx*tmp*inverse(tmp2)*vec4(vert, 1.0);
@@ -565,7 +539,6 @@ class Billboard(ModelV2):
         out vec4 finalColor;
         uniform sampler2D tex;
         
-        in vec4 texMask;
         in vec2 texCoord;
         
         
@@ -573,7 +546,7 @@ class Billboard(ModelV2):
         {   
             //vec4 texcolor = vec4(texCoord.x, texCoord.y, 0.0, 1.0);//texture(tex, texCoord);
             vec4 texcolor = texture(tex, texCoord);
-            finalColor = texcolor;
+            finalColor = texcolor*fragColor;
         }  
         """
 

@@ -146,14 +146,10 @@ class Graphics(object):
                 mtx.append(obj.getmatrix().mtx)
                 iconoffset = obj.iconoffset
 
-
-
-                value = 0
+                flag = 0
                 if obj in selected:
-                    extradata.append(255)
-
-                else:
-                    extradata.append(0)
+                    flag |= 1
+                extradata.append(flag)
 
                 r, g, b, a = object_colors[obj.type]
                 extradata.append(int(r * 255))
@@ -162,10 +158,11 @@ class Graphics(object):
 
                 if iconoffset is not None:
                     globalmtx.append(obj.getmatrix().mtx)
+                    flag = 0
                     if obj in selected:
-                        globalextradata.append(255)
-                    else:
-                        globalextradata.append(0)
+                        flag |= 1
+
+                    globalextradata.append(flag)
                     x,y = iconoffset
                     globalextradata.append(int(x))
                     globalextradata.append(int(y))
@@ -176,6 +173,8 @@ class Graphics(object):
         drawn = 0
         for objtype, model in self.scene.model.items():
             mtx, extradata = self.scene.objects[objtype]
+
+
             if not mtx:
                 mtx, extradata = None, None
             else:
@@ -183,6 +182,8 @@ class Graphics(object):
                 extradata =  numpy.array(extradata, dtype=numpy.uint8)
 
             model.bind(mtx, extradata)
+            coloruniform = glGetUniformLocation(model.program, "selectioncolor")
+            glUniform4f(coloruniform, *object_colors["SelectionColor"])
             model.instancedrender()
             model.unbind()
 
@@ -198,8 +199,10 @@ class Graphics(object):
             rw.models.billboard.bind(numpy.concatenate(globalmtx),
                                      numpy.array(globalextradata, dtype=numpy.uint8))
         texuniform = glGetUniformLocation(rw.models.billboard.program, "tex")
+        coloruniform = glGetUniformLocation(rw.models.billboard.program, "selectioncolor")
 
         glUniform1i(texuniform, 0)
+        glUniform4f(coloruniform, *object_colors["SelectionColor"])
 
         mtxuniform = glGetUniformLocation(rw.models.billboard.program, "mvmtx")
         projuniform = glGetUniformLocation(rw.models.billboard.program, "proj")
