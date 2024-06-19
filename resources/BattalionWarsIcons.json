@@ -152,6 +152,7 @@
     "icon_hq": [6, 9],
     "icon_airbase1": [7, 9],
     "icon_factory1": [8, 9],
-    "icon_barracks1": [9, 9]
+    "icon_barracks1": [9, 9],
+    "icon_miningsaw": [10, 9]
 }
 
