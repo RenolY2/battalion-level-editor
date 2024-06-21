@@ -153,6 +153,25 @@
     "icon_airbase1": [7, 9],
     "icon_factory1": [8, 9],
     "icon_barracks1": [9, 9],
-    "icon_miningsaw": [10, 9]
+    "icon_miningsaw": [10, 9],
+    "s_dnoughtq": [11, 9],
+    "icon_quemark": [12, 9],
+    "icon_health": [13, 9],
+    "icon_fuel": [14, 9],
+    "icon_guntowerx": [15, 9],
+    "icon_guntowerwf": [0, 10],
+    "icon_guntower": [1, 10],
+    "hud_p1": [2, 10],
+    "hud_p2": [3, 10],
+    "icon_all_s": [4, 10],
+    "icon_all_u": [5, 10],
+    "icon_all_t": [6, 10],
+    "icon_all_ai": [7, 10],
+    "icon_all_x": [8, 10],
+    "hud_cam": [9, 10],
+    "PrimaryObj": [10, 10],
+    "SecondaryObj": [11, 10],
+    "icon_inactive": [12, 10],
+    "icon_death": [13, 10],
+    "MissingIcon": [15, 15]
 }
-
