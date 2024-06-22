@@ -18,13 +18,13 @@ with open("lib/color_coding.json", "r") as f:
 class Scene(object):
     def __init__(self):
         self.objects = {
-            "generic": None#,
-            #"cCamera": None
+            "generic": None,
+            "cCamera": None
         }
 
         self.model = {
-            "generic": None#,
-            #"cCamera": None
+            "generic": None,
+            "cCamera": None
         }
 
     def reset(self):
@@ -42,7 +42,7 @@ class Graphics(object):
 
         self.scene = Scene()
         self.scene.set_model("generic", self.rw.models.cubev2)
-        #self.scene.set_model("cCamera", self.rw.models.camera)
+        self.scene.set_model("cCamera", self.rw.models.camera)
         self._dirty = True
 
     def set_dirty(self):
