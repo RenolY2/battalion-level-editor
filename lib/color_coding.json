@@ -10,7 +10,7 @@
   "cDestroyableObject":             [0.0, 0.0, 0.0, 1.0],
   "cGroundVehicle":                 [0.705, 0.196, 0.0, 1.0],
   "cMapZone":                       [0.5, 0.5, 0.5, 1.0],
-  "cMorphingBuilding":              [0.427, 0.114, 0.671, 1.0],
+  "cMorphingBuilding":              [0.635, 0.564, 0.839, 1.0],
   "cNogoHintZone":                  [1.0, 0.0, 0.0, 1.0],
   "cObjectiveMarker":               [1.0, 1.0, 1.0, 1.0],
   "cPickupReflected":               [0.671, 0.012, 0.012, 1.0],
