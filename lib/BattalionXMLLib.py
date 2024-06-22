@@ -259,6 +259,14 @@ class BattalionObject(object):
                 else:
                     x,y = BWICONS[icon.lower()]
                 self._iconoffset = (x,y)
+            elif self.type == "cPickupReflected":
+                healthtype = self.mBase.mType
+                if healthtype == "PICKUP_TYPE_TROOP_HEALTH":
+                    self._iconoffset = BWICONS["icon_health"]
+                elif healthtype == "PICKUP_TYPE_VEHICLE_HEALTH":
+                    self._iconoffset = BWICONS["icon_fuel"]
+            elif self.type == "cCamera":
+                self._iconoffset = BWICONS["hud_cam"]
 
     @property
     def modelname(self):
