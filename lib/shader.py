@@ -160,10 +160,21 @@ void main (void)
 }
 """
 
-def _compile_shader_with_error_report(shaderobj):
+
+class ShaderCompilationError(Exception):
+    def __init__(self, text, type):
+        super().__init__(text)
+        split = text.split(":")
+        line = split[2]
+        self.line = int(line)
+        self.type = type
+
+
+def _compile_shader_with_error_report(shaderobj, type):
     glCompileShader(shaderobj)
     if not glGetShaderiv(shaderobj, GL_COMPILE_STATUS):
-        raise RuntimeError(str(glGetShaderInfoLog(shaderobj), encoding="ascii"))
+        info = glGetShaderInfoLog(shaderobj)
+        raise ShaderCompilationError(str(info, encoding="ascii"), type)
 
 
 def create_default_shader():
@@ -175,8 +186,8 @@ def create_default_shader():
     glShaderSource(vertexShaderObject, vertshader)
     glShaderSource(fragmentShaderObject, fragshader)
 
-    _compile_shader_with_error_report(vertexShaderObject)
-    _compile_shader_with_error_report(fragmentShaderObject)
+    _compile_shader_with_error_report(vertexShaderObject, "Vertex")
+    _compile_shader_with_error_report(fragmentShaderObject, "Fragment")
     
     program = glCreateProgram()
 
@@ -197,8 +208,8 @@ def create_shader(vertshader, fragshader):
     glShaderSource(vertexShaderObject, vertshader)
     glShaderSource(fragmentShaderObject, fragshader)
 
-    _compile_shader_with_error_report(vertexShaderObject)
-    _compile_shader_with_error_report(fragmentShaderObject)
+    _compile_shader_with_error_report(vertexShaderObject, "Vertex")
+    _compile_shader_with_error_report(fragmentShaderObject, "Vertex")
 
     program = glCreateProgram()
 

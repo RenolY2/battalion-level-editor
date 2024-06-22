@@ -18,13 +18,13 @@ with open("lib/color_coding.json", "r") as f:
 class Scene(object):
     def __init__(self):
         self.objects = {
-            "generic": None,
-            "cCamera": None
+            "generic": None#,
+            #"cCamera": None
         }
 
         self.model = {
-            "generic": None,
-            "cCamera": None
+            "generic": None#,
+            #"cCamera": None
         }
 
     def reset(self):
@@ -42,7 +42,7 @@ class Graphics(object):
 
         self.scene = Scene()
         self.scene.set_model("generic", self.rw.models.cubev2)
-        self.scene.set_model("cCamera", self.rw.models.camera)
+        #self.scene.set_model("cCamera", self.rw.models.camera)
         self._dirty = True
 
     def set_dirty(self):
@@ -182,36 +182,43 @@ class Graphics(object):
                 extradata =  numpy.array(extradata, dtype=numpy.uint8)
 
             model.bind(mtx, extradata)
-            coloruniform = glGetUniformLocation(model.program, "selectioncolor")
+            coloruniform = model.program.getuniformlocation("selectioncolor")
             glUniform4f(coloruniform, *object_colors["SelectionColor"])
             model.instancedrender()
             model.unbind()
 
 
         glDisable(GL_CULL_FACE)
-        glActiveTexture(GL_TEXTURE0)
+
         glEnable(GL_TEXTURE_2D)
-        glBindTexture(GL_TEXTURE_2D, rw.models.billboard.ID)
+        glActiveTexture(GL_TEXTURE0)
+        rw.models.billboard.maintex.bind()
+        glActiveTexture(GL_TEXTURE1)
+        rw.models.billboard.outlinetex.bind()
 
         if not globalmtx:
             rw.models.billboard.bind(None, None)
         else:
             rw.models.billboard.bind(numpy.concatenate(globalmtx),
                                      numpy.array(globalextradata, dtype=numpy.uint8))
-        texuniform = glGetUniformLocation(rw.models.billboard.program, "tex")
-        coloruniform = glGetUniformLocation(rw.models.billboard.program, "selectioncolor")
+        texuniform = rw.models.billboard.program.getuniformlocation("tex")
+        outlinetexuniform = rw.models.billboard.program.getuniformlocation("outlinetex")
+        coloruniform = rw.models.billboard.program.getuniformlocation("selectioncolor")
 
         glUniform1i(texuniform, 0)
+        glUniform1i(outlinetexuniform, 1)
         glUniform4f(coloruniform, *object_colors["SelectionColor"])
 
-        mtxuniform = glGetUniformLocation(rw.models.billboard.program, "mvmtx")
-        projuniform = glGetUniformLocation(rw.models.billboard.program, "proj")
+        mtxuniform = rw.models.billboard.program.getuniformlocation("mvmtx")
+        projuniform = rw.models.billboard.program.getuniformlocation("proj")
         glUniformMatrix4fv(mtxuniform, 1, False, glGetFloatv(GL_MODELVIEW_MATRIX))
         glUniformMatrix4fv(projuniform, 1, False, glGetFloatv(GL_PROJECTION_MATRIX))
 
         rw.models.billboard.instancedrender()
         rw.models.billboard.unbind()
         glActiveTexture(GL_TEXTURE0)
+        glDisable(GL_TEXTURE_2D)
+        glActiveTexture(GL_TEXTURE1)
         glDisable(GL_TEXTURE_2D)
         glUseProgram(0)
         glBindTexture(GL_TEXTURE_2D, 0)

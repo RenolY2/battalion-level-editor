@@ -1,9 +1,12 @@
 import json
 import re
 from time import time
+import inspect
+
+
 from OpenGL.GL import *
 from lib.vectors import Vector3
-from lib.shader import create_shader
+from lib.shader import create_shader, ShaderCompilationError
 from struct import unpack
 import os
 import numpy
@@ -18,9 +21,64 @@ with open("lib/color_coding.json") as f:
 selectioncolor = colors["SelectionColor"]
 
 
+class Shader(object):
+    def __init__(self, filename, fileline, text):
+        self.filename = filename
+        self.fileline = fileline
+        self.text = text
+
+    def get_location(self, var):
+        return get_location(self.text, var)
+
+    def get_locations(self, *vars):
+        return get_locations(self.text, vars)
+
+    @classmethod
+    def create(cls, text):
+        frameinfo = inspect.getframeinfo(inspect.currentframe().f_back)
+        shader = cls(frameinfo.filename, frameinfo.lineno, text)
+
+        return shader
+
+
+class Program(object):
+    def __init__(self, vtxshader: Shader, fragshader: Shader):
+        self.vtxshader = vtxshader
+        self.fragshader = fragshader
+        self.program = None
+
+    def compiled(self):
+        return self.program is not None
+
+    def compile(self):
+        try:
+            self.program = create_shader(self.vtxshader.text, self.fragshader.text)
+        except ShaderCompilationError as err:
+            if err.type == "Vertex":
+                extraerror = "Error is found in Vertex Shader in {0} on line {1}".format(
+                    self.vtxshader.filename,
+                    self.vtxshader.fileline+err.line)
+            elif err.type == "Fragment":
+                extraerror = "Error is found in Fragment Shader in {0} on line {1}".format(
+                    self.fragshader.filename,
+                    self.fragshader.fileline+err.line)
+            else:
+                extraerror = ""
+            print(extraerror)
+            raise err
+
+    def bind(self):
+        if self.program is None:
+            raise RuntimeError("Trying to use a program that wasn't compiled.")
+        glUseProgram(self.program)
+
+    def getuniformlocation(self, uniform):
+        return glGetUniformLocation(self.program, uniform)
+
+
 def get_location(shaderstring, varname):
     match = re.search("layout\(location = ([0-9]+)\) in [a-z0-9]+ {0};".format(varname), shaderstring)
-    if match.group(1) is None:
+    if match is None:
         raise RuntimeError("Didn't find variable {0} in shader".format(varname))
 
     return int(match.group(1))
@@ -41,6 +99,45 @@ def read_vertex(v_data):
         texcoord = None
     v = int(split[0])
     return v, texcoord
+
+
+class Texture(object):
+    def __init__(self):
+        self.tex = None
+
+    def free(self):
+        if self.tex is not None:
+            glDeleteTextures(1, int(self.tex))
+        self.tex = None
+
+    @classmethod
+    def from_path(cls, path):
+        texture = cls()
+        texture.set_texture(path)
+        return texture
+
+    def bind(self):
+        if self.tex is None:
+            raise RuntimeError("Tried to bind texture but texture isn't initialized or was freed.")
+        glBindTexture(GL_TEXTURE_2D, self.tex)
+
+    def unbind(self):
+        glBindTexture(GL_TEXTURE_2D, 0)
+
+    def set_texture(self, path):
+        self.free()
+
+        qimage = QtGui.QImage(path, "png")
+        qimage = qimage.convertToFormat(QtGui.QImage.Format_ARGB32)
+        ID = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, ID)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
+
+        imgdata = bytes(qimage.bits().asarray(qimage.width() * qimage.height() * 4))
+        glTexImage2D(GL_TEXTURE_2D, 0, 4, qimage.width(), qimage.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, imgdata)
+        self.tex = ID
 
 
 class TexturedMesh(object):
@@ -214,8 +311,7 @@ class ModelV2(object):
         self._uvcoords = uvcoords  #Whether to use UV coordinates or not
 
 
-
-        self.vertexshader = """
+        self.vertexshader = Shader.create("""
 #version 330 compatibility
 layout(location = 0) in vec3 vert;
 layout(location = 1) in vec4 color;
@@ -245,8 +341,9 @@ void main(void)
 }   
 
 
-"""
-        self.vertexshader_colorid = """
+""")
+
+        self.vertexshader_colorid = Shader.create("""
 #version 330 compatibility
 layout(location = 0) in vec3 vert;
 layout(location = 1) in vec4 color;
@@ -267,8 +364,9 @@ void main(void)
     //fragColor = vec4(1.0, 0.0, 0.0, 1.0);
     gl_Position = gl_ModelViewProjectionMatrix* mtx*instanceMatrix*vec4(vert, 1.0);
     //gl_Position = gl_ModelViewProjectionMatrix* mtx*vec4(vert, 1.0);
-}   """
-        self.fragshader = """
+}   """)
+
+        self.fragshader = Shader.create("""
 #version 330
 in vec4 fragColor;
 out vec4 finalColor;
@@ -277,21 +375,21 @@ void main (void)
 {
     finalColor = fragColor;
 }  
-"""
+""")
         if uvcoords:
-            self.vbo = VertexColorUVBuffer(*get_locations(self.vertexshader, ("vert", "color", "uv")))
+            self.vbo = VertexColorUVBuffer(*self.vertexshader.get_locations("vert", "color", "uv"))
         else:
-            self.vbo = VertexColorBuffer(*get_locations(self.vertexshader, ("vert", "color")))
+            self.vbo = VertexColorBuffer(*self.vertexshader.get_locations("vert", "color"))
 
         self.vao = None
         self.vao_colorid = None
         self.mtxloc = None
-        self.program = None
-        self.program_colorid = None
-        self.mtxbuffer = MatrixBuffer(get_location(self.vertexshader, "instanceMatrix"))
+        self.program = Program(self.vertexshader, self.fragshader)
+        self.program_colorid = Program(self.vertexshader_colorid, self.fragshader)
+        self.mtxbuffer = MatrixBuffer(self.vertexshader.get_location( "instanceMatrix"))
         self.mtxdirty = True
-        self.extrabuffer = ExtraBuffer(get_location(self.vertexshader, "val"), normalize=GL_FALSE)
-        self.coloridbuffer = ExtraBuffer(get_location(self.vertexshader, "val"), normalize=GL_FALSE)
+        self.extrabuffer = ExtraBuffer(self.vertexshader.get_location("val"), normalize=GL_FALSE)
+        self.coloridbuffer = ExtraBuffer(self.vertexshader.get_location("val"), normalize=GL_FALSE)
         self._count = None
 
     def build_mesh(self, array, extradata):
@@ -321,19 +419,19 @@ void main (void)
     def bind(self, array, extradata):
         if array is not None:
             self._count = len(array)//16
-        if self.program is None:
-            self.program = create_shader(self.vertexshader, self.fragshader)
+        if not self.program.compiled():
+            self.program.compile()
 
         if self.vao is None or self.mtxdirty:
             self.build_mesh(array, extradata)
 
-        glUseProgram(self.program)
+        self.program.bind()
 
         glBindVertexArray(self.vao)
 
     def bind_colorid(self, extradata):
-        if self.program_colorid is None:
-            self.program_colorid = create_shader(self.vertexshader_colorid, self.fragshader)
+        if  not self.program_colorid.compiled():
+            self.program_colorid.compile()
 
         if self.vao_colorid is None:
             self.vao_colorid = glGenVertexArrays(1)
@@ -351,7 +449,7 @@ void main (void)
         self.mtxbuffer.bind()
         self.coloridbuffer.init()
         self.coloridbuffer.load_data(extradata)
-        glUseProgram(self.program_colorid)
+        self.program_colorid.bind()
 
         glBindVertexArray(self.vao_colorid)
 
@@ -480,8 +578,9 @@ void main (void)
 class Billboard(ModelV2):
     def __init__(self, uvcoords):
         super().__init__(uvcoords=True)
-        self.ID = None
-        self.vertexshader = """
+        self.maintex = Texture()
+        self.outlinetex = Texture()
+        self.vertexshader = Shader.create("""
         #version 330 compatibility
         layout(location = 0) in vec3 vert;
         layout(location = 1) in vec4 color;
@@ -521,23 +620,24 @@ class Billboard(ModelV2):
             tmp2[3].xyz = vec3(0.0, 0.0, 0.0);
 
             fragColor = color*vec4(1.0, 1.0, 1.0, 0.0);
-            float highlight = float(int(val.x) & 0x1)*0.5;
+            float highlight = float(int(val.x) & 0x1)*1.0;
             //fragColor += (vec4(1.0, 1.0, 1.0, 0.0)-color)*vec4(1.0*highlight, 1.0*highlight, 0.0, 0.0);
             //fragColor += vec4(0.0, 0.0, 0.0, 1.0);
-            fragColor = vec4(1.0, 1.0, 1.0, 1.0)*(1.0 - highlight) +  selectioncolor*highlight;
+            fragColor = vec4(selectioncolor.r, selectioncolor.g, selectioncolor.b, highlight);
             float offsetx = mod(gl_InstanceID, 100)*20;
             float offsety = (gl_InstanceID / 100)*20;
             gl_Position = proj*mvmtx* mtx*tmp*inverse(tmp2)*vec4(vert, 1.0);
         }   
 
 
-        """
+        """)
 
-        self.fragshader = """
+        self.fragshader = Shader.create("""
         #version 330
         in vec4 fragColor;
         out vec4 finalColor;
         uniform sampler2D tex;
+        uniform sampler2D outlinetex;
         
         in vec2 texCoord;
         
@@ -546,25 +646,14 @@ class Billboard(ModelV2):
         {   
             //vec4 texcolor = vec4(texCoord.x, texCoord.y, 0.0, 1.0);//texture(tex, texCoord);
             vec4 texcolor = texture(tex, texCoord);
-            finalColor = texcolor*fragColor;
+            vec4 outlinecolor = texture(outlinetex, texCoord) * fragColor;
+            finalColor = texcolor*(1-outlinecolor.a) + vec4(  outlinecolor.r, 
+                                                              outlinecolor.g, 
+                                                              outlinecolor.b, 1.0) * outlinecolor.a;
         }  
-        """
-
-    def set_texture(self, path):
-        if self.ID is not None:
-            glDeleteTextures(1, int(self.ID))
-
-        qimage = QtGui.QImage(path, "png")
-        qimage = qimage.convertToFormat(QtGui.QImage.Format_ARGB32)
-        ID = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, ID)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
-
-        imgdata = bytes(qimage.bits().asarray(qimage.width() * qimage.height() * 4))
-        glTexImage2D(GL_TEXTURE_2D, 0, 4, qimage.width(), qimage.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, imgdata)
-        self.ID = ID
+        """)
+        self.program = Program(self.vertexshader, self.fragshader)
+        self.program_colorid = Program(self.vertexshader_colorid, self.fragshader)
 
 
 class TexturedModel(object):
