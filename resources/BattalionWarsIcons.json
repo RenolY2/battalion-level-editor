@@ -173,5 +173,6 @@
     "SecondaryObj": [11, 10],
     "icon_inactive": [12, 10],
     "icon_death": [13, 10],
+    "Volumeicon": [14, 10],
     "MissingIcon": [15, 15]
 }
