@@ -99,6 +99,15 @@ class Vector4(Vector3):
         self.z /= norm
         self.w /= norm
 
+    def __str__(self):
+        return str((self.x, self.y, self.z, self.w))
+
+    def __eq__(self, other_vec):
+        return self.x == other_vec.x and self.y == other_vec.y and self.z == other_vec.z and self.w == other_vec.w
+
+    def is_zero(self):
+        return self.x == self.y == self.z == self.w == 0
+
 
 class Vector2(Vector3):
     def __init__(self, x, y):
