@@ -279,8 +279,12 @@ class BattalionObject(object):
                 rcolor = self.mBase.mRadarColour
                 if rcolor == Vector4(255,180,0,220):
                     self._iconoffset = BWICONS["PrimaryObj"]
-                elif rcolor == Vector4(255,180,0,220):
+                elif rcolor == Vector4(220,220,200,220):
                     self._iconoffset = BWICONS["SecondaryObj"]
+            elif self.type == "cAmbientAreaPointSoundSphere":
+                self._iconoffset = BWICONS["Volumeicon"]
+            elif self.type == "cAmbientAreaPointSoundBox":
+                self._iconoffset = BWICONS["Volumeicon"]
     @property
     def modelname(self):
         return self._modelname
