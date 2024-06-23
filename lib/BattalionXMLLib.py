@@ -285,7 +285,7 @@ class BattalionObject(object):
             self._iconoffset = BWICONS["Volumeicon"]
         elif self.type == "cAmbientAreaPointSoundBox":
             self._iconoffset = BWICONS["Volumeicon"]
-            
+
     @property
     def modelname(self):
         return self._modelname
