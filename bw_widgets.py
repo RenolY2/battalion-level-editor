@@ -336,7 +336,6 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.minimap = Minimap(Vector3(-1000.0, 0.0, -1000.0), Vector3(1000.0, 0.0, 1000.0), 0,
                                "resources/arrow.png")
 
-
     def resizeGL(self, width, height):
         # Called upon window resizing: reinitialize the viewport.
         # update the window size
@@ -609,6 +608,9 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
         return result
 
+    def is_topdown(self):
+        return self.mode == MODE_TOPDOWN
+
     #@catch_exception_with_dialog
     #@catch_exception
     def paintGL(self):
@@ -622,7 +624,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         width, height = self.canvas_width, self.canvas_height
 
-        if self.mode == MODE_TOPDOWN:
+        if self.is_topdown():
             self.graphics.setup_ortho(width, height, offset_x, offset_z)
         else:
             self.graphics.setup_perspective(width, height)
@@ -635,7 +637,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         campos = Vector3(self.offset_x, self.camera_height, -self.offset_z)
         self.campos = campos
 
-        if self.mode == MODE_TOPDOWN:
+        if self.is_topdown():
             gizmo_scale = 3*self.zoom_factor
         else:
             gizmo_scale = (self.gizmo.position - campos).norm() / 130.0

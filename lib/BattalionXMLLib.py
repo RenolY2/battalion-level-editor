@@ -9,6 +9,7 @@ except: # cElementTree not available
 
 #import xml.etree.ElementTree.Element as Element
 from lib.bw_types import convert_from, get_types, BWMatrix
+from lib.vectors import Vector4
 
 with open("resources/BattalionWarsIcons.json", "r") as f:
     BWICONS = json.load(f)
@@ -266,8 +267,20 @@ class BattalionObject(object):
                 elif healthtype == "PICKUP_TYPE_VEHICLE_HEALTH":
                     self._iconoffset = BWICONS["icon_fuel"]
             elif self.type == "cCamera":
-                self._iconoffset = BWICONS["hud_cam"]
-
+                camtype = self.mCamType
+                insflags = self.mInstanceFlags
+                if camtype == "eCAMTYPE_CHASETARGET" and insflags == 20:
+                    self._iconoffset = BWICONS["hud_p1"]
+                elif camtype == "eCAMTYPE_CHASETARGET" and insflags == 24:
+                    self._iconoffset = BWICONS["hud_p2"]
+                else:
+                    self._iconoffset = BWICONS["hud_cam"]
+            elif self.type == "cObjectiveMarker":
+                rcolor = self.mBase.mRadarColour
+                if rcolor == Vector4(255,180,0,220):
+                    self._iconoffset = BWICONS["PrimaryObj"]
+                elif rcolor == Vector4(255,180,0,220):
+                    self._iconoffset = BWICONS["SecondaryObj"]
     @property
     def modelname(self):
         return self._modelname
