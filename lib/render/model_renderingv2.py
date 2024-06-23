@@ -318,8 +318,12 @@ layout(location = 1) in vec4 color;
 layout(location = 2) in mat4 instanceMatrix;
 layout(location = 6) in vec4 val;
 layout(location = 7) in vec2 uv;
+layout(location = 8) in float height;
+
 uniform mat4 modelmtx;
 uniform vec4 selectioncolor;
+uniform int globalsetting;
+
 out vec4 fragColor;
 
 mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
@@ -349,6 +353,8 @@ layout(location = 0) in vec3 vert;
 layout(location = 1) in vec4 color;
 layout(location = 2) in mat4 instanceMatrix;
 layout(location = 6) in vec4 data;
+
+uniform int globalsetting;
 
 out vec4 fragColor;
 
@@ -590,6 +596,8 @@ class Billboard(ModelV2):
         uniform mat4 mvmtx;
         uniform mat4 proj;
         uniform vec4 selectioncolor;
+        uniform int globalsetting;
+        uniform float scalefactor;
         out vec4 fragColor;
         out vec2 texCoord;
         out float dohighlight;
@@ -610,7 +618,10 @@ class Billboard(ModelV2):
             //texCoord = vec2(uv.x/16, (1-uv.y)/16) + vec2((val.y)*(1/16), (val.z)*(1/16));
             texCoord = vec2((uv.x + val.y)/16, (1-(uv.y-val.z))/16);// + vec2(10*(1/16), 0*(1/16));
             mat4 tmp = mat4(instanceMatrix);
-            tmp[3].xyz += vec3(0.0, 10.0, 0.0);
+            
+            float istopdown = float((int(globalsetting)>>0) & 0x1)*1.0;
+            
+            tmp[3].xyz += (1-istopdown)*vec3(0.0, 10.0, 0.0)+istopdown*vec3(5.0, 10.0, 5.0);
             tmp[0].xyz = vec3(1.0, 0.0, 0.0);
             tmp[1].xyz = vec3(0.0, 0.0, 1.0);
             tmp[2].xyz = vec3(0.0, 1.0, 0.0);
@@ -626,7 +637,7 @@ class Billboard(ModelV2):
             fragColor = vec4(selectioncolor.r, selectioncolor.g, selectioncolor.b, highlight);
             float offsetx = mod(gl_InstanceID, 100)*20;
             float offsety = (gl_InstanceID / 100)*20;
-            gl_Position = proj*mvmtx* mtx*tmp*inverse(tmp2)*vec4(vert, 1.0);
+            gl_Position = proj*mvmtx* mtx*tmp*inverse(tmp2)*vec4(vert*((1-istopdown)+istopdown*scalefactor), 1.0);
         }   
 
 

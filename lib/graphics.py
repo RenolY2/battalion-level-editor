@@ -15,6 +15,15 @@ with open("lib/color_coding.json", "r") as f:
     #colors_area  = colors_json["Areas"]
 
 
+def lerp(x0, x1, y0, y1, val):
+    if val < x0:
+        return y0
+    elif val > x1:
+        return y1
+    else:
+        return (y0*(x1-val)+y1*(val-x0))/(x1-x0)
+
+
 class Scene(object):
     def __init__(self):
         self.objects = {}
@@ -130,6 +139,10 @@ class Graphics(object):
         globalmtx = []
         globalextradata = []
 
+        globalsetting = 0
+        if self.rw.is_topdown():
+            globalsetting |= 1
+
         if self.is_dirty():
             for obj in rw.level_file.objects_with_positions.values():
                 if obj.type in self.scene.objects:
@@ -208,6 +221,14 @@ class Graphics(object):
         glUniformMatrix4fv(mtxuniform, 1, False, glGetFloatv(GL_MODELVIEW_MATRIX))
         glUniformMatrix4fv(projuniform, 1, False, glGetFloatv(GL_PROJECTION_MATRIX))
 
+        globaluniform = rw.models.billboard.program.getuniformlocation("globalsetting")
+        glUniform1i(globaluniform, globalsetting)
+
+        zoomscale = lerp(0.28, 0.64, 1.0, 1.5, self.rw.zoom_factor)
+        #zoomuniform =
+        print(self.rw.zoom_factor, zoomscale)
+        facuniform = rw.models.billboard.program.getuniformlocation("scalefactor")
+        glUniform1f(facuniform, zoomscale)
         rw.models.billboard.instancedrender()
         rw.models.billboard.unbind()
         glActiveTexture(GL_TEXTURE0)
