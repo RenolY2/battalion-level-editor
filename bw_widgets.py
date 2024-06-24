@@ -254,6 +254,11 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         if self.terrainmap is not None:
             for entry in self.terrainmap:
                 glDeleteLists(entry, 1)
+
+        for material in self.bwterrain.materials:
+            self.bwmodelhandler.textures.initialize_texture(material.mat1, mipmap=True)
+            self.bwmodelhandler.textures.initialize_texture(material.mat2, mipmap=True)
+
         self.terrainmap = []
         glColor4f(0.0, 0.0, 0.0, 1.0)
         for meshindex, meshes in self.bwterrain.meshes.items():
