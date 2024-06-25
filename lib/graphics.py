@@ -224,7 +224,7 @@ class Graphics(object):
         globaluniform = rw.models.billboard.program.getuniformlocation("globalsetting")
         glUniform1i(globaluniform, globalsetting)
 
-        zoomscale = lerp(0.28, 0.64, 1.0, 2.8, self.rw.zoom_factor)
+        zoomscale = lerp(0.1, 0.68, 1.0, 2.7, self.rw.zoom_factor)
         #zoomuniform =
         print(self.rw.zoom_factor, zoomscale)
         facuniform = rw.models.billboard.program.getuniformlocation("scalefactor")

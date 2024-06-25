@@ -1333,7 +1333,7 @@ if __name__ == "__main__":
             # Debugging
 
             editor_gui.show()
-            editor_gui.file_menu.button_load_level(r"D:\Wii games\BW2Folder\files\Data\CompoundFiles\MP4.xml")
+            editor_gui.file_menu.button_load_level(r"D:\Battalion wars modding laptop\desktop imports\Orginal ONly use for replace\files\Data\CompoundFiles\SP_3.3.xml")
             err_code = app.exec()
 
         if pr is not None:
