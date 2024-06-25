@@ -111,9 +111,9 @@ class Texture(object):
         self.tex = None
 
     @classmethod
-    def from_path(cls, path):
+    def from_path(cls, path, mipmap=False):
         texture = cls()
-        texture.set_texture(path)
+        texture.set_texture(path, mipmap)
         return texture
 
     def bind(self):
@@ -124,7 +124,7 @@ class Texture(object):
     def unbind(self):
         glBindTexture(GL_TEXTURE_2D, 0)
 
-    def set_texture(self, path):
+    def set_texture(self, path, mipmap=False):
         self.free()
 
         qimage = QtGui.QImage(path, "png")
@@ -132,11 +132,18 @@ class Texture(object):
         ID = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, ID)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
+
+        if mipmap:
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        else:
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
 
         imgdata = bytes(qimage.bits().asarray(qimage.width() * qimage.height() * 4))
         glTexImage2D(GL_TEXTURE_2D, 0, 4, qimage.width(), qimage.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, imgdata)
+        if mipmap:
+            glGenerateMipmap(GL_TEXTURE_2D)
         self.tex = ID
 
 

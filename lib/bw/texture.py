@@ -969,7 +969,7 @@ class TextureArchive(object):
 
         self._cached = {}
 
-    def initialize_texture(self, texname):
+    def initialize_texture(self, texname, mipmap=False):
         dummy = False
 
         if texname in self._cached:
@@ -990,10 +990,10 @@ class TextureArchive(object):
         #tex.from_file(f)
         ID = glGenTextures(1)
         self._cached[texname] = (tex, ID)
-        self.load_texture(texname, dummy)
+        self.load_texture(texname, dummy, mipmap)
         return self._cached[texname]
 
-    def load_texture(self, texname, dummy=False):
+    def load_texture(self, texname, dummy=False, mipmap=False):
         if texname not in self._cached:
             return None
 
@@ -1021,12 +1021,20 @@ class TextureArchive(object):
             #tex.dump_to_file(str(texname.strip(b"\x00"), encoding="ascii")+".png")
             glBindTexture(GL_TEXTURE_2D, ID)
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+
+            if mipmap:
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            else:
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
+
             # glPixelStorei(GL_UNPACK_ROW_LENGTH, tex.size_x)
             #print("call info", tex.size_x, tex.size_y, tex.size_x * tex.size_y * 4, len(tex.rgba))
             #print(ID)
             glTexImage2D(GL_TEXTURE_2D, 0, 4, tex.size_x, tex.size_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.rgba)# b"\x00"*tex.size_x*tex.size_y*4)#tex.rgba)
+            if mipmap:
+                glGenerateMipmap(GL_TEXTURE_2D)
             #glTexImage2D(GL_TEXTURE_2D, 0, 4, tex.size_x, tex.size_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, b"\x7F"*tex.size_x*tex.size_y*4)
             #testsize = 32
             #glTexImage2D(GL_TEXTURE_2D, 0, 4, testsize, testsize, 0, GL_RGBA, GL_UNSIGNED_BYTE,
