@@ -31,32 +31,38 @@ class BWModelHandler(object):
 
         return bwmodels
 
-    def rendermodel(self, name, bwmatrix, bwterrain, offset):
-        pos = bwmatrix.position
+    def rendermodel(self, name, mtx, bwterrain, offset):
+        """pos = bwmatrix.position
         x,y = int((pos.x+2048)*0.25), int((pos.z+2048)*0.25)
         if x >= 0 and x < 4096 and y >= 0 and y < 4096:
             if bwterrain.pointdata[x][y] is not None:
                 y = bwterrain.pointdata[x][y][0]/32.0
             else:
-                y = pos.y
+                y = pos.y"""
 
         glPushMatrix()
 
-        glTranslatef(pos.x, pos.z, y)
-        mtx = bwmatrix.mtx
+        #glTranslatef(pos.x, pos.z, y)
+
         """glMultMatrixf([mtx.a1, mtx.a2, mtx.a3, mtx.a4,
                        mtx.b1, mtx.b2, mtx.b3, mtx.b4,
                        mtx.c1, mtx.c2, mtx.c3, mtx.c4,
                        mtx.d1, mtx.d2, mtx.d3, mtx.d4])"""
-        glRotatef(90, 1, 0, 0)
+        #glRotatef(90, 1, 0, 0)
         """glMultMatrixf([mtx.a1, mtx.b1, mtx.c1, mtx.d1,
                        mtx.a2, mtx.b2, mtx.c2, mtx.d2,
                        mtx.a3, mtx.b3, mtx.c3, mtx.d3,
                        mtx.a4, mtx.b4, mtx.c4, mtx.d4])"""
-        glMultMatrixf([mtx.a1, mtx.a2, mtx.a3, mtx.a4,
-                       mtx.b1, mtx.b2, mtx.b3, mtx.b4,
-                       mtx.c1, mtx.c2, mtx.c3, mtx.c4,
-                       mtx.d1, mtx.d2, mtx.d3, mtx.d4])
+        glMultMatrixf([ 1.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 1.0])
+
+        #glMultMatrixf([mtx.a1, mtx.a2, mtx.a3, mtx.a4,
+        #               mtx.b1, mtx.b2, mtx.b3, mtx.b4,
+        #               mtx.c1, mtx.c2, mtx.c3, mtx.c4,
+        #               mtx.d1, mtx.d2, mtx.d3, mtx.d4])
+        glMultMatrixf(mtx)
 
         model = self.models[name]
         model.render(self.textures, None)

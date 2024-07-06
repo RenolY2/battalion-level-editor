@@ -805,33 +805,24 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             #objects = self.pikmin_generators.generators
             #glDisable(GL_CULL_FACE)
             self.graphics.render_scene()
-            if False:
-                #for objectid, object in self.level_file.objects_with_positions.items():
+            #if False:
+            for objectid, object in self.level_file.objects_with_positions.items():
 
                 #glColor3f(1.0, 1.0, 1.0)
                 #glDisable(GL_TEXTURE_2D)
                 object: BattalionObject
                 bwmatrix = None
                 modelname = None
+                bwmatrix = object.getmatrix().mtx
+                modelname = object.modelname
+                if modelname is not None:
+                    if (self.cam_x - bwmatrix[12]) ** 2 + (self.cam_z - bwmatrix[14]) ** 2 < 250 ** 2:
+                        self.bwmodelhandler.rendermodel(modelname, bwmatrix, self.bwterrain, 0)
 
-                if hasattr(object, "spawnMatrix"):
-                    bwmatrix = object.spawnMatrix
-                    modelname = object._modelname
-
-                elif hasattr(object, "Mat"):
-                    bwmatrix = object.Mat
-                    modelname = object._modelname
-                #bwmatrix = object.getposition()
-                #modelname = None #object.modelname# object.modelname
-                #modelname = None
-                if bwmatrix is not None:
-                    #glPushMatrix()
-                    #glTranslatef(bwmatrix.position.x, bwmatrix.position.z, bwmatrix.position.y)
-                    #glTranslatef(0, 0, 0)
-                    self.models.cubev2.render(bwmatrix.mtx)
 
                     #glPopMatrix()
-                drawn += 1
+                #drawn += 1
+
                 """if False and modelname is not None:
                     if (self.cam_x - bwmatrix.position.x)**2 + (-self.cam_z - bwmatrix.position.z)**2 > 250**2:
                         x, z = int((bwmatrix.position.x + 2048) * 0.25), int((bwmatrix.position.z + 2048) * 0.25)
@@ -978,6 +969,9 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             dir.z = tmp
 
         return Line(pos, dir)
+
+    def select_objects(self, screen_x, screen_y, x_size=1, y_size=1, shift=False):
+        pass
 
 
 class ObjectViewSelectionToggle(object):
