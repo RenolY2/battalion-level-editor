@@ -27,7 +27,8 @@ class BWModelHandler(object):
             data.fileobj.seek(0)
             f = data.fileobj
             model.from_file(f)
-            bwmodels.models[name] = model
+            texmodel = model.make_textured_model(bwmodels.textures)
+            bwmodels.models[name] = texmodel#model
 
         return bwmodels
 

@@ -128,6 +128,57 @@ class TexturedMesh(object):
         glCallList(self._displist)
 
 
+class TexturedBWMesh(object):
+    def __init__(self, texname):
+        self.trilist = []
+
+
+        self.texname = texname
+        self._displist = None
+
+    def generate_displist(self):
+        if self._displist is not None:
+            glDeleteLists(self._displist, 1)
+
+        displist = glGenLists(1)
+        glNewList(displist, GL_COMPILE)
+        glBegin(GL_TRIANGLES)
+
+        assert len(self.trilist) % 3 == 0
+        for vtxpos, uv in self.trilist:
+            if self.texname is not None and uv is not None:
+                glTexCoord2f(*uv)
+            glVertex3f(*vtxpos)
+
+        glEnd()
+        glEndList()
+        self._displist = displist
+
+    def render(self, texturearchive, selected=False):
+        if self._displist is None:
+            self.generate_displist()
+
+        if self.texname is not None:
+            result = texturearchive.get_texture(self.texname.lower())
+            if result is not None:
+                glEnable(GL_TEXTURE_2D)
+                glBindTexture(GL_TEXTURE_2D, result[1])
+            else:
+                glDisable(GL_TEXTURE_2D)
+        else:
+            glDisable(GL_TEXTURE_2D)
+
+        if not selected:
+            #if self.material.diffuse is not None:
+            #    glColor3f(*self.material.diffuse)
+            #else:
+            glColor3f(1.0, 1.0, 1.0)
+        else:
+            glColor4f(*selectioncolor)
+
+        glCallList(self._displist)
+
+
 class Material(object):
     def __init__(self, diffuse=None, texturepath=None):
         if texturepath is not None:
@@ -386,6 +437,11 @@ class TexturedModel(object):
             #    nx, ny, nz = map(float, args[1:4])
             #    normals.append((nx, ny, nz))
 
+
+class TexturedBWModel(TexturedModel):
+    def render(self, texarchive, selected=False):
+        for mesh in self.mesh_list:
+            mesh.render(texarchive, selected)
 
 ALPHA = 0.8
 
