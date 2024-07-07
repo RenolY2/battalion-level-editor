@@ -806,6 +806,10 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             #glDisable(GL_CULL_FACE)
             self.graphics.render_scene()
             #if False:
+
+            glActiveTexture(GL_TEXTURE0)
+            glEnable(GL_TEXTURE_2D)
+
             for objectid, object in self.level_file.objects_with_positions.items():
 
                 #glColor3f(1.0, 1.0, 1.0)

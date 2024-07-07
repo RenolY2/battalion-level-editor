@@ -7,7 +7,7 @@ from .vectors import Vector3, Matrix4x4
 from .read_binary import *
 from .gx import VertexDescriptor, VTX, VTXFMT
 from math import floor, ceil
-
+from lib.model_rendering import TexturedBWModel, TexturedBWMesh
 from timeit import default_timer as timer
 
 
@@ -46,6 +46,11 @@ class Material(object):
             yield self.tex4
 
         return
+
+    def first_texture(self):
+        for tex in self.textures():
+            return tex
+        return None
 
     def __str__(self):
         return str([x.strip(b"\x00") for x in self.textures()])
@@ -172,167 +177,104 @@ class BW2Model(Model):
             #break
             #node.transform.reset_transform()
 
-    def export_obj(self, outputpath, texturearchive):
-        modelname = str(self.bgfname.strip(b"\00"), encoding="ascii")
-        objpath = os.path.join(outputpath, modelname+".obj")
-        matpath = os.path.join(outputpath, modelname+".mtl")
-
-        exported_textures = []
+    def make_textured_model(self, texturearchive):
+        model = TexturedBWModel()
+        alltextures = {}
         for node in self.nodes:
             for material in node.materials:
                 for texturename in material.textures():
-                    if texturename not in exported_textures:
-                        exported_textures.append(texturename)
+                    if texturename not in alltextures:
+                        alltextures[texturename] = TexturedBWMesh(texturename.strip(b"\x00").decode("ascii"))
 
-        for texturename in exported_textures:
-            texname = str(texturename.strip(b"\x00"), encoding="ascii") + ".png"
-            result = texturearchive.get_texture(texturename.lower())
-            if result is not None:
-                tex, texid = result
-                tex.dump_to_file(os.path.join(outputpath, texname))
+        for node in self.nodes:
+            if node.do_skip():
+                continue
+            mvmat = Matrix4x4.identity()
+            mvmat.a1 = 1.0
+            # normals_mvmat = Matrix4x4.identity()
 
-        normal_offset = 1
-        texcoord_offset = 1
-        vertex_offset = 1
+            currnode = node
+            mvmat.inplace_multiply_mat4(node.transform.matrix4)
+            while currnode.parent is not None:
+                currnode = currnode.parent
+                mvmat.inplace_multiply_mat4(currnode.transform.matrix4)
+                # normals_mvmat.inplace_multiply_mat4(currnode.transform.matrix4)
 
-        obj = open(objpath, "w", encoding="utf-8")
-        mtl = open(matpath, "w", encoding="utf-8")
-        obj.write("mtllib {0}\n".format(modelname+".mtl"))
-        try:
-            for node in self.nodes:
-                if node.do_skip():
-                    continue
-                #mvmat = Matrix4x4(*node._mvmat[0], *node._mvmat[1], *node._mvmat[2], *node._mvmat[3])
-                #mvmat.transpose()
-                mvmat = Matrix4x4.identity()
-                mvmat.a1 = 1.0
-                #normals_mvmat = Matrix4x4.identity()
+            # print(mvmat)
+            vertices = []
+            for x, y, z in node.vertices:
+                newx, newy, newz, _ = mvmat.multiply_vec4(x * node.vscl, y * node.vscl, z * node.vscl, 1)
+                vertices.append((newx, newy, newz))
+                #obj.write("v {0} {1} {2}\n".format(-newx, newy, newz))
 
-                currnode = node
-                mvmat.inplace_multiply_mat4(node.transform.matrix4)
-                while currnode.parent is not None:
-                    currnode = currnode.parent
-                    mvmat.inplace_multiply_mat4(currnode.transform.matrix4)
-                    #normals_mvmat.inplace_multiply_mat4(currnode.transform.matrix4)
+            # for x, y, z in node.normals:
+            #    newx, newy, newz, _ = mvmat.multiply_vec4(x, y, z, 0)
+            #    obj.write("vn {0} {1} {2}\n".format(newx, newy, newz))
+            uvs = []
+            for u, v in node.uvmaps[0]:
+                uvs.append((u,v))
 
-                #print(mvmat)
 
-                for x, y, z in node.vertices:
-                    newx, newy, newz, _ = mvmat.multiply_vec4(x*node.vscl, y*node.vscl, z*node.vscl, 1)
-                    obj.write("v {0} {1} {2}\n".format(-newx, newy, newz))
+            for matindex, mesh in node.meshes:
 
-                #for x, y, z in node.normals:
-                #    newx, newy, newz, _ = mvmat.multiply_vec4(x, y, z, 0)
-                #    obj.write("vn {0} {1} {2}\n".format(newx, newy, newz))
+                texname = node.materials[matindex].tex1
 
-                for u, v in node.uvmaps[0]:
-                    obj.write("vt {0} {1}\n".format(u, 1-v))
+                assert texname is not None
+                currmesh = alltextures[texname]
 
-                for i, mat in enumerate(node.materials):
-                    print(node.name)
-                    matname = str(node.name.strip(b"\00"), encoding="latin-1")+"_mat{0}".format(i)
-
-                    mtl.write("newmtl {0}\n".format(matname))
-                    texturename = mat.tex1
-                    if texturename is None:
-                        texturename = matname+"_notex1"
-                        mtl.write("map_kd {0}\n".format(texturename + ".png"))
+                for prim in mesh:
+                    if prim.type == 0x98:
+                        pass
+                    # elif prim.type == 0x90:
+                    #    glBegin(GL_TRIANGLES)
                     else:
-                        mtl.write("map_kd {0}\n".format(str(texturename.strip(b"\x00"), encoding="ascii") + ".png"))
+                        raise RuntimeError("woops unsupported prim type {0:x}".format(prim.type))
+                    i = 0
+                    vert1, vert2, vert3 = None, None, None
 
-            for node in self.nodes:
-                if node.do_skip():
-                    continue
-                materials = []
-                obj.write("o {0}\n".format(str(node.name.strip(b"\00"), encoding="latin-1")))
-                for i, mat in enumerate(node.materials):
-                    matname = str(node.name.strip(b"\00"), encoding="latin-1")+"_mat{0}".format(i)
-                    materials.append((matname, mat))
-
-                for matindex, mesh in node.meshes:
-                    matname, mat = materials[matindex]
-                    obj.write("usemtl {0}\n".format(matname))
-
-                    for prim in mesh:
-                        if prim.type == 0x98:
-                            pass
-                        #elif prim.type == 0x90:
-                        #    glBegin(GL_TRIANGLES)
+                    for vertex in prim.vertices:
+                        if vert1 is None:
+                            vert1 = vertex
+                            continue
+                        elif vert2 is None:
+                            vert2 = vertex
+                            continue
+                        elif vert3 is None:
+                            vert3 = vertex
                         else:
-                            raise RuntimeError("woops unsupported prim type {0:x}".format(prim.type))
-                        i = 0
-                        vert1, vert2, vert3 = None, None, None
+                            vert1 = vert2
+                            vert2 = vert3
+                            vert3 = vertex
+                            i = (i + 1) % 2
 
-                        for vertex in prim.vertices:
-                            if vert1 is None:
-                                vert1 = vertex
-                                continue
-                            elif vert2 is None:
-                                vert2 = vertex
-                                continue
-                            elif vert3 is None:
-                                vert3 = vertex
-                            else:
-                                vert1 = vert2
-                                vert2 = vert3
-                                vert3 = vertex
-                                i = (i + 1) % 2
+                        if i == 0:
+                            v1 = vert1
+                            v2 = vert2
+                            v3 = vert3
+                        else:
+                            v1 = vert2
+                            v2 = vert1
+                            v3 = vert3
 
-                            if i == 0:
-                                v1 = vert1
-                                v2 = vert2
-                                v3 = vert3
-                            else:
-                                v1 = vert2
-                                v2 = vert1
-                                v3 = vert3
+                        for v in (v3, v2, v1):
+                            posindex, normindex = v[0], v[1]
+                            tex0 = v[2]
+                            tex1 = v[3]
+                            hasNormals = False
+                            hasTexcoords = False
 
+                            if not tex1 is None:
+                                hasTexcoords = True
+                                # print(tex1, self.uvmaps[0])
+                                if not tex0 is None:
+                                    texcoordindex = tex0 << 8 | tex1
+                                else:
+                                    texcoordindex = tex1
 
-                            obj.write("f ")
+                                currmesh.trilist.append((vertices[posindex], uvs[texcoordindex]))
 
-                            for v in (v3, v2, v1):
-                                posindex, normindex = v[0], v[1]
-                                tex0 = v[2]
-                                tex1 = v[3]
-                                posindex += vertex_offset
-                                hasNormals = False
-                                hasTexcoords = False
-                                obj.write("{0}".format(posindex))
-
-                                if not tex1 is None:
-                                    hasTexcoords = True
-                                    # print(tex1, self.uvmaps[0])
-                                    if not tex0 is None:
-                                        texcoordindex = tex0 << 8 | tex1
-                                    else:
-                                        texcoordindex = tex1
-                                    texcoordindex += texcoord_offset
-                                    #u, v = uvmap_0[texcoordindex]
-
-                                    #glVertexAttrib2f(2, u, v)
-                                    #glVertexAttrib2f(4, u, v)
-                                    obj.write("/{0}".format(texcoordindex))
-
-                                #if normindex is not None:
-                                #    if not hasTexcoords:
-                                #        obj.write("/")
-                                #    normindex += normal_offset
-                                #    obj.write("/{0}".format(normindex))
-
-                                obj.write(" ")
-                            obj.write("\n")
-
-                vertex_offset += len(node.vertices)
-                normal_offset += len(node.normals)
-                texcoord_offset += len(node.uvmaps[0])
-
-        except Exception as e:
-            obj.close()
-            mtl.close()
-            raise e
-
-        obj.close()
-        mtl.close()
+        model.mesh_list.extend(alltextures.values())
+        return model
 
     def export_obj(self, outputpath, texturearchive):
         modelname = str(self.bgfname.strip(b"\00"), encoding="ascii")
