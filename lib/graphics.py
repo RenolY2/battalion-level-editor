@@ -46,6 +46,9 @@ class Graphics(object):
         self.scene = Scene()
         self.scene.set_model("generic", self.rw.models.cubev2)
         self.scene.set_model("cCamera", self.rw.models.camera)
+
+        self.models_scene = []
+
         self._dirty = True
 
     def set_dirty(self):
@@ -144,14 +147,23 @@ class Graphics(object):
             globalsetting |= 1
 
         if self.is_dirty():
+            self.models_scene = []
+
             for obj in rw.level_file.objects_with_positions.values():
                 if obj.type in self.scene.objects:
                     mtx, extradata = self.scene.objects[obj.type]
                 else:
                     mtx, extradata = default_matrices, default_extradata
 
-                mtx.append(obj.getmatrix().mtx)
+                currmtx = obj.getmatrix().mtx
+                mtx.append(currmtx)
                 iconoffset = obj.iconoffset
+
+                modelname = obj._modelname
+                if modelname is not None:
+                    self.models_scene.append((currmtx, currmtx[12], currmtx[14], modelname))
+
+
 
                 flag = 0
                 if obj in selected:
@@ -186,7 +198,7 @@ class Graphics(object):
                 mtx, extradata = None, None
             else:
                 mtx = numpy.concatenate(mtx)
-                extradata =  numpy.array(extradata, dtype=numpy.uint8)
+                extradata = numpy.array(extradata, dtype=numpy.uint8)
 
             model.bind(mtx, extradata)
             coloruniform = model.program.getuniformlocation("selectioncolor")
@@ -239,3 +251,19 @@ class Graphics(object):
         glBindTexture(GL_TEXTURE_2D, 0)
 
         glEnable(GL_CULL_FACE)
+
+        glActiveTexture(GL_TEXTURE0)
+        glEnable(GL_TEXTURE_2D)
+
+        cam_x, cam_z = rw.cam_x, rw.cam_z
+        cam = numpy.array([rw.cam_x, rw.cam_z])
+        norm = numpy.linalg.norm
+
+        #dist = lambda x: (cam_x-x[1])**2 + (cam_z-x[2])**2
+
+        #self.models_scene.sort(key=dist)
+        #self.partialsort(10, dist)
+        #bound = self.find_bound(dist, 250*250)
+        for mtx, x, z, modelname in self.models_scene:
+            if abs(cam_x - x) < 250 and abs(cam_z - z) < 250:
+                rw.bwmodelhandler.rendermodel(modelname, mtx, rw.bwterrain, 0)
