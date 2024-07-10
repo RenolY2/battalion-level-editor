@@ -805,43 +805,6 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             #objects = self.pikmin_generators.generators
             #glDisable(GL_CULL_FACE)
             self.graphics.render_scene()
-            #if False:
-
-            glActiveTexture(GL_TEXTURE0)
-            glEnable(GL_TEXTURE_2D)
-
-            for objectid, object in self.level_file.objects_with_positions.items():
-
-                #glColor3f(1.0, 1.0, 1.0)
-                #glDisable(GL_TEXTURE_2D)
-                object: BattalionObject
-                bwmatrix = None
-                modelname = None
-                bwmatrix = object.getmatrix().mtx
-                modelname = object.modelname
-                if modelname is not None:
-                    if (self.cam_x - bwmatrix[12]) ** 2 + (self.cam_z - bwmatrix[14]) ** 2 < 250 ** 2:
-                        self.bwmodelhandler.rendermodel(modelname, bwmatrix, self.bwterrain, 0)
-
-
-                    #glPopMatrix()
-                #drawn += 1
-
-                """if False and modelname is not None:
-                    if (self.cam_x - bwmatrix.position.x)**2 + (-self.cam_z - bwmatrix.position.z)**2 > 250**2:
-                        x, z = int((bwmatrix.position.x + 2048) * 0.25), int((bwmatrix.position.z + 2048) * 0.25)
-                        if bwmatrix.position.y != 0.0:
-                            y = bwmatrix.position.y
-                        elif 0 <= x < 4096 and 0 <= z < 4096 and self.bwterrain.pointdata[x][z] is not None:
-                            y = self.bwterrain.pointdata[x][z][0] / 32.0
-
-                        else:
-                            y = bwmatrix.position.y
-                        self.models.render_generic_position(Vector3(bwmatrix.position.x, y, bwmatrix.position.z), False)
-                    else:
-                    self.bwmodelhandler.rendermodel(modelname, bwmatrix, self.bwterrain, 0)
-                elif False and bwmatrix is not None:
-                    self.models.render_generic_position(bwmatrix.position, False)"""
 
             vismenu = self.visibility_menu
             self.models.cubev2.unbind()
