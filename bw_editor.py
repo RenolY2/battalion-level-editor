@@ -261,6 +261,7 @@ class LevelEditor(QMainWindow):
 
         QtWidgets.QShortcut(Qt.Key_G, self).activated.connect(self.action_ground_objects)
         #QtWidgets.QShortcut(Qt.CTRL + Qt.Key_A, self).activated.connect(self.shortcut_open_add_item_window)
+        QtWidgets.QShortcut(Qt.CTRL + Qt.Key_E, self).activated.connect(self.action_open_edit)
         self.statusbar = QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
         self.setStatusBar(self.statusbar)
@@ -1214,6 +1215,10 @@ class LevelEditor(QMainWindow):
     def action_update_position(self, event, pos):
         self.current_coordinates = pos
         self.statusbar.showMessage(str(pos))
+
+    def action_open_edit(self):
+        if self.pik_control.button_edit_object.isEnabled():
+            self.pik_control.button_edit_object.pressed.emit()
 
 
 class EditorHistory(object):
