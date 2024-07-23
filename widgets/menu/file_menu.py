@@ -95,6 +95,9 @@ class EditorFileMenu(QMenu):
 
                     level_data.resolve_pointers(preload_data)
                     preload_data.resolve_pointers(level_data)
+                    for id, obj in preload_data.objects.items():
+                        if obj.type == "cLevelSettings":
+                            self.editor.level_view.waterheight = obj.mpRenderParams.mWaterHeight
                     
                     if levelpaths.resourcepath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
