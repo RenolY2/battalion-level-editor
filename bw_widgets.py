@@ -938,7 +938,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         return Line(pos, dir)
 
     def select_objects(self, screen_x, screen_y, x_size=1, y_size=1, shift=False):
-        pass
+        self.selectionqueue.queue_selection(screen_x, screen_y, x_size, y_size, shift)
 
 
 class ObjectViewSelectionToggle(object):

@@ -121,8 +121,9 @@ class TopdownSelect(ClickDragAction):
         editor.selectionbox_start = (selectstartx, selectstartz)
 
         if editor.level_file is not None:
-            editor.selectionqueue.queue_selection(x, y, 1, 1,
-                                           editor.shift_is_pressed)
+            #editor.selectionqueue.queue_selection(x, y, 1, 1,
+            #                               editor.shift_is_pressed)
+            editor.select_objects(x, y, shift=editor.shift_is_pressed)
             editor.do_redraw(force=True)
 
     def move(self, editor, buttons, event):
@@ -139,9 +140,10 @@ class TopdownSelect(ClickDragAction):
         startz = min(selectstartz, selectendz)
         endz = max(selectstartz, selectendz)
 
-        editor.selectionqueue.queue_selection(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
-                                       editor.shift_is_pressed)
-
+        #editor.selectionqueue.queue_selection(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
+        #                               editor.shift_is_pressed)
+        editor.select_objects(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
+                              shift=editor.shift_is_pressed)
         editor.do_redraw(force=True)
 
         editor.selectionbox_start = editor.selectionbox_end = None
@@ -271,9 +273,11 @@ class Select3D(ClickDragAction):
 
     def just_clicked(self, editor, buttons, event):
         super().just_clicked(editor, buttons, event)
-        editor.selectionqueue.queue_selection(
-            event.x(), event.y(), 1, 1,
-            editor.shift_is_pressed)
+
+        editor.select_objects(event.x(), event.y(), shift=editor.shift_is_pressed)
+        #editor.selectionqueue.queue_selection(
+        #    event.x(), event.y(), 1, 1,
+        #    editor.shift_is_pressed)
         #print("WE HAVE SENT A REQUEST")
         editor.do_redraw(force=True)
 
@@ -307,9 +311,10 @@ class Select3D(ClickDragAction):
         startz = min(selectstartz, selectendz)
         endz = max(selectstartz, selectendz)
 
-        editor.selectionqueue.queue_selection(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
-                                       editor.shift_is_pressed)
-
+        #editor.selectionqueue.queue_selection(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
+        #                               editor.shift_is_pressed)
+        editor.select_objects(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
+                               shift=editor.shift_is_pressed)
         editor.do_redraw(force=True)
 
         editor.selectionbox_projected_origin = None

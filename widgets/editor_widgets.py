@@ -58,148 +58,38 @@ def open_error_dialog(errormsg, self):
     errorbox.setFixedSize(500, 200)
 
 
-class ErrorAnalyzer(QMdiSubWindow):
-    @catch_exception
-    def __init__(self, bol, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class BWObjectEditWindow(QMdiSubWindow):
+    closing = pyqtSignal()
+
+    def __init__(self):
+        super().__init__()
+        self.resize(900, 500)
+        self.setMinimumSize(QSize(300, 300))
+        self.textbox_xml = QTextEdit(self)
+        self.setWidget(self.textbox_xml)
+        self.textbox_xml.setLineWrapMode(QTextEdit.NoWrap)
+        self.textbox_xml.setContextMenuPolicy(Qt.CustomContextMenu)
+
         font = QFont()
         font.setFamily("Consolas")
         font.setStyleHint(QFont.Monospace)
         font.setFixedPitch(True)
         font.setPointSize(10)
 
-        self.setWindowTitle("Analysis Results")
-        self.text_widget = QTextEdit(self)
-        self.setWidget(self.text_widget)
-        self.resize(900, 500)
-        self.setMinimumSize(QSize(300, 300))
-        self.text_widget.setFont(font)
-        self.text_widget.setReadOnly(True)
+        metrics = QFontMetrics(font)
+        self.textbox_xml.setTabStopWidth(4 * metrics.width(' '))
+        self.textbox_xml.setFont(font)
+        self.id = None
 
-        self.analyze_bol_and_write_results(bol)
+        #self.verticalLayout.addWidget(self.textbox_xml)
 
-    @catch_exception
-    def analyze_bol_and_write_results(self, bol):
-        results = StringIO()
+    def closeEvent(self, event):
+        self.closing.emit()
 
-        def write_line(line):
-            results.write(line)
-            results.write("\n")
-
-        # Check enemy point linkage errors
-        links = {}
-        for group_index, group in enumerate(bol.enemypointgroups.groups):
-            for i, point in enumerate(group.points):
-                if point.link == -1:
-                    continue
-
-                if point.link not in links:
-                    links[point.link] = [(group_index, i, point)]
-                else:
-                    links[point.link].append(((group_index, i, point)))
-
-        for link_id, points in links.items():
-            if len(points) == 1:
-                group_index, i, point = points[0]
-                write_line("Point {0} in enemy point group {1} has link {2}; No other point has link {2}".format(
-                    i, group_index, point.link
-                ))
-        for group_index, group in enumerate(bol.enemypointgroups.groups):
-            print(group.points[0].link, group.points[-1].link)
-            if group.points[0].link == -1:
-                write_line("Start point of enemy point group {0} has no valid link to form a loop".format(group_index))
-            if group.points[-1].link == -1:
-                write_line("End point of enemy point group {0} has no valid link to form a loop".format(group_index))
-
-        # Check prev/next groups of checkpoints
-        for i, group in enumerate(bol.checkpoints.groups):
-            for index in chain(group.prevgroup, group.nextgroup):
-                if index != -1:
-                    if index < -1 or index+1 > len(bol.checkpoints.groups):
-                        write_line("Checkpoint group {0} has invalid Prev or Nextgroup index {1}".format(
-                            i, index
-                        ))
-
-        # Validate path id in objects
-        for object in bol.objects.objects:
-            if object.pathid < -1 or object.pathid + 1 > len(bol.routes):
-                write_line("Map object {0} uses path id {1} that does not exist".format(
-                    get_full_name(object.objectid), object.pathid
-                ))
-
-        # Validate Kart start positions
-        if len(bol.kartpoints.positions) == 0:
-            write_line("Map contains no kart start points")
-        else:
-            exist = [False for x in range(8)]
-
-            for i, kartstartpos in enumerate(bol.kartpoints.positions):
-                if kartstartpos.playerid == 0xFF:
-                    if all(exist):
-                        write_line("Duplicate kart start point for all karts")
-                    exist = [True for x in range(8)]
-                elif kartstartpos.playerid > 8:
-                    write_line("A kart start point with an invalid player id exists: {0}".format(
-                        kartstartpos.playerid
-                    ))
-                elif exist[kartstartpos.playerid]:
-                    write_line("Duplicate kart start point for player id {0}".format(
-                        kartstartpos.playerid))
-                else:
-                    exist[kartstartpos.playerid] = True
-
-        # Check camera indices in areas
-        for i, area in enumerate(bol.areas.areas):
-            if area.camera_index < -1 or area.camera_index + 1 > len(bol.cameras):
-                write_line("Area {0} uses invalid camera index {1}".format(i, area.camera_index))
-
-        # Check cameras
-        for i, camera in enumerate(bol.cameras):
-            if camera.nextcam < -1 or camera.nextcam + 1 > len(bol.cameras):
-                write_line("Camera {0} uses invalid nextcam (next camera) index {1}".format(
-                    i, camera.nextcam
-                ))
-            if camera.route < -1 or camera.route + 1 > len(bol.routes):
-                write_line("Camera {0} uses invalid path id {1}".format(i,
-                                                                        camera.route))
-
-        if len(bol.checkpoints.groups) == 0:
-            write_line("You need at least one checkpoint group!")
-
-        if len(bol.enemypointgroups.groups) == 0:
-            write_line("You need at least one enemy point group!")
-
-        self.check_checkpoints_convex(bol, write_line)
-
-        text = results.getvalue()
-        if not text:
-            text = "No known common errors detected!"
-        self.text_widget.setText(text)
-
-    def check_checkpoints_convex(self, bol, write_line):
-        for gindex, group in enumerate(bol.checkpoints.groups):
-            if len(group.points) > 1:
-                for i in range(1, len(group.points)):
-                    c1 = group.points[i-1]
-                    c2 = group.points[i]
-
-                    lastsign = None
-
-                    for p1, mid, p3 in ((c1.start, c2.start, c2.end),
-                                        (c2.start, c2.end, c1.end),
-                                        (c2.end, c1.end, c1.start),
-                                        (c1.end, c1.start, c2.start)):
-                        side1 = p1 - mid
-                        side2 = p3 - mid
-                        prod = side1.x * side2.z - side2.x * side1.z
-                        if lastsign is None:
-                            lastsign = prod > 0
-                        else:
-                            if not (lastsign == (prod > 0)):
-                                write_line("Quad formed by checkpoints {0} and {1} in checkpoint group {2} isn't convex.".format(
-                                    i-1, i, gindex
-                                ))
-                                break
+    def set_content(self, bwobject):
+        self.textbox_xml.setText(bwobject.tostring())
+        self.id = bwobject.id
+        self.setWindowTitle(bwobject.name)
 
 
 class AddPikObjectWindow(QMdiSubWindow):

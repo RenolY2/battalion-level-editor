@@ -34,7 +34,7 @@ from bw_widgets import BolMapViewer, MODE_TOPDOWN
 import lib.libbol as libbol
 from lib.BCOllider import RacetrackCollision
 from lib.model_rendering import TexturedModel, CollisionModel, Minimap
-from widgets.editor_widgets import ErrorAnalyzer
+
 from lib.dolreader import DolFile, read_float, write_float, read_load_immediate_r0, write_load_immediate_r0, UnmappedAddress
 from widgets.file_select import FileSelect
 from PyQt5.QtWidgets import QTreeWidgetItem
@@ -261,6 +261,7 @@ class LevelEditor(QMainWindow):
 
         QtWidgets.QShortcut(Qt.Key_G, self).activated.connect(self.action_ground_objects)
         #QtWidgets.QShortcut(Qt.CTRL + Qt.Key_A, self).activated.connect(self.shortcut_open_add_item_window)
+        QtWidgets.QShortcut(Qt.CTRL + Qt.Key_E, self).activated.connect(self.action_open_edit)
         self.statusbar = QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
         self.setStatusBar(self.statusbar)
@@ -1214,6 +1215,10 @@ class LevelEditor(QMainWindow):
     def action_update_position(self, event, pos):
         self.current_coordinates = pos
         self.statusbar.showMessage(str(pos))
+
+    def action_open_edit(self):
+        if self.pik_control.button_edit_object.isEnabled():
+            self.pik_control.button_edit_object.pressed.emit()
 
 
 class EditorHistory(object):

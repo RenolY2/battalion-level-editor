@@ -1,3 +1,5 @@
+from functools import partial
+
 from PyQt5.QtGui import QMouseEvent, QWheelEvent, QPainter, QColor, QFont, QFontMetrics, QPolygon, QImage, QPixmap, QKeySequence
 from PyQt5.QtWidgets import (QWidget, QListWidget, QListWidgetItem, QDialog, QMenu, QLineEdit,
                             QMdiSubWindow, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QTextEdit, QAction, QShortcut)
@@ -6,6 +8,8 @@ import PyQt5.QtCore as QtCore
 from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
 from PyQt5.QtCore import Qt
 from widgets.data_editor import choose_data_editor
+from widgets.editor_widgets import BWObjectEditWindow
+
 
 class PikminSideWidget(QWidget):
     def __init__(self, *args, **kwargs):
@@ -26,25 +30,24 @@ class PikminSideWidget(QWidget):
 
         self.verticalLayout.setObjectName("verticalLayout")
 
-        self.button_add_object = QPushButton(parent)
+        self.button_add_object = QPushButton("Add Object", parent)
 
-        self.button_remove_object = QPushButton(parent)
-        self.button_ground_object = QPushButton(parent)
+        self.button_remove_object = QPushButton("Remove Object(s)", parent)
+        self.button_ground_object = QPushButton("Ground Object(s)", parent)
         #self.button_move_object = QPushButton(parent)
-        #self.button_edit_object = QPushButton(parent)
+        self.button_edit_object = QPushButton("Edit Object", parent)
 
         #self.button_add_object.setDisabled(True)
         #self.button_remove_object.setDisabled(True)
-
-        self.button_add_object.setText("Add Object")
-        self.button_remove_object.setText("Remove Object(s)")
-        self.button_ground_object.setText("Ground Object(s)")
-
         self.button_add_object.setToolTip("Hotkey: Ctrl+A")
         self.button_remove_object.setToolTip("Hotkey: Delete")
         self.button_ground_object.setToolTip("Hotkey: G")
 
+        self.button_remove_object.setEnabled(False)
+        self.button_ground_object.setEnabled(False)
+        self.button_add_object.setEnabled(False)
 
+        self.button_edit_object.pressed.connect(self.action_open_edit_object)
         self.button_add_object.setCheckable(True)
         #self.button_move_object.setCheckable(True)
 
@@ -58,7 +61,7 @@ class PikminSideWidget(QWidget):
         self.verticalLayout.addWidget(self.button_add_object)
         self.verticalLayout.addWidget(self.button_remove_object)
         self.verticalLayout.addWidget(self.button_ground_object)
-        #self.verticalLayout.addWidget(self.button_move_object)
+        self.verticalLayout.addWidget(self.button_edit_object)
         self.verticalLayout.addStretch(20)
 
         self.name_label = QLabel(parent)
@@ -94,8 +97,34 @@ class PikminSideWidget(QWidget):
         self.objectlist = []
 
         self.object_data_edit = None
+        self.edit_windows = {}
 
         self.reset_info()
+
+    def action_open_edit_object(self):
+        selected = self.parent.level_view.selected
+
+        if len(selected) >= 1:
+            for i, v in enumerate(selected):
+                offset = (len(self.edit_windows)%15)*25
+                obj = selected[i]
+                if obj.id in self.edit_windows:
+                    window = self.edit_windows[obj.id]
+                    window.setWindowState(window.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+                    window.activateWindow()
+                    window.show()
+                else:
+                    window = BWObjectEditWindow()
+                    window.move(window.x()+offset, window.y()+offset)
+                    self.edit_windows[obj.id] = window
+
+                    def remove_window(id):
+                        del self.edit_windows[id]
+
+                    window.closing.connect(partial(remove_window, obj.id))
+                    window.set_content(obj)
+                    window.show()
+
 
     def _make_labeled_lineedit(self, lineedit, label):
         font = QFont()
@@ -132,7 +161,7 @@ class PikminSideWidget(QWidget):
             self.name_label.setText("Selected: {}\nUsed by: {}".format(obj.type,
                                     ", ".join(usedby)))
         else:
-            self.name_label.setText("Selected: {}".format(obj.type))
+            self.name_label.setText("Selected: {} ({})".format(obj.type, obj.id))
         #self.identifier_label.setText(obj.get_identifier())
         if self.object_data_edit is not None:
             #self.verticalLayout.removeWidget(self.object_data_edit)
