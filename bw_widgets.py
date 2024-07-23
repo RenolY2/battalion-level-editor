@@ -754,8 +754,15 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         glActiveTexture(GL_TEXTURE1)
         glDisable(GL_TEXTURE_2D)
 
+        glDisable(GL_TEXTURE_2D)
+        glColor4f(1.0, 1.0, 1.0, 1.0)
+        self.grid.render()
+
         if self.waterheight is not None:
-            glColor4f(0.0, 12/255.0, 92/255.0, 1.0)
+            glDisable(GL_ALPHA_TEST)
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glColor4f(0.0, 12/255.0, 92/255.0, 0.7)
             glLineWidth(2.0)
             glBegin(GL_TRIANGLE_FAN)
             glVertex3f(-2000, -2000, self.waterheight)
@@ -763,7 +770,8 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             glVertex3f(2000, 2000, self.waterheight)
             glVertex3f(-2000, 2000, self.waterheight)
             glEnd()
-
+            glEnable(GL_ALPHA_TEST)
+            glDisable(GL_BLEND)
 
         terraintime = default_timer()-subtime
         if self.mode == MODE_TOPDOWN:
@@ -779,9 +787,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 self.alternative_mesh.render(selectedPart=self.highlight_colltype)
                 glPopMatrix()"""
 
-        glDisable(GL_TEXTURE_2D)
-        glColor4f(1.0, 1.0, 1.0, 1.0)
-        self.grid.render()
+
 
         glEnable(GL_ALPHA_TEST)
         glAlphaFunc(GL_GEQUAL, 0.5)
