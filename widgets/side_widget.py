@@ -106,7 +106,7 @@ class PikminSideWidget(QWidget):
 
         if len(selected) >= 1:
             for i, v in enumerate(selected):
-                offset = (i%15)*25
+                offset = (len(self.edit_windows)%15)*25
                 obj = selected[i]
                 if obj.id in self.edit_windows:
                     window = self.edit_windows[obj.id]
