@@ -127,6 +127,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.selected = []
         self.selected_positions = []
         self.selected_rotations = []
+        self.waterheight = None
 
         #self.p = QPainter()
         #self.p2 = QPainter()
@@ -748,6 +749,22 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         if self.terrainmap is not None:
             #glCallList(self.terrainmap)
             self.render_terrain_immediate()
+        glActiveTexture(GL_TEXTURE0)
+        glDisable(GL_TEXTURE_2D)
+        glActiveTexture(GL_TEXTURE1)
+        glDisable(GL_TEXTURE_2D)
+
+        if self.waterheight is not None:
+            glColor4f(0.0, 12/255.0, 92/255.0, 1.0)
+            glLineWidth(2.0)
+            glBegin(GL_TRIANGLE_FAN)
+            glVertex3f(-2000, -2000, self.waterheight)
+            glVertex3f(2000, -2000, self.waterheight)
+            glVertex3f(2000, 2000, self.waterheight)
+            glVertex3f(-2000, 2000, self.waterheight)
+            glEnd()
+
+
         terraintime = default_timer()-subtime
         if self.mode == MODE_TOPDOWN:
             glClear(GL_DEPTH_BUFFER_BIT)
@@ -794,6 +811,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                            0, 0, 0, 0)
         glPushMatrix()
         glUseProgram(0)
+        glDisable(GL_TEXTURE_2D)
         #glScale(1.0, -1.0, 1.0)
         #self.models.render_generic_position(Vector3(self.cam_x, self.camera_height-5, -self.cam_z), False)
         subtime = default_timer()
@@ -817,6 +835,13 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 glVertex3f(p.x, -p.z, p.y + 5)
 
             glEnd()"""
+
+        glEnable(GL_CULL_FACE)
+
+        glActiveTexture(GL_TEXTURE0)
+        glDisable(GL_TEXTURE_2D)
+        glActiveTexture(GL_TEXTURE1)
+        glDisable(GL_TEXTURE_2D)
 
         self.gizmo.render_scaled(gizmo_scale, is3d=self.mode == MODE_3D)
         glDisable(GL_DEPTH_TEST)
