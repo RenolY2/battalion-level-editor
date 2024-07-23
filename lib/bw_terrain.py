@@ -94,7 +94,7 @@ class TileModel(object):
                 v = fy*(fx*tl.y + (1-fx)*tr.y) + (1-fy)*(fx*bl.y + (1-fx)*br.y)
 
                 index = 4*y + x
-                height = tile.heights[index]/32.0
+                height = tile.heights[index]/16.0
                 position = array([(x+offsetx)*4*(4/3)-2048, height, (y+offsety)*4*(4/3)-2048])
                 uv1 = UVPoint(u, v)
                 uv2 = tile.detail_coordinates[index]
