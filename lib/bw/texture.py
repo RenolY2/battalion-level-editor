@@ -2,6 +2,8 @@ from OpenGL.GL import *
 from io import BytesIO
 from array import array
 from struct import Struct
+from multiprocessing import Process
+
 from PyQt5.QtGui import QImage, QPainter
 from math import ceil, floor
 from timeit import default_timer
@@ -962,6 +964,8 @@ class TextureArchive(object):
 
         self._cached = {}
         self.tex = glGenTextures(1)
+        self.placeholder = Texture("PlaceHolder")
+        self.placeholder.generate_dummy(64, 64)
 
     def reset(self):
         for name, val in self._cached.items():
