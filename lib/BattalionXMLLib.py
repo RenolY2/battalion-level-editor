@@ -199,7 +199,7 @@ class BattalionObject(object):
             setattr(self, "getmatrix", lambda: self.mMatrix)
         else:
             setattr(self, "getmatrix", lambda: None)
-    
+
     def resolve_pointers(self, level, other=None):
         for attr_node in self._node:
             if attr_node.tag in ("Pointer", "Resource"):
@@ -331,6 +331,9 @@ class BattalionObject(object):
                 return "{0}({2},{1})".format(self.type, self.id, modelname)
             else:
                 return "{0}({1})".format(self.type, self.id)
+
+    def tostring(self):
+        return etree.tostring(self._node, encoding="unicode")
 
 
 if __name__ == "__main__":
