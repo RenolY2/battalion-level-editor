@@ -838,7 +838,10 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
         glEnable(GL_CULL_FACE)
 
-
+        glActiveTexture(GL_TEXTURE0)
+        glDisable(GL_TEXTURE_2D)
+        glActiveTexture(GL_TEXTURE1)
+        glDisable(GL_TEXTURE_2D)
 
         self.gizmo.render_scaled(gizmo_scale, is3d=self.mode == MODE_3D)
         glDisable(GL_DEPTH_TEST)
