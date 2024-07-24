@@ -264,6 +264,21 @@ class Graphics(object):
         #self.models_scene.sort(key=dist)
         #self.partialsort(10, dist)
         #bound = self.find_bound(dist, 250*250)
+        minx = cam_x - 250
+        maxx = cam_x + 250
+        minz = cam_z - 250
+        maxz = cam_z + 250
+
+
+        inrange = []
         for mtx, x, z, modelname in self.models_scene:
             if abs(cam_x - x) < 250 and abs(cam_z - z) < 250:
-                rw.bwmodelhandler.rendermodel(modelname, mtx, rw.bwterrain, 0)
+                dist = (cam_x - x)**2 + (cam_z - z)**2
+                inrange.append((modelname, mtx, dist))
+
+        inrange.sort(key=lambda x: x[2])
+        for i, v in enumerate(inrange):
+            if i > 100:
+                break
+
+            rw.bwmodelhandler.rendermodel(v[0], v[1], rw.bwterrain, 0)
