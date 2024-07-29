@@ -51,6 +51,8 @@ class Graphics(object):
 
         self._dirty = True
 
+        self.render_everything_once = True
+
     def set_dirty(self):
         self.rw.models.cubev2.mtxdirty = True
         self.rw.models.camera.mtxdirty = True
@@ -269,16 +271,20 @@ class Graphics(object):
         minz = cam_z - 250
         maxz = cam_z + 250
 
+        if self.render_everything_once:
+            for mtx, x, z, modelname in self.models_scene:
+                rw.bwmodelhandler.rendermodel(modelname, mtx, rw.bwterrain, 0)
+            self.render_everything_once = False
+        else:
+            inrange = []
+            for mtx, x, z, modelname in self.models_scene:
+                if abs(cam_x - x) < 250 and abs(cam_z - z) < 250:
+                    dist = (cam_x - x)**2 + (cam_z - z)**2
+                    inrange.append((modelname, mtx, dist))
 
-        inrange = []
-        for mtx, x, z, modelname in self.models_scene:
-            if abs(cam_x - x) < 250 and abs(cam_z - z) < 250:
-                dist = (cam_x - x)**2 + (cam_z - z)**2
-                inrange.append((modelname, mtx, dist))
+            inrange.sort(key=lambda x: x[2])
+            for i, v in enumerate(inrange):
+                if i > 100:
+                    break
 
-        inrange.sort(key=lambda x: x[2])
-        for i, v in enumerate(inrange):
-            if i > 100:
-                break
-
-            rw.bwmodelhandler.rendermodel(v[0], v[1], rw.bwterrain, 0)
+                rw.bwmodelhandler.rendermodel(v[0], v[1], rw.bwterrain, 0)
