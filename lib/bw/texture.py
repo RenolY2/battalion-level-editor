@@ -23,7 +23,15 @@ def process(queuein, queueout):
 
 class TextureArchive(object):
     def __init__(self, archive):
-        self.cachefolder = os.path.join(sys.argv[0], "texture_cache")
+        self.cachefolder = os.path.join(os.path.dirname(sys.argv[0]), "texture_cache")
+        if not os.path.exists(self.cachefolder):
+            os.mkdir(self.cachefolder)
+
+        self.cached_textures = {}
+        for filename in os.listdir(self.cachefolder):
+            if filename.endswith(".png"):
+                self.cached_textures[filename.replace(".png", "")] = True
+
         self.game = archive.get_game()
 
         self.textures = {}
@@ -98,13 +106,20 @@ class TextureArchive(object):
             tex.generate_dummy(32, 32)
             tex.loaded = True
         else:
-            #if
-            f = self.textures[texname].fileobj
-            f.seek(0)
-            if self.game == "BW1":
-                tex = BW1Texture.from_file(f, ignoremips=True)
-            elif self.game == "BW2":
-                tex = BW2Texture.from_file(f, ignoremips=True)
+            if texname in self.cached_textures:
+                tex = Texture.from_png(texname, os.path.join(self.cachefolder, texname+".png"))
+            else:
+
+                f = self.textures[texname].fileobj
+                f.seek(0)
+
+                if self.game == "BW1":
+                    tex = BW1Texture.from_file(f, ignoremips=True)
+                elif self.game == "BW2":
+                    tex = BW2Texture.from_file(f, ignoremips=True)
+
+                tex.dump_to_file(os.path.join(self.cachefolder, texname+".png"))
+
             self._cached[texname] = (tex, ID)
             tex.loaded = True
 
