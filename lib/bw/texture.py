@@ -71,11 +71,8 @@ class TextureArchive(object):
         if texname not in self.textures:
             print("Texture not found:", texname)
 
-            # Sometimes level terrain uses a dummy texture
-            if texname == "Dummy":
-                dummy = True
-            else:
-                return None
+            # Sometimes level terrain uses a dummy texture or the texture is missing
+            dummy = True
 
         # f = self.textures[texname].fileobj
 
@@ -102,7 +99,7 @@ class TextureArchive(object):
 
         if dummy:
             tex.processed = True
-            print("Generating dummy texture")
+            print("Generating dummy texture for", texname)
             tex.generate_dummy(32, 32)
             tex.loaded = True
         else:
