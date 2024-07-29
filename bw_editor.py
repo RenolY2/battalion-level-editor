@@ -585,6 +585,7 @@ class LevelEditor(QMainWindow):
             self.setup_collision(verts, faces, arcfilepath, alternative_mesh=model)
 
     def setup_level_file(self, level_file, filepath):
+        self.level_view.graphics.render_everything_once = True
         self.level_file = level_file
         self.level_view.level_file = self.level_file
         # self.pikmin_gen_view.update()
