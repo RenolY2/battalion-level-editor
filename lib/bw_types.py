@@ -39,7 +39,7 @@ def matrix4x4_from(mtx_text):
 
 
 def matrix4x4_to(mtx):
-    return ",".join(str(v) for v in mtx.to_array())
+    return ",".join("{:f}".format(v) for v in mtx.to_array())
 
 
 def vector4_from(vec_text):
@@ -49,7 +49,7 @@ def vector4_from(vec_text):
 
 
 def vector4_to(vec):
-    return "{0},{1},{2},{3}".format(vec.x, vec.y, vec.z, vec.w)
+    return "{0:f},{1:f},{2:f},{3:f}".format(vec.x, vec.y, vec.z, vec.w)
 
 
 # Pass-through
@@ -74,6 +74,7 @@ CONVERTERS_FROM = {
 }
 
 CONVERTERS_TO = {
+    "sFloat": lambda x: "{:f}".format(x),
     "eBoolean": boolean_to,
     "sMatrix4x4": matrix4x4_to,
     "cMatrix4x4": matrix4x4_to,
