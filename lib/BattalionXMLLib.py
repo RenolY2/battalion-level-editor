@@ -8,11 +8,12 @@ except: # cElementTree not available
     import xml.etree.ElementTree as etree
 
 #import xml.etree.ElementTree.Element as Element
-from lib.bw_types import convert_from, get_types, BWMatrix
+from lib.bw_types import convert_from, get_types, BWMatrix, convert_to
 from lib.vectors import Vector4
 
 with open("resources/BattalionWarsIcons.json", "r") as f:
     BWICONS = json.load(f)
+
 
 class PointerPlaceholder(object):
     def __init__(self, pointer):
@@ -172,7 +173,16 @@ class BattalionObject(object):
 
         self._attributes = {}
         self._custom_name = ""
-        for attr_node in node:
+
+        self._referenced_by = set()
+
+        self.update_object_from_xml()
+
+    def add_reference(self, obj):
+        self._referenced_by.add(obj)
+
+    def update_object_from_xml(self):
+        for attr_node in self._node:
             if attr_node.tag in ("Pointer", "Resource"):
                 elementcount = int(attr_node.attrib["elements"])
                 if elementcount == 1:
@@ -215,8 +225,10 @@ class BattalionObject(object):
                                 raise RuntimeError("ID {0} not found in level or preload".format(subnode.text))
                             else:
                                 obj = other.objects[subnode.text]
+                                obj.add_reference(self)
                         else:
                             obj = level.objects[subnode.text]
+                            obj.add_reference(self)
                         result.append(obj)
 
                 if elementcount == 1:
@@ -285,6 +297,33 @@ class BattalionObject(object):
             self._iconoffset = BWICONS["Volumeicon"]
         elif self.type == "cAmbientAreaPointSoundBox":
             self._iconoffset = BWICONS["Volumeicon"]
+
+    def update_xml(self):
+        for attr_node in self._node:
+            if attr_node.tag in ("Pointer", "Resource"):
+                elementcount = int(attr_node.attrib["elements"])
+                if elementcount == 1:
+                    obj = getattr(self, attr_node.attrib["name"])
+                    if obj is None:
+                        attr_node[0].text = "0"
+                    else:
+                        attr_node[0].text = str(obj.id)
+                else:
+                    objlist = getattr(self, attr_node.attrib["name"])
+                    for obj, node in zip(objlist, attr_node):
+                        if obj is None:
+                            node.text = "0"
+                        else:
+                            node.text = str(obj.id)
+            else:
+                elementcount = int(attr_node.attrib["elements"])
+                if elementcount == 1:
+                    val = getattr(self, attr_node.attrib["name"])
+                    attr_node[0].text = convert_to(attr_node.attrib["type"], val)
+                else:
+                    vallist = getattr(self, attr_node.attrib["name"])
+                    for val, node in zip(vallist, attr_node):
+                        node[0].text = convert_to(attr_node.attrib["type"], val)
 
     @property
     def modelname(self):
