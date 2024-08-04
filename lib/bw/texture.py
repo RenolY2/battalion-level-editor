@@ -115,8 +115,16 @@ class TextureArchive(object):
                 elif self.game == "BW2":
                     tex = BW2Texture.from_file(f, ignoremips=True)
 
-                tex.dump_to_file(os.path.join(self.cachefolder, texname+".png"))
 
+
+
+                tex.dump_to_file(os.path.join(self.cachefolder, texname+".png"))
+                
+            # Hack for mission 5.2: The cave uses a mostly transparent texture that has a rock texture
+            # hidden in the transparent parts. Force the alpha to be fully opaque to render it correctly.
+            if texname == "c1sncave":
+                texdata = tex.texture
+                texdata.putalpha(255)
             self._cached[texname] = (tex, ID)
             tex.loaded = True
 
