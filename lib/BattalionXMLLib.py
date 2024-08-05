@@ -8,11 +8,19 @@ except: # cElementTree not available
     import xml.etree.ElementTree as etree
 
 #import xml.etree.ElementTree.Element as Element
-from lib.bw_types import convert_from, get_types, BWMatrix, convert_to
-from lib.vectors import Vector4
+LOCALTESTING = False
+if not LOCALTESTING:
+    from lib.bw_types import convert_from, get_types, BWMatrix, convert_to
+    from lib.vectors import Vector4
 
-with open("resources/BattalionWarsIcons.json", "r") as f:
-    BWICONS = json.load(f)
+    with open("resources/BattalionWarsIcons.json", "r") as f:
+        BWICONS = json.load(f)
+else:
+    from bw_types import convert_from, get_types, BWMatrix, convert_to
+    from vectors import Vector4
+
+    with open("../resources/BattalionWarsIcons.json", "r") as f:
+        BWICONS = json.load(f)
 
 
 class PointerPlaceholder(object):
@@ -214,7 +222,6 @@ class BattalionObject(object):
         for attr_node in self._node:
             if attr_node.tag in ("Pointer", "Resource"):
                 elementcount = int(attr_node.attrib["elements"])
-                print(elementcount)
                 result = []
                 for subnode in attr_node:
                     if subnode.text == "0":
@@ -415,109 +422,131 @@ if __name__ == "__main__":
         print(paths.stringpaths)
         print(paths.objectpath)
         print(paths.resourcepath)"""
-    import gzip 
-    import os
-    BW1path = r"D:\Wii games\BattWars\P-G8WP\files\Data\CompoundFiles"
-    BW2path = r"D:\Wii games\BW2Folder\files\Data\CompoundFiles"
-    
-    import csv 
-    
-    with csv.open("table.csv", "w") as tbl:
-    
-        types = set()
-        alltypes = set()
-        for fname in os.listdir(BW1path):
-            path = os.path.join(BW1path, fname)
-            if path.endswith("_Level.xml"):
-                preload = path.replace("_Level.xml", "_Level_preload.xml")
-                print(path)
-                with open(path, "rb") as g:
-                    level_data = BattalionLevelFile(g)
-                    with open(preload, "rb") as h:
-                        with open(path+".info.txt", "w") as f:
-                            preload_data = BattalionLevelFile(h)
-                            objectcounts = {}
-                            for objid, obj in level_data.objects.items():
-                                for node in obj._node:
-                                    if "Matrix" in node.attrib["type"]:
-                                        mtype = node.attrib["type"] 
-                                        #print(node.attrib["type"])
-                                        types.add((obj.type, mtype, node.attrib["name"]))
-                                        alltypes.add(obj.type)
-                                objectcounts[obj.type] = objectcounts.get(obj.type, 0) + 1
-                            values = []
-                            
-                            for objid, obj in preload_data.objects.items():
-                                if obj.type == "cWorldFreeListSizeLoader":
-                                    for var in (
-                                    "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies", "numShadowVolumes",
-                                    "numPolynodes", "numObjInstances", "numObjAnimInstances", "numJoints", "numJointAnims",
-                                    "numBanJoints", "numAnimationBlends", "numMaxTerrainMaterials", "numMaxTroopVoiceMessageQueueItems"):
-                                        val = getattr(obj, var)
-                                        values.append((var, val))
-                                elif obj.type == "cLevelSettings":
-                                    for var in (
-                                    "mLuaScriptMemory",
-                                    "mTequilaMemoryHeap"):
-                                        val = getattr(obj, var)
-                                        values.append((var, val))
-                            f.write("=== Preload values ===\n")
-                            for var, val in sorted(values, key=lambda x: x[0]):
-                                f.write("{0} {1}\n".format(var, val))
-                            f.write("\n=== Objects ===\n")
-                            for objtype in sorted(objectcounts.keys()):
-                                f.write("{0} {1}\n".format(objtype, objectcounts[objtype]))
-                            
-        #"mLuaScriptMemory", "mRenderToTextureMemory", "mbRenderToTextureUseMem1", "miMaxTerrainMemorySize",
-        #                            "miPhysicsMemorySize", "miActionHeapMemorySize", "mTequilaMemoryHeap"):
-        print("BW1")
-        for result in sorted(types, key=lambda x: x[0]):
-            print(result[0], result[1], result[2])
-        types = set()
-        for fname in os.listdir(BW2path):
-            path = os.path.join(BW2path, fname)
-            if path.endswith("_Level.xml.gz"):
-                preload = path.replace("_Level.xml.gz", "_Level_preload.xml.gz")
-                print(path)
-                with gzip.open(path, "rb") as g:
-                    level_data = BattalionLevelFile(g)
-                    with gzip.open(preload, "rb") as h:
-                        with open(path+".info.txt", "w") as f:
-                            preload_data = BattalionLevelFile(h)
-                            objectcounts = {}
-                            for objid, obj in level_data.objects.items():
-                                for node in obj._node:
-                                    if "Matrix" in node.attrib["type"]:
-                                        mtype = node.attrib["type"] 
-                                        #print(node.attrib["type"])
-                                        types.add((obj.type, mtype, node.attrib["name"]))
-                                        alltypes.add(obj.type)
-                                objectcounts[obj.type] = objectcounts.get(obj.type, 0) + 1
-                            values = []
-                            
-                            for objid, obj in preload_data.objects.items():
-                                if obj.type == "cWorldFreeListSizeLoader":
-                                    for var in (
-                                    "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies", "numShadowVolumes",
-                                    "numPolynodes", "numObjInstances", "numObjAnimInstances", "numJoints", "numJointAnims",
-                                    "numBanJoints", "numAnimationBlends", "numMaxTerrainMaterials", "numMaxTroopVoiceMessageQueueItems"):
-                                        val = getattr(obj, var)
-                                        values.append((var, val))
-                                elif obj.type == "cLevelSettings":
-                                    for var in (
-                                    "mLuaScriptMemory", "mRenderToTextureMemory", "mbRenderToTextureUseMem1", "miMaxTerrainMemorySize",
-                                    "miPhysicsMemorySize", "miActionHeapMemorySize", "mTequilaMemoryHeap"):
-                                        val = getattr(obj, var)
-                                        values.append((var, val))
-                            f.write("n=== Preload values ===\n")
-                            for var, val in sorted(values, key=lambda x: x[0]):
-                                f.write("{0} {1}\n".format(var, val))
-                            f.write("\n=== Objects ===\n")
-                            for objtype in sorted(objectcounts.keys()):
-                                f.write("{0} {1}\n".format(objtype, objectcounts[objtype]))
-        print("BW2")
-        for result in sorted(types, key=lambda x: x[0]):
-            print(result[0], result[1], result[2])
-        
-        for result in sorted(alltypes):
-            print(result)
+
+    if False:
+        import gzip
+        import os
+        BW1path = r"D:\Wii games\BattWars\P-G8WP\files\Data\CompoundFiles"
+        BW2path = r"D:\Wii games\BW2Folder\files\Data\CompoundFiles"
+
+        import csv
+
+        with csv.open("table.csv", "w") as tbl:
+
+            types = set()
+            alltypes = set()
+            for fname in os.listdir(BW1path):
+                path = os.path.join(BW1path, fname)
+                if path.endswith("_Level.xml"):
+                    preload = path.replace("_Level.xml", "_Level_preload.xml")
+                    print(path)
+                    with open(path, "rb") as g:
+                        level_data = BattalionLevelFile(g)
+                        with open(preload, "rb") as h:
+                            with open(path+".info.txt", "w") as f:
+                                preload_data = BattalionLevelFile(h)
+                                objectcounts = {}
+                                for objid, obj in level_data.objects.items():
+                                    for node in obj._node:
+                                        if "Matrix" in node.attrib["type"]:
+                                            mtype = node.attrib["type"]
+                                            #print(node.attrib["type"])
+                                            types.add((obj.type, mtype, node.attrib["name"]))
+                                            alltypes.add(obj.type)
+                                    objectcounts[obj.type] = objectcounts.get(obj.type, 0) + 1
+                                values = []
+
+                                for objid, obj in preload_data.objects.items():
+                                    if obj.type == "cWorldFreeListSizeLoader":
+                                        for var in (
+                                        "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies", "numShadowVolumes",
+                                        "numPolynodes", "numObjInstances", "numObjAnimInstances", "numJoints", "numJointAnims",
+                                        "numBanJoints", "numAnimationBlends", "numMaxTerrainMaterials", "numMaxTroopVoiceMessageQueueItems"):
+                                            val = getattr(obj, var)
+                                            values.append((var, val))
+                                    elif obj.type == "cLevelSettings":
+                                        for var in (
+                                        "mLuaScriptMemory",
+                                        "mTequilaMemoryHeap"):
+                                            val = getattr(obj, var)
+                                            values.append((var, val))
+                                f.write("=== Preload values ===\n")
+                                for var, val in sorted(values, key=lambda x: x[0]):
+                                    f.write("{0} {1}\n".format(var, val))
+                                f.write("\n=== Objects ===\n")
+                                for objtype in sorted(objectcounts.keys()):
+                                    f.write("{0} {1}\n".format(objtype, objectcounts[objtype]))
+
+            #"mLuaScriptMemory", "mRenderToTextureMemory", "mbRenderToTextureUseMem1", "miMaxTerrainMemorySize",
+            #                            "miPhysicsMemorySize", "miActionHeapMemorySize", "mTequilaMemoryHeap"):
+            print("BW1")
+            for result in sorted(types, key=lambda x: x[0]):
+                print(result[0], result[1], result[2])
+            types = set()
+            for fname in os.listdir(BW2path):
+                path = os.path.join(BW2path, fname)
+                if path.endswith("_Level.xml.gz"):
+                    preload = path.replace("_Level.xml.gz", "_Level_preload.xml.gz")
+                    print(path)
+                    with gzip.open(path, "rb") as g:
+                        level_data = BattalionLevelFile(g)
+                        with gzip.open(preload, "rb") as h:
+                            with open(path+".info.txt", "w") as f:
+                                preload_data = BattalionLevelFile(h)
+                                objectcounts = {}
+                                for objid, obj in level_data.objects.items():
+                                    for node in obj._node:
+                                        if "Matrix" in node.attrib["type"]:
+                                            mtype = node.attrib["type"]
+                                            #print(node.attrib["type"])
+                                            types.add((obj.type, mtype, node.attrib["name"]))
+                                            alltypes.add(obj.type)
+                                    objectcounts[obj.type] = objectcounts.get(obj.type, 0) + 1
+                                values = []
+
+                                for objid, obj in preload_data.objects.items():
+                                    if obj.type == "cWorldFreeListSizeLoader":
+                                        for var in (
+                                        "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies", "numShadowVolumes",
+                                        "numPolynodes", "numObjInstances", "numObjAnimInstances", "numJoints", "numJointAnims",
+                                        "numBanJoints", "numAnimationBlends", "numMaxTerrainMaterials", "numMaxTroopVoiceMessageQueueItems"):
+                                            val = getattr(obj, var)
+                                            values.append((var, val))
+                                    elif obj.type == "cLevelSettings":
+                                        for var in (
+                                        "mLuaScriptMemory", "mRenderToTextureMemory", "mbRenderToTextureUseMem1", "miMaxTerrainMemorySize",
+                                        "miPhysicsMemorySize", "miActionHeapMemorySize", "mTequilaMemoryHeap"):
+                                            val = getattr(obj, var)
+                                            values.append((var, val))
+                                f.write("n=== Preload values ===\n")
+                                for var, val in sorted(values, key=lambda x: x[0]):
+                                    f.write("{0} {1}\n".format(var, val))
+                                f.write("\n=== Objects ===\n")
+                                for objtype in sorted(objectcounts.keys()):
+                                    f.write("{0} {1}\n".format(objtype, objectcounts[objtype]))
+            print("BW2")
+            for result in sorted(types, key=lambda x: x[0]):
+                print(result[0], result[1], result[2])
+
+            for result in sorted(alltypes):
+                print(result)
+
+    from searchquery import create_query
+    import gzip
+    query = create_query("self.mDamageAmount >= 32")
+    results = []
+    with gzip.open(r"D:\Wii games\BW2Folder\files\Data\CompoundFiles\SP_5.2_Level.xml.gz", "rb") as f:
+        level_data = BattalionLevelFile(f)
+        for objid, obj in level_data.objects.items():
+            try:
+                obj.resolve_pointers(level_data)
+            except:
+                pass
+
+        for objid, obj in level_data.objects.items():
+            if query.evaluate(obj):
+                results.append(obj)
+
+    print(results)
+    print([x.name for x in results])
+    print(len(results))
