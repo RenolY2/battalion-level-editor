@@ -14,9 +14,7 @@ from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
 from PyQt5.QtCore import Qt
 import PyQt5.QtGui as QtGui
 
-import lib.libbol as libbol
 from widgets.data_editor import choose_data_editor
-from lib.libbol import get_full_name
 
 
 def catch_exception(func):

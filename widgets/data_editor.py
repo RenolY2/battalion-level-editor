@@ -5,9 +5,6 @@ from collections import OrderedDict
 from PyQt5.QtWidgets import QSizePolicy, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QCheckBox, QLineEdit, QComboBox, QSizePolicy
 from PyQt5.QtGui import QIntValidator, QDoubleValidator, QValidator
 from math import inf
-from lib.libbol import (EnemyPoint, EnemyPointGroup, CheckpointGroup, Checkpoint, Route, RoutePoint,
-                        MapObject, KartStartPoint, Area, Camera, BOL, JugemPoint, MapObject,
-                        LightParam, MGEntry, OBJECTNAMES, REVERSEOBJECTNAMES, MUSIC_IDS, REVERSE_MUSIC_IDS)
 from lib.vectors import Vector3
 from lib.model_rendering import Minimap
 from PyQt5.QtCore import pyqtSignal
@@ -387,38 +384,7 @@ MAX_UNSIGNED_INT = 2**32 - 1
 
 
 def choose_data_editor(obj):
-    if isinstance(obj, EnemyPoint):
-        return EnemyPointEdit
-    elif isinstance(obj, EnemyPointGroup):
-        return EnemyPointGroupEdit
-    elif isinstance(obj, CheckpointGroup):
-        return CheckpointGroupEdit
-    elif isinstance(obj, MapObject):
-        return ObjectEdit
-    elif isinstance(obj, Checkpoint):
-        return CheckpointEdit
-    elif isinstance(obj, Route):
-        return ObjectRouteEdit
-    elif isinstance(obj, RoutePoint):
-        return ObjectRoutePointEdit
-    elif isinstance(obj, BOL):
-        return BOLEdit
-    elif isinstance(obj, KartStartPoint):
-        return KartStartPointEdit
-    elif isinstance(obj, Area):
-        return AreaEdit
-    elif isinstance(obj, Camera):
-        return CameraEdit
-    elif isinstance(obj, JugemPoint):
-        return RespawnPointEdit
-    elif isinstance(obj, LightParam):
-        return LightParamEdit
-    elif isinstance(obj, MGEntry):
-        return MGEntryEdit
-    elif isinstance(obj, Minimap):
-        return MinimapEdit
-    else:
-        return None
+    return None
 
 
 class EnemyPointGroupEdit(DataEditor):

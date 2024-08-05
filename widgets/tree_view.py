@@ -1,10 +1,10 @@
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
-from lib.libbol import BOL, get_full_name
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QAction, QMenu
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
 from collections import OrderedDict
 from PyQt5.QtGui import QClipboard, QGuiApplication
+
 
 class BolHeader(QTreeWidgetItem):
     def __init__(self):

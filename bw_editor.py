@@ -31,14 +31,11 @@ from widgets.side_widget import PikminSideWidget
 from widgets.editor_widgets import open_error_dialog, catch_exception_with_dialog
 from bw_widgets import BolMapViewer, MODE_TOPDOWN
 
-import lib.libbol as libbol
-from lib.BCOllider import RacetrackCollision
 from lib.model_rendering import TexturedModel, CollisionModel, Minimap
 
 from lib.dolreader import DolFile, read_float, write_float, read_load_immediate_r0, write_load_immediate_r0, UnmappedAddress
 from widgets.file_select import FileSelect
 from PyQt5.QtWidgets import QTreeWidgetItem
-from lib.bmd_render import clear_temp_folder, load_textured_bmd
 from lib.game_visualizer import Game
 
 from widgets.menu.file_menu import EditorFileMenu
@@ -1138,37 +1135,13 @@ class LevelEditor(QMainWindow):
             if len(selected) == 1:
                 currentobj = selected[0]
                 item = None
-                if isinstance(currentobj, libbol.EnemyPoint):
+                """if isinstance(currentobj, libbol.EnemyPoint):
                     for i in range(self.leveldatatreeview.enemyroutes.childCount()):
                         child = self.leveldatatreeview.enemyroutes.child(i)
                         item = get_treeitem(child, currentobj)
                         if item is not None:
-                            break
-
-                    """elif isinstance(currentobj, libbol.Checkpoint):
-                    for i in range(self.leveldatatreeview.checkpointgroups.childCount()):
-                        child = self.leveldatatreeview.checkpointgroups.child(i)
-                        item = get_treeitem(child, currentobj)
-                        if item is not None:
                             break"""
 
-                elif isinstance(currentobj, libbol.RoutePoint):
-                    for i in range(self.leveldatatreeview.objectroutes.childCount()):
-                        child = self.leveldatatreeview.objectroutes.child(i)
-                        item = get_treeitem(child, currentobj)
-                        if item is not None:
-                            break
-
-                elif isinstance(currentobj, libbol.MapObject):
-                    item = get_treeitem(self.leveldatatreeview.objects, currentobj)
-                elif isinstance(currentobj, libbol.Camera):
-                    item = get_treeitem(self.leveldatatreeview.cameras, currentobj)
-                elif isinstance(currentobj, libbol.Area):
-                    item = get_treeitem(self.leveldatatreeview.areas, currentobj)
-                elif isinstance(currentobj, libbol.JugemPoint):
-                    item = get_treeitem(self.leveldatatreeview.respawnpoints, currentobj)
-                elif isinstance(currentobj, libbol.KartStartPoint):
-                    item = get_treeitem(self.leveldatatreeview.kartpoints, currentobj)
 
                 #assert item is not None
                 if item is not None:

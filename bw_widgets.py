@@ -21,7 +21,6 @@ from PyQt5.QtCore import Qt
 
 
 from helper_functions import calc_zoom_in_factor, calc_zoom_out_factor
-from lib.libgen import GeneratorObject
 from lib.collision import Collision
 from lib.bw_types import BWMatrix
 from widgets.editor_widgets import catch_exception, catch_exception_with_dialog
@@ -33,8 +32,6 @@ from lib.shader import create_default_shader
 from gizmo import Gizmo
 from lib.object_models import ObjectModels
 from editor_controls import UserControl
-from lib.libpath import Paths
-from lib.libbol import BOL
 import numpy
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
 from lib.bw_terrain import BWTerrainV2
@@ -214,7 +211,6 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.last_position_update = 0
         self.move_collision_plane = Plane(Vector3(0.0, 0.0, 0.0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0))
 
-        self.paths = Paths()
         self.usercontrol = UserControl(self)
 
         # Initialize some models
