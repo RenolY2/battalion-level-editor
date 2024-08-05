@@ -118,19 +118,20 @@ class AttributeList(MutableSequence, Iterable):
     
         
 class BattalionLevelFile(object):
-    def __init__(self, fileobj, preload=None):
+    def __init__(self, fileobj, callback=None):
         self._tree = etree.parse(fileobj)
         self._root = self._tree.getroot()
         self.objects = {}
         self.objects_with_positions = {}
         
-        for child in self._root:
+        for i, child in enumerate(self._root):
             if child.tag == "Object":
                 bwobject = BattalionObject(self, child)
                 if hasattr(bwobject, "spawnMatrix") or hasattr(bwobject, "Mat") or hasattr(bwobject, "mMatrix"):
                     self.add_object(bwobject, position=True)
                 else:
                     self.add_object(bwobject, position=False)
+                if callback is not None: callback(len(self._root), i)
 
     def resolve_pointers(self, other):
         for bwobject in self.objects.values():

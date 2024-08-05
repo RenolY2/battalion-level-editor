@@ -1,3 +1,4 @@
+from functools import partial
 from OpenGL.GL import *
 from .model_rendering import BW1Model, BW2Model
 from .bw_archive import BWArchive
@@ -10,13 +11,14 @@ class BWModelHandler(object):
         self.textures = None
 
     @classmethod
-    def from_file(cls, f):
+    def from_file(cls, f, callback=None):
         bwmodels = cls()
 
         bwarc = BWArchive(f)
+
         bwmodels.textures = TextureArchive(bwarc)
 
-        for modeldata in bwarc.models:
+        for i, modeldata in enumerate(bwarc.models):
             name = str(modeldata.res_name, encoding="ascii")
             print(name, modeldata)
             if bwarc.is_bw2():
@@ -29,7 +31,7 @@ class BWModelHandler(object):
             model.from_file(f)
             texmodel = model.make_textured_model(bwmodels.textures)
             bwmodels.models[name] = texmodel#model
-
+            if callback is not None: callback(len(bwarc.models), i)
         return bwmodels
 
     def rendermodel(self, name, mtx, bwterrain, offset):

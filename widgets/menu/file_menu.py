@@ -1,18 +1,38 @@
 import os
-from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter,
+import sys
+import traceback
+from functools import partial
+from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QApplication, QMdiSubWindow, QVBoxLayout,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
                              QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QShortcut, QStatusBar, QLineEdit)
 #from bw_editor import LevelEditor
 from widgets.editor_widgets import catch_exception_with_dialog, open_error_dialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import traceback
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionFilePaths
 import gzip
+from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect, QObject
 from io import BytesIO
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
+
+
+class LoadingProgress(QObject):
+    progressupdate = pyqtSignal(int)
+    def __init__(self):
+        super().__init__()
+        self.curr = 0
+
+    def callback(self, scale, max, i):
+        self.progressupdate.emit(int(self.curr + (i/max)*scale))
+        QApplication.processEvents()
+
+    def set(self, progress):
+        self.curr = progress
+        self.progressupdate.emit(int(self.curr))
+
 
 class EditorFileMenu(QMenu):
     def __init__(self, editor):
@@ -44,6 +64,12 @@ class EditorFileMenu(QMenu):
         self.addAction(self.save_file_as_action)
         self.addAction(self.save_file_copy_as_action)
 
+    def updatestatus(self, progress):
+        self.editor.statusbar.showMessage("Loading: {0}%".format(progress))
+
+    def loadingcallback(self, base, max, progress):
+        print(progress)
+        QApplication.processEvents()
 
     def button_load_level(self, fpathoverride=None):
         if fpathoverride:
@@ -79,42 +105,61 @@ class EditorFileMenu(QMenu):
                     levelpaths = BattalionFilePaths(f)
                     base = os.path.dirname(filepath)
                     print(base, levelpaths.objectpath)
+                    progressbar = LoadingProgress()
+                    QApplication.setOverrideCursor(Qt.WaitCursor)
+                    progressbar.progressupdate.connect(self.updatestatus)
                     if levelpaths.objectpath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.objectpath), "rb") as g:
-                            level_data = BattalionLevelFile(g)
+                            level_data = BattalionLevelFile(g, partial(progressbar.callback, 10))
                     else:
                         with open(os.path.join(base, levelpaths.objectpath), "rb") as g:
-                            level_data = BattalionLevelFile(g)
+                            level_data = BattalionLevelFile(g, partial(progressbar.callback, 10))
 
+                    progressbar.set(10)
                     if levelpaths.preloadpath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.preloadpath), "rb") as g:
-                            preload_data = BattalionLevelFile(g)
+                            preload_data = BattalionLevelFile(g, partial(progressbar.callback, 10))
                     else:
                         with open(os.path.join(base, levelpaths.preloadpath), "rb") as g:
-                            preload_data = BattalionLevelFile(g)
+                            preload_data = BattalionLevelFile(g, partial(progressbar.callback, 10))
 
+                    progressbar.set(20)
                     level_data.resolve_pointers(preload_data)
                     preload_data.resolve_pointers(level_data)
+
                     for id, obj in preload_data.objects.items():
                         if obj.type == "cLevelSettings":
                             self.editor.level_view.waterheight = obj.mpRenderParams.mWaterHeight
-                    
+                    progressbar.set(30)
+                    print("done 1")
                     if levelpaths.resourcepath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
-                            self.editor.level_view.reloadModels(g)
+                            self.editor.level_view.reloadModels(g, partial(progressbar.callback, 40))
                     else:
                         with open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
-                            self.editor.level_view.reloadModels(g)
-                            
+                            self.editor.level_view.reloadModels(g, partial(progressbar.callback, 40))
+                    progressbar.set(70)
+                    print("done 2")
                     if levelpaths.terrainpath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.terrainpath), "rb") as g:
-                            self.editor.level_view.reloadTerrain(g)
+                            self.editor.level_view.reloadTerrain(g, partial(progressbar.callback, 30))
                     else:
                         with open(os.path.join(base, levelpaths.terrainpath), "rb") as g:
-                            self.editor.level_view.reloadTerrain(g)
+                            self.editor.level_view.reloadTerrain(g, partial(progressbar.callback, 30))
+                    progressbar.set(100)
 
+                    self.level_data = level_data
+                    self.preload_data = preload_data
                     self.editor.setup_level_file(level_data, filepath)
                     self.current_gen_path = filepath
+
+                    # In testing the cursor didn't want to change back unless you moved the cursor
+                    # off the window and back so we'll do this
+                    QApplication.setOverrideCursor(Qt.ArrowCursor)
+                    QApplication.setOverrideCursor(Qt.WaitCursor)
+                    QApplication.processEvents()
+                    QApplication.restoreOverrideCursor()
+                    QApplication.processEvents()
                 except Exception as error:
                     print("Error appeared while loading:", error)
                     traceback.print_exc()

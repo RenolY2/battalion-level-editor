@@ -186,6 +186,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self._wasdscrolling_speed = 1
         self._wasdscrolling_speedupfactor = 3
 
+        self.paused_render = False
         self.main_model = None
         self.buffered_deltas = []
 
@@ -234,17 +235,17 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         #with open("D:/Wii games/BattWars/P-G8WP/files/Data/CompoundFiles/C1_OnPatrol.out", "rb") as f:
         #    self.bwterrain = BWTerrain(f)
 
-    def reloadModels(self, f):
+    def reloadModels(self, f, callback=None):
         self.makeCurrent()
         if self.bwmodelhandler is None:
             #with open("lib/bw/C1_OnPatrol_Level.res", "rb") as f:
-            self.bwmodelhandler = BWModelHandler.from_file(f)
+            self.bwmodelhandler = BWModelHandler.from_file(f, callback)
         else:
             del self.bwmodelhandler
-            self.bwmodelhandler = BWModelHandler.from_file(f)
+            self.bwmodelhandler = BWModelHandler.from_file(f, callback)
         self.doneCurrent()
 
-    def reloadTerrain(self, f):
+    def reloadTerrain(self, f, callback=None):
         self.bwterrain = BWTerrainV2(f)
         self.makeCurrent()
 
@@ -252,9 +253,10 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             for entry in self.terrainmap:
                 glDeleteLists(entry, 1)
 
-        for material in self.bwterrain.materials:
+        for i, material in enumerate(self.bwterrain.materials):
             self.bwmodelhandler.textures.initialize_texture(material.mat1, mipmap=True)
             self.bwmodelhandler.textures.initialize_texture(material.mat2, mipmap=True)
+            if callback is not None: callback(len(self.bwterrain.materials), i)
 
         self.terrainmap = []
         glColor4f(0.0, 0.0, 0.0, 1.0)
@@ -384,6 +386,14 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
     def logic(self, delta, diff):
         self.dolphin.logic(self, delta, diff)
 
+    def pause_render(self):
+        self.paused_render = True
+        self.doneCurrent()
+
+    def continue_render(self):
+        self.makeCurrent()
+        self.pause_render = False
+
     @catch_exception
     def render_loop(self):
         now = default_timer()
@@ -400,7 +410,8 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
         if diff > 1 / 60.0:
             if self._frame_invalid:
-                self.update()
+                if not self.paused_render:
+                    self.update()
                 self._lastrendertime = now
                 self._frame_invalid = False
         self._lasttime = now
@@ -616,6 +627,9 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
     #@catch_exception_with_dialog
     #@catch_exception
     def paintGL(self):
+        if self.paused_render:
+            return
+
         start = default_timer()
         offset_x = self.offset_x
         offset_z = self.offset_z
