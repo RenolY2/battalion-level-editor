@@ -134,11 +134,11 @@ class EditorFileMenu(QMenu):
                     print("done 1")
                     if levelpaths.resourcepath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
-                            self.editor.level_view.reloadModels(g, partial(progressbar.callback, 40))
+                            self.editor.level_view.reloadModels(g, partial(progressbar.callback, 30))
                     else:
                         with open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
-                            self.editor.level_view.reloadModels(g, partial(progressbar.callback, 40))
-                    progressbar.set(70)
+                            self.editor.level_view.reloadModels(g, partial(progressbar.callback, 30))
+                    progressbar.set(60)
                     print("done 2")
                     if levelpaths.terrainpath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.terrainpath), "rb") as g:
