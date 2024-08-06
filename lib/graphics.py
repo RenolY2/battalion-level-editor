@@ -8,6 +8,7 @@ from lib.vectors import Vector3
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from bw_widgets import BolMapViewer
+    from widgets.filter_view import FilterViewMenu
 
 with open("lib/color_coding.json", "r") as f:
     object_colors = json.load(f)
@@ -105,21 +106,22 @@ class Graphics(object):
 
     def render_select(self, objlist):
         rw = self.rw
+        vismenu = self.rw.visibility_menu
 
         extradataarrays = {}
         for key in self.scene.objects:
             extradataarrays[key] = []
 
-
         if len(objlist) > 0xFFFF:
             raise RuntimeError("More than 64k objects, cannot select.")
 
         for i, obj in enumerate(objlist):
-            colorid = (0x10000000 + (i << 12))
-            if obj.type not in extradataarrays:
-                extradataarrays["generic"].append(colorid)
-            else:
-                extradataarrays[obj.type].append(colorid)
+            if vismenu.object_visible(obj.type):
+                colorid = (0x10000000 + (i << 12))
+                if obj.type not in extradataarrays:
+                    extradataarrays["generic"].append(colorid)
+                else:
+                    extradataarrays[obj.type].append(colorid)
         for key, model in self.scene.model.items():
             extradataarray = extradataarrays[key]
             extradata = numpy.array(extradataarray, dtype=numpy.uint32)
@@ -141,17 +143,26 @@ class Graphics(object):
         default_matrices, default_extradata = self.scene.objects["generic"]
 
         # self.models.cubev2.mtxdirty = True
-        globalmtx = []
-        globalextradata = []
+        globalmtx = None
+        globalextradata = None
 
         globalsetting = 0
         if self.rw.is_topdown():
             globalsetting |= 1
+        vismenu: FilterViewMenu = self.rw.visibility_menu
+        empty = True
 
         if self.is_dirty():
+            globalmtx = []
+            globalextradata = []
+
             self.models_scene = []
 
             for obj in rw.level_file.objects_with_positions.values():
+                if not vismenu.object_visible(obj.type):
+                    continue
+                empty = False
+
                 if obj.type in self.scene.objects:
                     mtx, extradata = self.scene.objects[obj.type]
                 else:
@@ -162,10 +173,8 @@ class Graphics(object):
                 iconoffset = obj.iconoffset
 
                 modelname = obj._modelname
-                if modelname is not None:
+                if modelname is not None and vismenu.object_3d_visible(obj.type):
                     self.models_scene.append((currmtx, currmtx[12], currmtx[14], modelname))
-
-
 
                 flag = 0
                 if obj in selected:
@@ -193,10 +202,15 @@ class Graphics(object):
 
         drawn = 0
         for objtype, model in self.scene.model.items():
+            if not vismenu.object_visible(objtype):
+                continue
+
             mtx, extradata = self.scene.objects[objtype]
 
-
-            if not mtx:
+            if empty:
+                mtx = numpy.array([], dtype=numpy.uint8)
+                extradata = numpy.array([], dtype=numpy.uint8)
+            elif not mtx:
                 mtx, extradata = None, None
             else:
                 mtx = numpy.concatenate(mtx)
@@ -217,8 +231,11 @@ class Graphics(object):
         glActiveTexture(GL_TEXTURE1)
         rw.models.billboard.outlinetex.bind()
 
-        if not globalmtx:
+        if globalmtx is None:
             rw.models.billboard.bind(None, None)
+        elif len(globalmtx) == 0:
+            rw.models.billboard.bind(numpy.array(globalmtx, dtype=numpy.uint8),
+                                     numpy.array(globalextradata, dtype=numpy.uint8))
         else:
             rw.models.billboard.bind(numpy.concatenate(globalmtx),
                                      numpy.array(globalextradata, dtype=numpy.uint8))

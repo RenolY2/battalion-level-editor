@@ -37,6 +37,7 @@ from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
 from lib.bw_terrain import BWTerrainV2
 from lib.bw.bwmodelrender import BWModelHandler
 from lib.graphics import Graphics
+from widgets.filter_view import FilterViewMenu
 
 MOUSE_MODE_NONE = 0
 MOUSE_MODE_MOVEWP = 1
@@ -511,8 +512,9 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
     def do_redraw(self, force=False):
         self._frame_invalid = True
-        self.graphics.set_dirty()
+
         if force:
+            self.graphics.set_dirty()
             self._lastrendertime = 0
             self.update()
 
@@ -997,98 +999,4 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
     def select_objects(self, screen_x, screen_y, x_size=1, y_size=1, shift=False):
         self.selectionqueue.queue_selection(screen_x, screen_y, x_size, y_size, shift)
 
-
-class ObjectViewSelectionToggle(object):
-    def __init__(self, name, menuparent):
-        self.name = name
-        self.menuparent = menuparent
-
-        self.action_view_toggle = QAction("{0} visible".format(name), menuparent)
-        self.action_select_toggle = QAction("{0} selectable".format(name), menuparent)
-        self.action_view_toggle.setCheckable(True)
-        self.action_view_toggle.setChecked(True)
-        self.action_select_toggle.setCheckable(True)
-        self.action_select_toggle.setChecked(True)
-
-        self.action_view_toggle.triggered.connect(self.handle_view_toggle)
-        self.action_select_toggle.triggered.connect(self.handle_select_toggle)
-
-        menuparent.addAction(self.action_view_toggle)
-        menuparent.addAction(self.action_select_toggle)
-
-    def handle_view_toggle(self, val):
-        if not val:
-            self.action_select_toggle.setChecked(False)
-        else:
-            self.action_select_toggle.setChecked(True)
-
-    def handle_select_toggle(self, val):
-        if val:
-            self.action_view_toggle.setChecked(True)
-
-    def is_visible(self):
-        return self.action_view_toggle.isChecked()
-
-    def is_selectable(self):
-        return self.action_select_toggle.isChecked()
-
-
-class FilterViewMenu(QMenu):
-    filter_update = pyqtSignal()
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setTitle("Filter View")
-
-        self.show_all = QAction("Show All", self)
-        self.show_all.triggered.connect(self.handle_show_all)
-        self.addAction(self.show_all)
-
-        self.hide_all = QAction("Hide All", self)
-        self.hide_all.triggered.connect(self.handle_hide_all)
-        self.addAction(self.hide_all)
-
-        self.enemyroute = ObjectViewSelectionToggle("Enemy Routes", self)
-        self.itemroutes = ObjectViewSelectionToggle("Object Routes", self)
-        self.checkpoints = ObjectViewSelectionToggle("Checkpoints", self)
-        self.objects = ObjectViewSelectionToggle("Objects", self)
-        self.areas = ObjectViewSelectionToggle("Areas", self)
-        self.cameras = ObjectViewSelectionToggle("Cameras", self)
-        self.respawnpoints = ObjectViewSelectionToggle("Respawn Points", self)
-        self.kartstartpoints = ObjectViewSelectionToggle("Kart Start Points", self)
-        self.minimap = ObjectViewSelectionToggle("Minimap", self)
-        for action in (self.enemyroute, self.itemroutes, self.checkpoints, self.objects,
-                       self.areas, self.cameras, self.respawnpoints, self.kartstartpoints,
-                       self.minimap):
-            action.action_view_toggle.triggered.connect(self.emit_update)
-            action.action_select_toggle.triggered.connect(self.emit_update)
-
-    def handle_show_all(self):
-        for action in (self.enemyroute, self.itemroutes, self.checkpoints, self.objects,
-                       self.areas, self.cameras, self.respawnpoints, self.kartstartpoints,
-                       self.minimap):
-            action.action_view_toggle.setChecked(True)
-            action.action_select_toggle.setChecked(True)
-        self.filter_update.emit()
-
-    def handle_hide_all(self):
-        for action in (self.enemyroute, self.itemroutes, self.checkpoints, self.objects,
-                       self.areas, self.cameras, self.respawnpoints, self.kartstartpoints,
-                       self.minimap):
-            action.action_view_toggle.setChecked(False)
-            action.action_select_toggle.setChecked(False)
-        self.filter_update.emit()
-
-    def emit_update(self, val):
-        self.filter_update.emit()
-
-    def mouseReleaseEvent(self, e):
-        try:
-            action = self.activeAction()
-            if action and action.isEnabled():
-                action.trigger()
-            else:
-                QMenu.mouseReleaseEvent(self, e)
-        except:
-            traceback.print_exc()
 

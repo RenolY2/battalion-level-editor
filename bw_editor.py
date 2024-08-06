@@ -70,6 +70,7 @@ class LevelEditor(QMainWindow):
         self.level_view.level_file = self.level_file
         self.level_view.set_editorconfig(self.configuration["editor"])
         self.level_view.visibility_menu = self.menubar.visibility_menu
+        self.menubar.visibility_menu.filter_update.connect(self.level_view.graphics.set_dirty)
 
         self.pathsconfig = self.configuration["default paths"]
         self.editorconfig = self.configuration["editor"]
@@ -298,28 +299,14 @@ class LevelEditor(QMainWindow):
 
     def change_to_topdownview(self):
         self.level_view.change_from_3d_to_topdown()
-        self.change_to_topdownview_action.setChecked(True)
-        self.change_to_3dview_action.setChecked(False)
+        self.menubar.change_to_topdownview_action.setChecked(True)
+        self.menubar.change_to_3dview_action.setChecked(False)
 
     def change_to_3dview(self):
         self.level_view.change_from_topdown_to_3d()
-        self.change_to_topdownview_action.setChecked(False)
-        self.change_to_3dview_action.setChecked(True)
+        self.menubar.change_to_topdownview_action.setChecked(False)
+        self.menubar.change_to_3dview_action.setChecked(True)
         self.statusbar.clearMessage()
-
-    def setup_ui_toolbar(self):
-        # self.toolbar = QtWidgets.QToolBar("Test", self)
-        # self.toolbar.addAction(QAction("TestToolbar", self))
-        # self.toolbar.addAction(QAction("TestToolbar2", self))
-        # self.toolbar.addAction(QAction("TestToolbar3", self))
-
-        # self.toolbar2 = QtWidgets.QToolBar("Second Toolbar", self)
-        # self.toolbar2.addAction(QAction("I like cake", self))
-
-        # self.addToolBar(self.toolbar)
-        # self.addToolBarBreak()
-        # self.addToolBar(self.toolbar2)
-        pass
 
     def connect_actions(self):
         self.level_view.select_update.connect(self.action_update_info)
