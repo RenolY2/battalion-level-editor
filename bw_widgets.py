@@ -768,23 +768,24 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         glColor4f(1.0, 1.0, 1.0, 1.0)
         self.grid.render()
 
-        if self.waterheight is not None:
-            glDisable(GL_ALPHA_TEST)
-            glEnable(GL_BLEND)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            glColor4f(0.0, 12/255.0, 92/255.0, 0.7)
-            glLineWidth(2.0)
-            glBegin(GL_TRIANGLE_FAN)
-            glVertex3f(-2000, -2000, self.waterheight)
-            glVertex3f(2000, -2000, self.waterheight)
-            glVertex3f(2000, 2000, self.waterheight)
-            glVertex3f(-2000, 2000, self.waterheight)
-            glEnd()
-            glEnable(GL_ALPHA_TEST)
-            glDisable(GL_BLEND)
+
 
         terraintime = default_timer()-subtime
         if self.mode == MODE_TOPDOWN:
+            if self.waterheight is not None:
+                glDisable(GL_ALPHA_TEST)
+                glEnable(GL_BLEND)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                glColor4f(0.0, 12 / 255.0, 92 / 255.0, 0.7)
+                glLineWidth(2.0)
+                glBegin(GL_TRIANGLE_FAN)
+                glVertex3f(-2000, -2000, self.waterheight)
+                glVertex3f(2000, -2000, self.waterheight)
+                glVertex3f(2000, 2000, self.waterheight)
+                glVertex3f(-2000, 2000, self.waterheight)
+                glEnd()
+                glEnable(GL_ALPHA_TEST)
+                glDisable(GL_BLEND)
             glClear(GL_DEPTH_BUFFER_BIT)
 
 
@@ -858,6 +859,21 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         glDisable(GL_TEXTURE_2D)
         glActiveTexture(GL_TEXTURE1)
         glDisable(GL_TEXTURE_2D)
+
+        if self.waterheight is not None and self.mode != MODE_TOPDOWN:
+            glDisable(GL_ALPHA_TEST)
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glColor4f(0.0, 12/255.0, 92/255.0, 0.7)
+            glLineWidth(2.0)
+            glBegin(GL_TRIANGLE_FAN)
+            glVertex3f(-2000, -2000, self.waterheight)
+            glVertex3f(2000, -2000, self.waterheight)
+            glVertex3f(2000, 2000, self.waterheight)
+            glVertex3f(-2000, 2000, self.waterheight)
+            glEnd()
+            glEnable(GL_ALPHA_TEST)
+            glDisable(GL_BLEND)
 
         self.gizmo.render_scaled(gizmo_scale, is3d=self.mode == MODE_3D)
         glDisable(GL_DEPTH_TEST)
