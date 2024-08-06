@@ -20,6 +20,7 @@ import PyQt5.QtGui as QtGui
 import opengltext
 import py_obj
 
+from widgets.menu.menubar import EditorMenuBar
 from widgets.editor_widgets import catch_exception
 from widgets.editor_widgets import AddPikObjectWindow
 from widgets.tree_view import LevelDataTreeView
@@ -68,7 +69,7 @@ class LevelEditor(QMainWindow):
 
         self.level_view.level_file = self.level_file
         self.level_view.set_editorconfig(self.configuration["editor"])
-        self.level_view.visibility_menu = self.visibility_menu
+        self.level_view.visibility_menu = self.menubar.visibility_menu
 
         self.pathsconfig = self.configuration["default paths"]
         self.editorconfig = self.configuration["editor"]
@@ -230,8 +231,8 @@ class LevelEditor(QMainWindow):
         self.resize(1000, 800)
         self.set_base_window_title("")
 
-        self.setup_ui_menubar()
-        self.setup_ui_toolbar()
+        self.menubar = EditorMenuBar(self)
+        self.setMenuBar(self.menubar)
 
         #self.centralwidget = QWidget(self)
         #self.centralwidget.setObjectName("centralwidget")
@@ -265,65 +266,7 @@ class LevelEditor(QMainWindow):
 
         self.connect_actions()
 
-    @catch_exception_with_dialog
-    def setup_ui_menubar(self):
-        self.menubar = QMenuBar(self)
 
-        self.visibility_menu = bw_widgets.FilterViewMenu(self)
-        self.visibility_menu.filter_update.connect(self.update_render)
-
-
-        # ------ Collision Menu
-        self.collision_menu = QMenu(self.menubar)
-        self.collision_menu.setTitle("Geometry")
-        self.collision_load_action = QAction("Load OBJ", self)
-        self.collision_load_action.triggered.connect(self.button_load_collision)
-        self.collision_menu.addAction(self.collision_load_action)
-        self.collision_load_grid_action = QAction("Load BCO", self)
-        self.collision_load_grid_action.triggered.connect(self.button_load_collision_bco)
-        self.collision_menu.addAction(self.collision_load_grid_action)
-        self.collision_load_bmd_action = QAction("Load BMD", self)
-        self.collision_load_bmd_action.triggered.connect(self.button_load_collision_bmd)
-        self.collision_menu.addAction(self.collision_load_bmd_action)
-
-        # Misc
-        self.misc_menu = QMenu(self.menubar)
-        self.misc_menu.setTitle("Misc")
-        #self.spawnpoint_action = QAction("Set startPos/Dir", self)
-        #self.spawnpoint_action.triggered.connect(self.action_open_rotationedit_window)
-        #self.misc_menu.addAction(self.spawnpoint_action)
-        self.rotation_mode = QAction("Rotate Positions around Pivot", self)
-        self.rotation_mode.setCheckable(True)
-        self.rotation_mode.setChecked(True)
-        #self.goto_action.triggered.connect(self.do_goto_action)
-        #self.goto_action.setShortcut("Ctrl+G")
-        self.misc_menu.addAction(self.rotation_mode)
-        self.analyze_action = QAction("Analyze for common mistakes", self)
-        self.analyze_action.triggered.connect(self.analyze_for_mistakes)
-        self.misc_menu.addAction(self.analyze_action)
-
-        self.change_to_topdownview_action = QAction("Topdown View", self)
-        self.change_to_topdownview_action.triggered.connect(self.change_to_topdownview)
-        self.misc_menu.addAction(self.change_to_topdownview_action)
-        self.change_to_topdownview_action.setCheckable(True)
-        self.change_to_topdownview_action.setChecked(True)
-        self.change_to_topdownview_action.setShortcut("Ctrl+1")
-
-        self.change_to_3dview_action = QAction("3D View", self)
-        self.change_to_3dview_action.triggered.connect(self.change_to_3dview)
-        self.misc_menu.addAction(self.change_to_3dview_action)
-        self.change_to_3dview_action.setCheckable(True)
-        self.change_to_3dview_action.setShortcut("Ctrl+2")
-
-        self.choose_bco_area = QAction("Highlight Collision Area (BCO)")
-
-        self.menubar.addAction(self.file_menu.menuAction())
-        self.menubar.addAction(self.visibility_menu.menuAction())
-        self.menubar.addAction(self.collision_menu.menuAction())
-        self.menubar.addAction(self.misc_menu.menuAction())
-        self.setMenuBar(self.menubar)
-
-        self.last_obj_select_pos = 0
 
     def action_hook_into_dolphion(self):
         error = self.dolphin.initialize()
@@ -612,76 +555,6 @@ class LevelEditor(QMainWindow):
             alternative_mesh = TexturedModel.from_obj_path(filepath, rotate=True)
 
             self.setup_collision(verts, faces, filepath, alternative_mesh)
-
-        except Exception as e:
-            traceback.print_exc()
-            open_error_dialog(str(e), self)
-
-    def button_load_collision_bmd(self):
-        try:
-            filepath, choosentype = QFileDialog.getOpenFileName(
-                self, "Open File",
-                self.pathsconfig["collision"],
-                "Course Model (*.bmd);;Archived files (*.arc);;All files (*)")
-
-            if not filepath:
-                return
-            bmdpath = filepath
-            clear_temp_folder()
-            if choosentype == "Archived files (*.arc)" or filepath.endswith(".arc"):
-                with open(filepath, "rb") as f:
-                    rarc = Archive.from_file(f)
-
-                root_name = rarc.root.name
-                bmd_filename = find_file(rarc.root, "_course.bmd")
-                bmd = rarc[root_name][bmd_filename]
-                with open("lib/temp/temp.bmd", "wb") as f:
-                    f.write(bmd.getvalue())
-
-                bmdpath = "lib/temp/temp.bmd"
-                
-
-            alternative_mesh = load_textured_bmd(bmdpath)
-            with open("lib/temp/temp.obj", "r") as f:
-                verts, faces, normals = py_obj.read_obj(f)
-
-            self.setup_collision(verts, faces, filepath, alternative_mesh)
-
-        except Exception as e:
-            traceback.print_exc()
-            open_error_dialog(str(e), self)
-
-    def button_load_collision_bco(self):
-        try:
-            filepath, choosentype = QFileDialog.getOpenFileName(
-                self, "Open File",
-                self.pathsconfig["collision"],
-                "MKDD Collision (*.bco);;Archived files (*.arc);;All files (*)")
-            if filepath:
-                bco_coll = RacetrackCollision()
-                verts = []
-                faces = []
-
-                if choosentype == "Archived files (*.arc)" or filepath.endswith(".arc"):
-                    with open(filepath, "rb") as f:
-                        rarc = Archive.from_file(f)
-
-
-                    root_name = rarc.root.name
-                    collision_file = find_file(rarc.root, "_course.bco")
-                    bco = rarc[root_name][collision_file]
-                    bco_coll.load_file(bco)
-                else:
-                    with open(filepath, "rb") as f:
-                        bco_coll.load_file(f)
-
-                for vert in bco_coll.vertices:
-                    verts.append(vert)
-
-                for v1, v2, v3, collision_type, rest in bco_coll.triangles:
-                    faces.append(((v1+1, None), (v2+1, None), (v3+1, None)))
-                model = CollisionModel(bco_coll)
-                self.setup_collision(verts, faces, filepath, alternative_mesh=model)
 
         except Exception as e:
             traceback.print_exc()
