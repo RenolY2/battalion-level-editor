@@ -158,6 +158,8 @@ class Graphics(object):
 
             self.models_scene = []
 
+            bwterrain = self.rw.bwterrain
+
             for obj in rw.level_file.objects_with_positions.values():
                 if not vismenu.object_visible(obj.type):
                     continue
@@ -169,6 +171,19 @@ class Graphics(object):
                     mtx, extradata = default_matrices, default_extradata
 
                 currmtx = obj.getmatrix().mtx
+
+                height = bwterrain.check_height(currmtx[12], currmtx[14])
+                h = currmtx[13]
+                if height is None:
+                    if self.rw.waterheight is not None and h < self.rw.waterheight:
+                        currmtx[13] = self.rw.waterheight+0.2  # Avoid z-fighting in some cases
+                else:
+                    if self.rw.waterheight is not None and h < self.rw.waterheight:
+                        h = self.rw.waterheight+0.2  # Avoid z-fighting in some cases
+                    if h < height:
+                        h = height
+                    currmtx[13] = h
+
                 mtx.append(currmtx)
                 iconoffset = obj.iconoffset
 
@@ -187,7 +202,7 @@ class Graphics(object):
                 extradata.append(int(b * 255))
 
                 if iconoffset is not None:
-                    globalmtx.append(obj.getmatrix().mtx)
+                    globalmtx.append(currmtx)
                     flag = 0
                     if obj in selected:
                         flag |= 1

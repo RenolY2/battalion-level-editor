@@ -229,8 +229,27 @@ class BWTerrainV2(BWSectionedFile):
                             if tile.material_index not in self.meshes:
                                 self.meshes[tile.material_index] = []
 
+                            for x in range(4):
+                                for y in range(4):
+                                    index = y*4 + x
+                                    self.pointdata[chunkx*16 + tilex*4 + x][chunky*16+tiley*4+y] = tile.heights[index]/16.0
+
                             tilemodel = TileModel(tile, self.materials, chunkx*16 + tilex*4 - tilex -chunkx*4, chunky*16 + tiley*4 - tiley - chunky*4)
                             self.meshes[tile.material_index].append(tilemodel)
+
+    def check_height(self, x, y):
+        mapx = int((x + 2048)*0.25)
+        mapy = int((y + 2048)*0.25)
+        if 0 <= mapx < 4096 and 0 <= mapy < 4096:
+            if self.pointdata[mapx][mapy] is None:
+                return None
+            return self.pointdata[mapx][mapy]
+        else:
+            return None
+
+
+
+
 
 
 class BWTerrain(BWSectionedFile):

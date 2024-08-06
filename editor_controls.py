@@ -568,17 +568,18 @@ class UserControl(object):
                 mapx, mapz = editor.mouse_coord_to_world_coord(event.x(), event.y())
                 self.last_position_update = default_timer()
 
-                if editor.collision is not None:
-                    height = editor.collision.collide_ray_downwards(mapx, -mapz)
+                if editor.bwterrain is not None:
+                    #height = editor.collision.collide_ray_downwards(mapx, -mapz)
+                    height = editor.bwterrain.check_height(mapx, mapz)
 
                     if height is not None:
                         # self.highlighttriangle = res[1:]
                         # self.update()
-                        editor.position_update.emit(event, (round(mapx, 2), round(height, 2), round(-mapz, 2)))
+                        editor.position_update.emit(event, (round(mapx, 2), round(height, 2), round(mapz, 2)))
                     else:
-                        editor.position_update.emit(event, (round(mapx, 2), None, round(-mapz, 2)))
+                        editor.position_update.emit(event, (round(mapx, 2), None, round(mapz, 2)))
                 else:
-                    editor.position_update.emit(event, (round(mapx, 2), None, round(-mapz, 2)))
+                    editor.position_update.emit(event, (round(mapx, 2), None, round(mapz, 2)))
         else:
             self.handle_move_3d(event)
 
