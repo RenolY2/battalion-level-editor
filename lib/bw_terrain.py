@@ -240,15 +240,12 @@ class BWTerrainV2(BWSectionedFile):
     def check_height(self, x, y):
         mapx = int((x + 2048)*0.25)
         mapy = int((y + 2048)*0.25)
-        if 0 <= mapx < 4096 and 0 <= mapy < 4096:
+        if 0 <= mapx < 1024 and 0 <= mapy < 1024:
             if self.pointdata[mapx][mapy] is None:
                 return None
             return self.pointdata[mapx][mapy]
         else:
             return None
-
-
-
 
 
 
