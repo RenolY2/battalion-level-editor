@@ -150,7 +150,10 @@ class Graphics(object):
         if self.rw.is_topdown():
             globalsetting |= 1
         vismenu: FilterViewMenu = self.rw.visibility_menu
-        empty = True
+        visible = vismenu.object_visible
+        visible3d = vismenu.object_3d_visible
+
+        empty = False
 
         if self.is_dirty():
             globalmtx = []
@@ -159,9 +162,10 @@ class Graphics(object):
             self.models_scene = []
 
             bwterrain = self.rw.bwterrain
-
+            waterheight = self.rw.waterheight
+            empty = True
             for obj in rw.level_file.objects_with_positions.values():
-                if not vismenu.object_visible(obj.type):
+                if not visible(obj.type):
                     continue
                 empty = False
 
@@ -175,11 +179,11 @@ class Graphics(object):
                 height = bwterrain.check_height(currmtx[12], currmtx[14])
                 h = currmtx[13]
                 if height is None:
-                    if self.rw.waterheight is not None and h < self.rw.waterheight:
-                        currmtx[13] = self.rw.waterheight+0.2  # Avoid z-fighting in some cases
+                    if self.rw.waterheight is not None and h < waterheight:
+                        currmtx[13] = waterheight+0.2  # Avoid z-fighting in some cases
                 else:
-                    if self.rw.waterheight is not None and h < self.rw.waterheight:
-                        h = self.rw.waterheight+0.2  # Avoid z-fighting in some cases
+                    if self.rw.waterheight is not None and h < waterheight:
+                        h = waterheight+0.2  # Avoid z-fighting in some cases
                     if h < height:
                         h = height
                     currmtx[13] = h
@@ -212,12 +216,13 @@ class Graphics(object):
                     globalextradata.append(int(x))
                     globalextradata.append(int(y))
                     globalextradata.append(int(b * 255))
+            self.reset_dirty()
 
         # self.models.cubev2.mtxdirty = True
 
         drawn = 0
         for objtype, model in self.scene.model.items():
-            if not vismenu.object_visible(objtype):
+            if not visible(objtype):
                 continue
 
             mtx, extradata = self.scene.objects[objtype]
@@ -290,18 +295,6 @@ class Graphics(object):
         glEnable(GL_TEXTURE_2D)
 
         cam_x, cam_z = rw.cam_x, rw.cam_z
-        cam = numpy.array([rw.cam_x, rw.cam_z])
-        norm = numpy.linalg.norm
-
-        #dist = lambda x: (cam_x-x[1])**2 + (cam_z-x[2])**2
-
-        #self.models_scene.sort(key=dist)
-        #self.partialsort(10, dist)
-        #bound = self.find_bound(dist, 250*250)
-        minx = cam_x - 250
-        maxx = cam_x + 250
-        minz = cam_z - 250
-        maxz = cam_z + 250
 
         if self.render_everything_once:
             for mtx, x, z, modelname in self.models_scene:
@@ -310,13 +303,13 @@ class Graphics(object):
         else:
             inrange = []
             for mtx, x, z, modelname in self.models_scene:
-                if abs(cam_x - x) < 250 and abs(cam_z - z) < 250:
+                if abs(cam_x - x) < 1000 and abs(cam_z - z) < 1000:
                     dist = (cam_x - x)**2 + (cam_z - z)**2
                     inrange.append((modelname, mtx, dist))
 
             inrange.sort(key=lambda x: x[2])
             for i, v in enumerate(inrange):
-                if i > 100:
+                if i > 400:
                     break
 
                 rw.bwmodelhandler.rendermodel(v[0], v[1], rw.bwterrain, 0)

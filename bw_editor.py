@@ -517,7 +517,7 @@ class LevelEditor(QMainWindow):
         self.level_view.level_file = self.level_file
         # self.pikmin_gen_view.update()
         self.leveldatatreeview.set_objects(level_file)
-        self.level_view.do_redraw()
+        self.level_view.do_redraw(force=True)
 
         print("File loaded")
         # self.bw_map_screen.update()
