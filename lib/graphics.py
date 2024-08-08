@@ -135,7 +135,7 @@ class Graphics(object):
 
         for i, obj in enumerate(objlist):
             if vismenu.object_visible(obj.type):
-                colorid = (0x10000000 + (i << 12))
+                colorid = (0x10000100 + (i << 12))
                 if obj.type not in extradataarrays:
                     extradataarrays["generic"].append(colorid)
                 else:
