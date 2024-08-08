@@ -50,7 +50,6 @@ class Scene(object):
         del self.modelinstances
         self.modelinstances = {}
 
-
     def set_model(self, type, model):
         self.objects[type] = None
         self.model[type] = model
@@ -173,7 +172,7 @@ class Graphics(object):
         visible3d = vismenu.object_3d_visible
 
         empty = False
-
+        #self.set_dirty()
         if self.is_dirty():
             self.scene.fullreset()
             globalmtx = []
@@ -194,7 +193,7 @@ class Graphics(object):
                 else:
                     mtx, extradata = default_matrices, default_extradata
 
-                currmtx = obj.getmatrix().mtx
+                currmtx = obj.getmatrix().mtx.copy()
 
                 height = bwterrain.check_height(currmtx[12], currmtx[14])
                 h = currmtx[13]
@@ -208,15 +207,14 @@ class Graphics(object):
                         h = height
                     currmtx[13] = h
 
+                obj.height = currmtx[13]
+
                 mtx.append(currmtx)
                 iconoffset = obj.iconoffset
 
                 modelname = obj._modelname
-                if modelname in self.rw.bwmodelhandler.instancemodels:
+                if modelname is not None:
                     self.scene.add_matrix(modelname, currmtx)
-                else:
-                    if modelname is not None and vismenu.object_3d_visible(obj.type):
-                        self.models_scene.append((currmtx, currmtx[12], currmtx[14], modelname))
 
                 flag = 0
                 if obj in selected:
