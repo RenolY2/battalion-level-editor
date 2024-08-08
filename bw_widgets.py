@@ -707,7 +707,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
                 for i in range(0, clickwidth*clickheight, 13):
                     # | (pixels[i*3+0] << 16)
-                    if pixels[i * 3] != 0xFF:
+                    if pixels[i * 3] != 0xFF and pixels[i * 3] != 0x00:
                         value = pixels[i*3] | pixels[i*3+1]<<8 | pixels[i*3+2]<<16
                         index = (value >> 4) & 0xFFFF
                         misc = value & 0xFF
