@@ -77,7 +77,7 @@ class Program(object):
 
 
 def get_location(shaderstring, varname):
-    match = re.search("layout\(location = ([0-9]+)\) in [a-z0-9]+ {0};".format(varname), shaderstring)
+    match = re.search(r"layout\(location = ([0-9]+)\) in [a-z0-9]+ {0};".format(varname), shaderstring)
     if match is None:
         raise RuntimeError("Didn't find variable {0} in shader".format(varname))
 
