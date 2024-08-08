@@ -131,7 +131,7 @@ class EditorFileMenu(QMenu):
                         if obj.type == "cLevelSettings":
                             self.editor.level_view.waterheight = obj.mpRenderParams.mWaterHeight
                     progressbar.set(30)
-                    print("done 1")
+
                     if levelpaths.resourcepath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
                             self.editor.level_view.reloadModels(g, partial(progressbar.callback, 30))
@@ -139,7 +139,7 @@ class EditorFileMenu(QMenu):
                         with open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
                             self.editor.level_view.reloadModels(g, partial(progressbar.callback, 30))
                     progressbar.set(60)
-                    print("done 2")
+
                     if levelpaths.terrainpath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.terrainpath), "rb") as g:
                             self.editor.level_view.reloadTerrain(g, partial(progressbar.callback, 30))

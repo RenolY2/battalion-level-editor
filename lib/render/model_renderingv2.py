@@ -305,6 +305,13 @@ class VertexColorUVBuffer(VertexBuffer):
         self.add_attribute(uv_attr_index,       2, GL_FLOAT, GL_FALSE, 8 * 4, 6 * 4)
 
 
+class VertexUVBuffer(VertexBuffer):
+    def __init__(self, vtx_attr_index, uv_attr_index):
+        super().__init__()
+        self.add_attribute(vtx_attr_index,      3, GL_FLOAT, GL_FALSE, 5 * 4, 0 * 4)
+        self.add_attribute(uv_attr_index,       2, GL_FLOAT, GL_FALSE, 5 * 4, 3 * 4)
+
+
 class MatrixBuffer(VertexBuffer):
     def __init__(self, mtx_attr_index):
         super().__init__()
@@ -681,6 +688,115 @@ class Billboard(ModelV2):
         """)
         self.program = Program(self.vertexshader, self.fragshader)
         self.program_colorid = Program(self.vertexshader_colorid, self.fragshader)
+
+
+class BWModelV2(ModelV2):
+    def __init__(self):
+        self.texnames = []
+        self.mesh_list = []
+        self._triangles = []
+
+        self.vertexshader = Shader.create("""
+        #version 330 compatibility
+        layout(location = 0) in vec3 vert;
+        // layout(location = 1) in vec4 color;
+        layout(location = 2) in mat4 instanceMatrix;
+        layout(location = 6) in vec4 val;
+        layout(location = 7) in vec2 uv;
+        layout(location = 8) in float height;
+    
+        uniform mat4 modelmtx;
+        uniform vec4 selectioncolor;
+        uniform int globalsetting;
+    
+        out vec2 texCoord;
+        
+        mat4 pos = mat4(1.0, 0.0, 0.0, 0.0,
+                        0.0, 1.0, 0.0, 0.0,
+                        0.0, 0.0, 1.0, 0.0,
+                        0.0, 0.0, 0.0, 1.0);
+        
+        mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 1.0);
+    
+        void main(void)
+        {   
+            texCoord = uv;
+            gl_Position = gl_ModelViewProjectionMatrix*mtx*instanceMatrix*vec4(vert, 1.0);
+            //gl_Position = gl_ModelViewProjectionMatrix*mtx*pos*vec4(vert, 1.0);
+        }   
+    
+    
+        """)
+
+        self.fragshader = Shader.create("""
+        #version 330
+        in vec2 texCoord;
+        out vec4 finalColor;
+        
+        uniform sampler2D tex;
+        
+        void main (void)
+        {
+            finalColor = texture(tex, texCoord); //vec4(1.0, 1.0, 1.0, 1.0);//texture(tex, texCoord);
+        }  
+        """)
+        self.vbo = VertexUVBuffer(*self.vertexshader.get_locations("vert", "uv"))
+
+        self.vao = None
+        self.vao_colorid = None
+        self.mtxloc = None
+        self.program = Program(self.vertexshader, self.fragshader)
+        self.mtxbuffer = MatrixBuffer(self.vertexshader.get_location("instanceMatrix"))
+        self.mtxdirty = True
+        #self.extrabuffer = ExtraBuffer(self.vertexshader.get_location("val"), normalize=GL_FALSE)
+        self._count = None
+
+    @classmethod
+    def from_textured_bw_model(cls, bwmodel):
+        model = cls()
+        offset = 0
+        for bwmesh in bwmodel.mesh_list:
+            if len(bwmesh.trilist) == 0:
+                continue
+
+            model.mesh_list.append((offset, len(bwmesh.trilist)))
+            offset += len(bwmesh.trilist)
+
+            model.texnames.append(bwmesh.texname)
+            for vtxpos, vtxuv in bwmesh.trilist:
+                model._triangles.extend(vtxpos)
+                model._triangles.extend(vtxuv)
+
+        return model
+
+    def rebuild_instance_array(self, array, extradata):
+        if self.mtxdirty:
+            # if self.mtxbuffer.initialized():
+            #    self.mtxbuffer.free()
+            #    self.extrabuffer.free()
+            self.mtxbuffer.init()
+            self.mtxbuffer.load_data(array)
+
+            self.mtxdirty = False
+
+    def instancedrender(self, texarchive):
+        #glUniformMatrix4fv(self.mtxloc, 1, False, mtx)
+        for texname, meshdata in zip(self.texnames, self.mesh_list):
+            if texname is not None:
+                result = texarchive.get_texture(texname.lower())
+                if result is not None:
+                    glEnable(GL_TEXTURE_2D)
+                    glBindTexture(GL_TEXTURE_2D, result[1])
+                else:
+                    glDisable(GL_TEXTURE_2D)
+            else:
+                glDisable(GL_TEXTURE_2D)
+
+            offset, vertexcount = meshdata
+            glDrawArraysInstanced(GL_TRIANGLES, offset, vertexcount, self._count)
 
 
 class TexturedModel(object):

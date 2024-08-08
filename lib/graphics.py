@@ -30,10 +30,26 @@ class Scene(object):
         self.objects = {}
         self.model = {}
 
+        self.modelinstances = {}
+        self.renderedmodels = []
+
+    def add_matrix(self, modelname, mtx):
+        if modelname not in self.modelinstances:
+            self.renderedmodels.append(modelname)
+            self.modelinstances[modelname] = [mtx]
+        else:
+            self.modelinstances[modelname].append(mtx)
+
+    def fullreset(self):
+        self.renderedmodels = []
+
     def reset(self):
         for key in list(self.objects.keys()):
             del self.objects[key]
             self.objects[key] = ([], [])
+        del self.modelinstances
+        self.modelinstances = {}
+
 
     def set_model(self, type, model):
         self.objects[type] = None
@@ -58,6 +74,9 @@ class Graphics(object):
         self.rw.models.cubev2.mtxdirty = True
         self.rw.models.camera.mtxdirty = True
         self.rw.models.billboard.mtxdirty = True
+        for model in self.rw.bwmodelhandler.instancemodels.values():
+            model.mtxdirty = True
+
         self._dirty = True
 
     def reset_dirty(self):
@@ -156,6 +175,7 @@ class Graphics(object):
         empty = False
 
         if self.is_dirty():
+            self.scene.fullreset()
             globalmtx = []
             globalextradata = []
 
@@ -192,8 +212,11 @@ class Graphics(object):
                 iconoffset = obj.iconoffset
 
                 modelname = obj._modelname
-                if modelname is not None and vismenu.object_3d_visible(obj.type):
-                    self.models_scene.append((currmtx, currmtx[12], currmtx[14], modelname))
+                if modelname in self.rw.bwmodelhandler.instancemodels:
+                    self.scene.add_matrix(modelname, currmtx)
+                else:
+                    if modelname is not None and vismenu.object_3d_visible(obj.type):
+                        self.models_scene.append((currmtx, currmtx[12], currmtx[14], modelname))
 
                 flag = 0
                 if obj in selected:
@@ -300,7 +323,23 @@ class Graphics(object):
             for mtx, x, z, modelname in self.models_scene:
                 rw.bwmodelhandler.rendermodel(modelname, mtx, rw.bwterrain, 0)
             self.render_everything_once = False
-        else:
+
+        for meshname in self.scene.renderedmodels:
+            if meshname in self.scene.modelinstances:
+                mtxlist = self.scene.modelinstances[meshname]
+                if not mtxlist:
+                    mtx, extradata = None, None
+                else:
+                    mtx = numpy.concatenate(mtxlist)
+            else:
+                mtx, extradata = None, None
+
+            #if len(mtx) > 0:
+            model = self.rw.bwmodelhandler.instancemodels[meshname]
+            model.bind(mtx, numpy.array([], dtype=numpy.uint8))
+            model.instancedrender(self.rw.bwmodelhandler.textures)
+            model.unbind()
+        """else:
             inrange = []
             for mtx, x, z, modelname in self.models_scene:
                 if abs(cam_x - x) < 1000 and abs(cam_z - z) < 1000:
@@ -312,4 +351,5 @@ class Graphics(object):
                 if i > 400:
                     break
 
-                rw.bwmodelhandler.rendermodel(v[0], v[1], rw.bwterrain, 0)
+                rw.bwmodelhandler.rendermodel(v[0], v[1], rw.bwterrain, 0)"""
+

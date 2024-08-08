@@ -3,11 +3,13 @@ from OpenGL.GL import *
 from .model_rendering import BW1Model, BW2Model
 from .bw_archive import BWArchive
 from .texture import TextureArchive
+from lib.render.model_renderingv2 import BWModelV2
 
 
 class BWModelHandler(object):
     def __init__(self):
         self.models = {}
+        self.instancemodels = {}
         self.textures = None
 
     @classmethod
@@ -31,6 +33,7 @@ class BWModelHandler(object):
             model.from_file(f)
             texmodel = model.make_textured_model(bwmodels.textures)
             bwmodels.models[name] = texmodel#model
+            bwmodels.instancemodels[name] = BWModelV2.from_textured_bw_model(texmodel)
             if callback is not None: callback(len(bwarc.models), i)
         return bwmodels
 
