@@ -213,7 +213,7 @@ class Graphics(object):
                 iconoffset = obj.iconoffset
 
                 modelname = obj._modelname
-                if modelname is not None:
+                if modelname is not None and visible3d(obj.type):
                     self.scene.add_matrix(modelname, currmtx)
 
                 flag = 0
