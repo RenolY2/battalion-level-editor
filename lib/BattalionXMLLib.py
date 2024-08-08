@@ -187,6 +187,9 @@ class BattalionObject(object):
 
         self.update_object_from_xml()
 
+        self.height = None
+        self.dirty = True
+
     def add_reference(self, obj):
         self._referenced_by.add(obj)
 
@@ -305,6 +308,12 @@ class BattalionObject(object):
             self._iconoffset = BWICONS["Volumeicon"]
         elif self.type == "cAmbientAreaPointSoundBox":
             self._iconoffset = BWICONS["Volumeicon"]
+        elif self.type == "cMorphingBuilding":
+            for allegiance in (self.mBaseWF, self.mBaseXY, self.mBaseTT, self.mBaseSE,
+                               self.mBaseUW, self.mBaseNeutral, self.mBaseAG):
+                if allegiance is not None:
+                    self._modelname = allegiance.mpModel.mName
+                    break 
 
     def update_xml(self):
         for attr_node in self._node:
