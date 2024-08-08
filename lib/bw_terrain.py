@@ -211,7 +211,6 @@ class BWTerrainV2(BWSectionedFile):
         self.materials = initiate_from_section(MapMaterial, self.sections[b"LTAM"])
 
         assert self.terrain_data.chunks_x == self.terrain_data.chunks_y == 64
-        print(self.terrain_data.material_count)
 
         self.pointdata = [[None for y in range(self.terrain_data.chunks_y * 16 + 1)] for x in range(self.terrain_data.chunks_y * 16 + 1)]
 
@@ -220,7 +219,6 @@ class BWTerrainV2(BWSectionedFile):
             for chunky in range(64):
                 mapchunk = self.map[chunky*64 + chunkx]
                 if mapchunk.b == 1:
-                    print(mapchunk.chunkindex)
                     chunk = self.chunks[mapchunk.chunkindex]
                     for tilex in range(4):
                         for tiley in range(4):
@@ -248,7 +246,6 @@ class BWTerrainV2(BWSectionedFile):
             return None
 
 
-
 class BWTerrain(BWSectionedFile):
     def __init__(self, f):
         super().__init__(f)
@@ -258,7 +255,6 @@ class BWTerrain(BWSectionedFile):
         self.tiles = self.sections[b"KNHC"]
         self.map = self.sections[b"PAMC"]
 
-        print(len(self.tiles), "a")
         self.triangles = []
         self.colors = []
         pointdata = {}
