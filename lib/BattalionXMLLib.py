@@ -296,6 +296,10 @@ class BattalionObject(object):
                     self._iconoffset = BWICONS["hud_p1"]
                 elif camtype == "eCAMTYPE_CHASETARGET" and insflags == 24:
                     self._iconoffset = BWICONS["hud_p2"]
+                elif camtype == "eCAMTYPE_CHASETARGET" and insflags == 21:
+                    self._iconoffset = BWICONS["hud_p1"]
+                elif camtype == "eCAMTYPE_CHASETARGET" and insflags == 25:
+                    self._iconoffset = BWICONS["hud_p2"]
                 else:
                     self._iconoffset = BWICONS["hud_cam"]
             elif self.type == "cObjectiveMarker":
