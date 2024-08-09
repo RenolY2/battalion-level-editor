@@ -86,6 +86,6 @@ class EditorMenuBar(QtWidgets.QMenuBar):
             window.activateWindow()
         else:
             self.search_window = SearchWidget(self.editor)
-            self.search_window.closing.connect(self.close)
+            self.search_window.closing.connect(self.close_search)
         self.search_window.show()
 

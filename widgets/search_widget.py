@@ -77,3 +77,6 @@ class SearchWidget(QtWidgets.QMdiSubWindow):
 
         self.treeview.set_objects(objects)
         self.treeview.expandAll()
+
+    def closeEvent(self, closeEvent: QtGui.QCloseEvent):
+        self.closing.emit()
