@@ -41,14 +41,14 @@ class Value(Keyword):
 
 
 class DecimalNumber(Keyword):
-    regex = re.compile("\d+\.\d+")
+    regex = re.compile(r"\d+\.\d+")
 
     def convert(self):
         return float(self)
 
 
 class Integer(Keyword):
-    regex = re.compile("\d+")
+    regex = re.compile(r"\d+")
 
     def convert(self):
         return int(self)
@@ -56,7 +56,7 @@ class Integer(Keyword):
 
 class EqualOperator(Keyword):
     grammar = Enum(K("="))
-    regex = re.compile("[\=]+")
+    regex = re.compile(r"[=]+")
 
     def action(self, a, b):
         return a == b
@@ -68,7 +68,7 @@ class EqualOperator(Keyword):
 
 class UnequalOperator(Keyword):
     grammar = Enum(K("!="))
-    regex = re.compile("[\!\=]+")
+    regex = re.compile(r"[!=]+")
 
     def action(self, a, b):
         return a != b
@@ -80,7 +80,7 @@ class UnequalOperator(Keyword):
 
 class Less(Keyword):
     grammar = Enum(K("<"))
-    regex = re.compile("[\<]")
+    regex = re.compile(r"[<]")
 
     def action(self, a, b):
         return a < b
@@ -92,7 +92,7 @@ class Less(Keyword):
 
 class LessEqual(Keyword):
     grammar = Enum(K("<="))
-    regex = re.compile("[\<\=]+")
+    regex = re.compile(r"[<=]+")
 
     def action(self, a, b):
         return a <= b
@@ -104,7 +104,7 @@ class LessEqual(Keyword):
 
 class Greater(Keyword):
     grammar = Enum(K(">"))
-    regex = re.compile("[\>]")
+    regex = re.compile(r"[>]")
 
     def action(self, a, b):
         return a > b
@@ -116,7 +116,7 @@ class Greater(Keyword):
 
 class GreaterEqual(Keyword):
     grammar = Enum(K(">="))
-    regex = re.compile("[\>\=]+")
+    regex = re.compile(r"[>=]+")
 
     def action(self, a, b):
         return a >= b
@@ -128,7 +128,7 @@ class GreaterEqual(Keyword):
 
 class And(Keyword):
     grammar = Enum(K("&"))
-    regex = re.compile("[\&]")
+    regex = re.compile("[&]")
 
     def action(self, a, b):
         return a and b
@@ -136,7 +136,7 @@ class And(Keyword):
 
 class Or(Keyword):
     grammar = Enum(K("|"))
-    regex = re.compile("[\|]")
+    regex = re.compile("[|]")
 
     def action(self, a, b):
         return a or b
@@ -184,10 +184,15 @@ class NumberCompare(List):
 
             for val in values:
                 try:
+                    if isinstance(val, str) and val.isdigit():
+                        val = int(val)
+
                     if isinstance(val, int):
                         tmpresult = op.action(val, self[2].convert())
                     elif isinstance(val, float):
                         tmpresult = op.action(val, float(self[2]))
+                    else:
+                        tmpresult = False
                 except ValueError as err:
                     print(err)
                     tmpresult = False
