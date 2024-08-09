@@ -1,8 +1,8 @@
 import PyQt5.QtWidgets as QtWidgets
-
+import PyQt5.QtCore as QtCore
 import bw_widgets
 from widgets.filter_view import FilterViewMenu
-
+from widgets.search_widget import SearchWidget
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
@@ -30,6 +30,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         super().__init__()
         self.editor: bw_editor.LevelEditor = editor
 
+        self.search_window = None
+
         self.visibility_menu = FilterViewMenu(self)
         self.visibility_menu.filter_update.connect(self.editor.update_render)
 
@@ -47,9 +49,10 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
         # Misc
         self.misc_menu = Menu(self, "Misc")
-        self.rotation_mode = self.misc_menu.addAction("Rotate Positions around Pivot")
-        self.rotation_mode.setCheckable(True)
-        self.rotation_mode.setChecked(True)
+        #self.rotation_mode = self.misc_menu.addAction("Rotate Positions around Pivot")
+        #self.rotation_mode.setCheckable(True)
+        #self.rotation_mode.setChecked(True)
+        self.search = self.misc_menu.addAction("Find Objects", self.open_search, "Ctrl+F")
 
 
         self.change_to_topdownview_action = self.misc_menu.addAction("Topdown View",
@@ -71,5 +74,18 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.addAction(self.collision_menu.menuAction())
         self.addAction(self.misc_menu.menuAction())
 
-
         self.last_obj_select_pos = 0
+
+    def close_search(self):
+        self.search_window = None
+
+    def open_search(self):
+        if self.search_window is not None:
+            window = self.search_window
+            window.setWindowState(window.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+            window.activateWindow()
+        else:
+            self.search_window = SearchWidget(self.editor)
+            self.search_window.closing.connect(self.close_search)
+        self.search_window.show()
+
