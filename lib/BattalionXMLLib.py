@@ -313,7 +313,7 @@ class BattalionObject(object):
                                self.mBaseUW, self.mBaseNeutral, self.mBaseAG):
                 if allegiance is not None:
                     self._modelname = allegiance.mpModel.mName
-                    break 
+                    break
 
     def update_xml(self):
         for attr_node in self._node:
