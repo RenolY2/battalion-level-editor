@@ -1,6 +1,36 @@
 from pypeg2 import *
 import re
 
+fieldnames = {}
+autocomplete = []
+autocompletebw2 = []
+
+autocompletefull = []
+
+with open("lib/fieldnames.txt", "r") as f:
+    for word in f:
+        word = word.strip()
+        autocomplete.append(word)
+        autocompletefull.append(word)
+        wordlower = word.lower()
+        if wordlower in fieldnames:
+            fieldnames[wordlower].append(word)
+        else:
+            fieldnames[wordlower] = [word]
+
+fieldnamesbw2 = {}
+with open("lib/fieldnamesbw2.txt", "r") as f:
+    for word in f:
+        word = word.strip()
+        autocompletebw2.append(word)
+        if word not in autocompletefull:
+            autocompletefull.append(word)
+        wordlower = word.lower()
+        if wordlower in fieldnamesbw2:
+            fieldnamesbw2[wordlower].append(word)
+        else:
+            fieldnamesbw2[wordlower] = [word]
+
 
 class Field(List):
     grammar = Keyword("self"), ".", word, maybe_some(".", word)
@@ -126,6 +156,20 @@ class GreaterEqual(Keyword):
         parse(">=", GreaterEqual)
 
 
+class Contains(Keyword):
+    grammar = Enum(K("contains"))
+
+    def action(self, a, b):
+        return b.lower() in a.lower()
+
+
+class Excludes(Keyword):
+    grammar = Enum(K("excludes"))
+
+    def action(self, a, b):
+        return b.lower() not in a.lower()
+
+
 class And(Keyword):
     grammar = Enum(K("&"))
     regex = re.compile("[&]")
@@ -140,6 +184,33 @@ class Or(Keyword):
 
     def action(self, a, b):
         return a or b
+
+
+class StringContentCheck(List):
+    grammar = Field, maybe_some(whitespace), [Contains, Excludes], maybe_some(whitespace), Value
+
+    def evaluate(self, obj):
+        values = self[0].evaluate(obj)
+        if len(values) == 0:
+            return False
+        else:
+            result = False
+            op = self[1]
+
+            for val in values:
+                try:
+                    if isinstance(val, str):
+                        tmpresult = op.action(val, self[2])
+                    else:
+                        tmpresult = False
+                except ValueError:
+                    tmpresult = False
+
+                if tmpresult:
+                    result = True
+                    break
+
+            return result
 
 
 class Equal(List):
@@ -205,7 +276,7 @@ class NumberCompare(List):
 
 
 class Comparison(List):
-    grammar = [Equal, NumberCompare]
+    grammar = [Equal, NumberCompare, StringContentCheck]
 
     def evaluate(self, obj):
         return self[0].evaluate(obj)
@@ -292,6 +363,60 @@ class TestObject(object):
 
 def create_query(querytext):
     return parse(querytext, QueryGrammar)
+
+
+# Levenshtein distance implemented according to https://en.wikipedia.org/wiki/Levenshtein_distance
+def tail(a):
+    if len(a) == 1:
+        return ""
+    else:
+        return a[1:]
+
+
+def lev(a, b, currdistance=0):
+    if currdistance > 5:
+        return 9999
+
+    if len(b) == 0:
+        return len(a)
+    elif len(a) == 0:
+        return len(b)
+    if a[0] == b[0]:
+        return lev(tail(a), tail(b))
+    else:
+        return 1 + min(
+                       lev(tail(a), b, currdistance+1),
+                       lev(a, tail(b), currdistance+1),
+                       lev(tail(a), tail(b), currdistance+1)
+                       )
+
+
+def simpledistance(a, b):
+    if a not in b:
+        return 999999
+    else:
+        return len(b) - len(a) + b.find(a)*2  # Prioritize matches happening earlier in the string
+
+
+def find_best_fit(name, bw2=False, max=10):
+    results = []
+    namelower = name.lower()
+
+    if bw2:
+        relevantfieldnames = fieldnamesbw2
+    else:
+        relevantfieldnames = fieldnames
+
+    for name in relevantfieldnames:
+        dist = simpledistance(namelower, name)
+        if dist < 100:
+            for fullcase in relevantfieldnames[name]:
+                results.append((fullcase, dist))
+
+    results.sort(key=lambda x: x[1])
+
+    return results[:max]
+
 
 """
 for parser in [EqualOperator, UnequalOperator, Less, LessEqual, Greater, GreaterEqual]:

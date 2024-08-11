@@ -9,7 +9,41 @@ if TYPE_CHECKING:
 
 
 from widgets.tree_view import LevelDataTreeView, ObjectGroup, NamedItem
-from lib.searchquery import create_query
+from lib.searchquery import create_query, find_best_fit, autocompletefull
+
+
+class AutocompleteDropDown(QtWidgets.QComboBox):
+    def __init__(self, parent, items):
+        super().__init__(parent)
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        for item in items:
+            self.addItem(item)
+
+        self.max = len(items)
+
+    def scroll_up(self):
+        if self.maxCount() == 0:
+            return
+
+        index = self.currentIndex()
+        index -= 1
+        if index < 0:
+            index = self.max-1
+
+        self.setCurrentIndex(index)
+
+    def scroll_down(self):
+        if self.maxCount() == 0:
+            return
+
+        index = self.currentIndex()
+        index += 1
+        if index >= self.max:
+            index = 0
+
+        self.setCurrentIndex(index)
+
+        print(self.currentIndex(), self.currentText())
 
 
 class SearchTreeView(LevelDataTreeView):
@@ -34,6 +68,111 @@ class SearchTreeView(LevelDataTreeView):
             target.addChild(category)
 
 
+def cursor_select(cursor, start, end):
+    curr = cursor.position()
+
+    cursor.setPosition(start)
+    cursor.selectionStart()
+    cursor.setPosition(end)
+    cursor.selectionEnd()
+
+    cursor.setPosition(end)
+    pass
+
+
+class AutocompleteTextEdit(QtWidgets.QTextEdit):
+    def __init__(self, parent, editor):
+        super().__init__(parent)
+        self.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+
+        self.editor: bw_editor.LevelEditor = editor
+        self.autocomplete: AutocompleteDropDown = None
+
+    def get_last_field(self):
+        text = self.toPlainText()
+        cursor = self.textCursor()
+        prev = text.rfind(" ", 0, cursor.position())
+        if prev == -1:
+            prev = 0
+        field = text[prev:cursor.position()]
+        if field:
+            rightmost_dot = field.rfind(".")
+            field = field[rightmost_dot + 1:]
+            if field:
+
+                return text[rightmost_dot+1:cursor.position()]
+            else:
+                return ""
+        else:
+            return ""
+
+    def mousePressEvent(self, e: QtGui.QMouseEvent) -> None:
+        if self.autocomplete is not None:
+            self.autocomplete.hide()
+            self.autocomplete.deleteLater()
+            del self.autocomplete
+            self.autocomplete: AutocompleteDropDown = None
+
+        super().mousePressEvent(e)
+
+    def update_autocomplete(self):
+        field = self.get_last_field()
+        cursor = self.textCursor()
+        for i in range(len(field)):
+            cursor.deletePreviousChar()
+        cursor.insertText(self.autocomplete.currentText())
+
+    def keyPressEvent(self, e: QtGui.QKeyEvent):
+        if self.autocomplete is not None and e.key() in (Qt.Key_Up, Qt.Key_Down):
+            if e.key() == Qt.Key_Up:
+                self.autocomplete.scroll_up()
+            elif e.key() == Qt.Key_Down:
+                self.autocomplete.scroll_down()
+            field = self.get_last_field()
+            cursor = self.textCursor()
+            print(field)
+            for i in range(len(field)):
+                cursor.deletePreviousChar()
+            cursor.insertText(self.autocomplete.currentText())
+
+        elif self.autocomplete is not None:
+            self.autocomplete.hide()
+            self.autocomplete.deleteLater()
+            del self.autocomplete
+            self.autocomplete: AutocompleteDropDown = None
+
+        if (e.key() == Qt.Key_Tab):
+            text = self.toPlainText()
+            cursor = self.textCursor()
+            prev = text.rfind(" ",0, cursor.position())
+            if prev == -1:
+                prev = 0
+            field = text[prev:cursor.position()]
+            if field:
+                rightmost_dot = field.rfind(".")
+                field = field[rightmost_dot+1:]
+                if field:
+                    print(field)
+                    bestmatch = find_best_fit(field, bw2=self.editor.level_file.bw2, max=15)
+                    rect = self.cursorRect()
+
+                    self.autocomplete = AutocompleteDropDown(self, [x[0] for x in bestmatch])
+                    self.autocomplete.currentIndexChanged.connect(self.update_autocomplete)
+                    self.autocomplete.move(rect.bottomRight().x(), rect.bottomRight().y()+5)
+
+                    self.autocomplete.show()
+                    self.setFocus()
+
+                    if bestmatch:
+                        cursor.clearSelection()
+                        for i in range(len(field)):
+                            cursor.deletePreviousChar()
+                        cursor.insertText(bestmatch[0][0])
+        else:
+            super().keyPressEvent(e)
+
+
 class SearchWidget(QtWidgets.QMdiSubWindow):
     closing = pyqtSignal()
 
@@ -49,9 +188,8 @@ class SearchWidget(QtWidgets.QMdiSubWindow):
         self.vlayout = QtWidgets.QVBoxLayout(self)
         self.basewidget.setLayout(self.vlayout)
 
-        self.queryinput = QtWidgets.QTextEdit(self)
-        self.queryinput.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
-        self.queryinput.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.queryinput = AutocompleteTextEdit(self, self.editor)
+
 
         self.searchbutton = QtWidgets.QPushButton("Find", self)
         self.searchbutton.pressed.connect(self.do_search)
