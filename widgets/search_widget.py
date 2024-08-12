@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
 
-
+from widgets.editor_widgets import open_error_dialog
 from widgets.tree_view import LevelDataTreeView, ObjectGroup, NamedItem
 from lib.searchquery import create_query, find_best_fit, autocompletefull
 
@@ -201,6 +201,9 @@ class SearchWidget(QtWidgets.QMdiSubWindow):
         self.save_query = QtWidgets.QPushButton("Save Query")
         self.load_query = QtWidgets.QPushButton("Load Query")
 
+        self.save_query.pressed.connect(self.action_save_query)
+        self.load_query.pressed.connect(self.action_load_query)
+
         self.vlayout.addWidget(self.queryinput)
 
         self.hlayout = QtWidgets.QHBoxLayout(self)
@@ -222,6 +225,8 @@ class SearchWidget(QtWidgets.QMdiSubWindow):
         self.shortcut = QtWidgets.QShortcut("Ctrl+E", self)
         self.shortcut.activated.connect(self.editor.pik_control.action_open_edit_object)
 
+        self.query_path = "searchqueries/"
+
     def tree_select(self):
         current = self.treeview.selectedItems()
         if len(current) == 1:
@@ -232,7 +237,7 @@ class SearchWidget(QtWidgets.QMdiSubWindow):
         try:
             query = create_query(searchquery)
         except Exception as err:
-            print(err)
+            open_error_dialog("Cannot save: Search query has syntax errors.", self)
             return
 
         objects = []
@@ -242,6 +247,33 @@ class SearchWidget(QtWidgets.QMdiSubWindow):
 
         self.treeview.set_objects(objects)
         self.treeview.expandAll()
+
+    def action_load_query(self):
+        filepath, choosentype = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open File",
+            self.query_path,
+            "Text (*.txt);;All files (*)")
+
+        if filepath:
+            with open(filepath, "r") as f:
+                self.queryinput.setText(f.read())
+            self.query_path = filepath
+
+    def action_save_query(self):
+        try:
+            query = create_query(self.queryinput.toPlainText())
+        except Exception as err:
+            open_error_dialog("Cannot search: Search query has syntax errors.", self)
+        else:
+            filepath, choosentype = QtWidgets.QFileDialog.getSaveFileName(
+                self, "Save File",
+                self.query_path,
+                "Text (*.txt);;All files (*)")
+
+            if filepath:
+                with open(filepath, "w") as f:
+                    f.write(self.queryinput.toPlainText())
+                self.query_path = filepath
 
     def closeEvent(self, closeEvent: QtGui.QCloseEvent):
         self.closing.emit()
