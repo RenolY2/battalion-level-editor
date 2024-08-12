@@ -8,28 +8,28 @@ autocompletebw2 = []
 autocompletefull = []
 
 with open("lib/fieldnames.txt", "r") as f:
-    for word in f:
-        word = word.strip()
-        autocomplete.append(word)
-        autocompletefull.append(word)
-        wordlower = word.lower()
+    for fieldname in f:
+        fieldname = fieldname.strip()
+        autocomplete.append(fieldname)
+        autocompletefull.append(fieldname)
+        wordlower = fieldname.lower()
         if wordlower in fieldnames:
-            fieldnames[wordlower].append(word)
+            fieldnames[wordlower].append(fieldname)
         else:
-            fieldnames[wordlower] = [word]
+            fieldnames[wordlower] = [fieldname]
 
 fieldnamesbw2 = {}
 with open("lib/fieldnamesbw2.txt", "r") as f:
-    for word in f:
-        word = word.strip()
-        autocompletebw2.append(word)
-        if word not in autocompletefull:
-            autocompletefull.append(word)
-        wordlower = word.lower()
+    for fieldname in f:
+        fieldname = fieldname.strip()
+        autocompletebw2.append(fieldname)
+        if fieldname not in autocompletefull:
+            autocompletefull.append(fieldname)
+        wordlower = fieldname.lower()
         if wordlower in fieldnamesbw2:
-            fieldnamesbw2[wordlower].append(word)
+            fieldnamesbw2[wordlower].append(fieldname)
         else:
-            fieldnamesbw2[wordlower] = [word]
+            fieldnamesbw2[wordlower] = [fieldname]
 
 
 class Field(List):
