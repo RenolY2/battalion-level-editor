@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 from widgets.editor_widgets import open_error_dialog
 from widgets.tree_view import LevelDataTreeView, ObjectGroup, NamedItem
+from widgets.menu.menubar import Menu
 from lib.searchquery import create_query, find_best_fit, autocompletefull
 
 
@@ -178,7 +179,66 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
             super().keyPressEvent(e)
 
 
-class SearchWidget(QtWidgets.QMdiSubWindow):
+class HelpWindow(QtWidgets.QMdiSubWindow):
+    closing = pyqtSignal()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.resize(800, 400)
+
+        self.helptext = QtWidgets.QTextEdit(self)
+        self.helptext.setReadOnly(True)
+        self.helptext.setText("""The "Find Objects" utility allows filtering the massive selection of objects in a Battalion Wars level based on your search query!
+
+Syntax example:
+self.id = 50032934
+This search term finds an object whose id is exactly 50032934.
+
+self.type = cAirVehicle & self.State != AI_STATE_NORMAL
+This search term finds an object whose type is a cAirVehicle but whose state is not AI_STATE_NORMAL.
+
+self.type = cGroundVehicle & self.mBase.mArmy = eXylvanian & self.mBase.mMaximumCameraSpeed > 3
+This search term finds a ground vehicle whose base object belongs to Xylvania and has a maximum camera speed bigger than 3.
+
+self.mName contains lod | self.mName contains box
+This search term finds objects whose name contains either the word "lod" or the word "box". The comparison is case insensitive and will also match e.g. "LOD".
+
+self.type != cAirVehicle & (self.mLockToSurface = True | self.mStartWayPoint = 0)
+This search term finds objects whose type isn't cAirVehicle and that either have lock to surface enabled or the start waypoint set to 0.
+
+self.mPassenger.id = 50033037
+This search finds objects with a passenger that has the id 50033037. With lists of references/values, the comparison is done for each reference/value in the list, e.g. each passenger, and is true if at least one comparison is true.
+
+Possible comparison operations: = (equal), != (unequal), > (bigger than), >= (bigger than or equal), < (less than), <= (less than or equal).
+Possible string content search operations: contains, excludes
+
+Many fields can be searched for and it is possible to string together multiple fields with a dot that will follow the chain of references to retrieve a value.
+You can save and load search queries using the Save Query/Load Query buttons. The Find button executes the search query.
+Clicking on an object in the list will select it in the main window. Double click will teleport your view to that object. Ctrl + E will open up the edit window.
+""")
+
+        self.setWidget(self.helptext)
+
+    def closeEvent(self, closeEvent: QtGui.QCloseEvent) -> None:
+        self.closing.emit()
+
+
+class SearchMenubar(QtWidgets.QMenuBar):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.help = self.addAction("Help")
+        self.help.triggered.connect(self.show_help)
+        self.helpwindow = None
+
+    def show_help(self):
+        self.helpwindow = HelpWindow()
+        self.helpwindow.closing.connect(self.killhelp)
+        self.helpwindow.show()
+
+    def killhelp(self):
+        self.helpwindow = None
+
+
+class SearchWidget(QtWidgets.QMainWindow):
     closing = pyqtSignal()
 
     def __init__(self, editor):
@@ -188,10 +248,13 @@ class SearchWidget(QtWidgets.QMdiSubWindow):
         self.setMinimumSize(QSize(300, 300))
         self.basewidget = QtWidgets.QWidget(self)
 
-        self.setWidget(self.basewidget)
+        self.setCentralWidget(self.basewidget)
+        self.menubar = SearchMenubar(self)
+        self.setMenuBar(self.menubar)
 
         self.vlayout = QtWidgets.QVBoxLayout(self)
         self.basewidget.setLayout(self.vlayout)
+
 
         self.queryinput = AutocompleteTextEdit(self, self.editor)
 
@@ -226,7 +289,13 @@ class SearchWidget(QtWidgets.QMdiSubWindow):
         self.shortcut = QtWidgets.QShortcut("Ctrl+E", self)
         self.shortcut.activated.connect(self.editor.pik_control.action_open_edit_object)
 
+
+
+
         self.query_path = "searchqueries/"
+
+    def open_help(self):
+        pass
 
     def tree_select(self):
         current = self.treeview.selectedItems()
