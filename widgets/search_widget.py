@@ -47,6 +47,10 @@ class AutocompleteDropDown(QtWidgets.QComboBox):
 
 
 class SearchTreeView(LevelDataTreeView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setMaximumWidth(9999)
+
     def set_objects(self, objects):
         self.reset()
 
@@ -194,11 +198,34 @@ class SearchWidget(QtWidgets.QMdiSubWindow):
         self.searchbutton = QtWidgets.QPushButton("Find", self)
         self.searchbutton.pressed.connect(self.do_search)
 
+        self.save_query = QtWidgets.QPushButton("Save Query")
+        self.load_query = QtWidgets.QPushButton("Load Query")
+
         self.vlayout.addWidget(self.queryinput)
-        self.vlayout.addWidget(self.searchbutton)
+
+        self.hlayout = QtWidgets.QHBoxLayout(self)
+        self.hlayout.addWidget(self.searchbutton)
+        self.vlayout.addLayout(self.hlayout)
+
+        self.hlayout2 = QtWidgets.QHBoxLayout(self)
+        self.hlayout2.addWidget(self.load_query)
+        self.hlayout2.addWidget(self.save_query)
+
+        self.hlayout.addLayout(self.hlayout2)
+
 
         self.treeview = SearchTreeView(self)
         self.vlayout.addWidget(self.treeview)
+        self.treeview.itemDoubleClicked.connect(self.editor.do_goto_action)
+        self.treeview.itemSelectionChanged.connect(self.tree_select)
+
+        self.shortcut = QtWidgets.QShortcut("Ctrl+E", self)
+        self.shortcut.activated.connect(self.editor.pik_control.action_open_edit_object)
+
+    def tree_select(self):
+        current = self.treeview.selectedItems()
+        if len(current) == 1:
+            self.editor.tree_select_object(current[0])
 
     def do_search(self):
         searchquery = self.queryinput.toPlainText().replace("\n", "")
