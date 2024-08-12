@@ -1,6 +1,34 @@
 from pypeg2 import *
 import re
 
+fieldnames = {}
+autocomplete = []
+autocompletebw2 = []
+
+autocompletefull = []
+
+
+def load_autocomplete(fpath):
+    result = []
+    fullnames = {}
+    with open(fpath, "r") as f:
+        for fieldname in f:
+            fieldname = fieldname.strip()
+            result.append(fieldname)
+
+            wordlower = fieldname.lower()
+            if wordlower in fullnames:
+                fullnames[wordlower].append(fieldname)
+            else:
+                fullnames[wordlower] = [fieldname]
+
+    return result, fullnames
+
+autocomplete, fieldnames = load_autocomplete("lib/fieldnames.txt")
+autocompletebw2, fieldnamesbw2 = load_autocomplete("lib/fieldnamesbw2.txt")
+autocompletevalues, valuenames = load_autocomplete("lib/values.txt")
+autocompletevaluesbw2, valuenamesbw2 = load_autocomplete("lib/valuesbw2.txt")
+
 
 class Field(List):
     grammar = Keyword("self"), ".", word, maybe_some(".", word)
@@ -38,6 +66,14 @@ class Value(Keyword):
 
     def convert(self):
         return int(self)
+
+    def convert_bool(self):
+        if self.lower() in ("true", "etrue"):
+            return True
+        elif self.lower() in ("false", "efalse"):
+            return False
+        else:
+            raise ValueError("Value should be True or False")
 
 
 class DecimalNumber(Keyword):
@@ -126,6 +162,20 @@ class GreaterEqual(Keyword):
         parse(">=", GreaterEqual)
 
 
+class Contains(Keyword):
+    grammar = Enum(K("contains"))
+
+    def action(self, a, b):
+        return b.lower() in a.lower()
+
+
+class Excludes(Keyword):
+    grammar = Enum(K("excludes"))
+
+    def action(self, a, b):
+        return b.lower() not in a.lower()
+
+
 class And(Keyword):
     grammar = Enum(K("&"))
     regex = re.compile("[&]")
@@ -142,6 +192,33 @@ class Or(Keyword):
         return a or b
 
 
+class StringContentCheck(List):
+    grammar = Field, maybe_some(whitespace), [Contains, Excludes], maybe_some(whitespace), Value
+
+    def evaluate(self, obj):
+        values = self[0].evaluate(obj)
+        if len(values) == 0:
+            return False
+        else:
+            result = False
+            op = self[1]
+
+            for val in values:
+                try:
+                    if isinstance(val, str):
+                        tmpresult = op.action(val, self[2])
+                    else:
+                        tmpresult = False
+                except ValueError:
+                    tmpresult = False
+
+                if tmpresult:
+                    result = True
+                    break
+
+            return result
+
+
 class Equal(List):
     grammar = Field, maybe_some(whitespace), [EqualOperator, UnequalOperator], maybe_some(whitespace), [DecimalNumber, Value]
 
@@ -155,7 +232,11 @@ class Equal(List):
 
             for val in values:
                 try:
-                    if isinstance(val, int):
+                    if val is None and self[2].lower() in ("none", "0"):
+                        tmpresult = op.action(val, None)
+                    elif isinstance(val, bool):
+                        tmpresult = op.action(val, self[2].convert_bool())
+                    elif isinstance(val, int):
                         tmpresult = op.action(val, self[2].convert())
                     elif isinstance(val, float):
                         tmpresult = op.action(val, float(self[2]))
@@ -186,7 +267,6 @@ class NumberCompare(List):
                 try:
                     if isinstance(val, str) and val.isdigit():
                         val = int(val)
-
                     if isinstance(val, int):
                         tmpresult = op.action(val, self[2].convert())
                     elif isinstance(val, float):
@@ -205,7 +285,7 @@ class NumberCompare(List):
 
 
 class Comparison(List):
-    grammar = [Equal, NumberCompare]
+    grammar = [Equal, NumberCompare, StringContentCheck]
 
     def evaluate(self, obj):
         return self[0].evaluate(obj)
@@ -292,6 +372,66 @@ class TestObject(object):
 
 def create_query(querytext):
     return parse(querytext, QueryGrammar)
+
+
+# Levenshtein distance implemented according to https://en.wikipedia.org/wiki/Levenshtein_distance
+def tail(a):
+    if len(a) == 1:
+        return ""
+    else:
+        return a[1:]
+
+
+def lev(a, b, currdistance=0):
+    if currdistance > 5:
+        return 9999
+
+    if len(b) == 0:
+        return len(a)
+    elif len(a) == 0:
+        return len(b)
+    if a[0] == b[0]:
+        return lev(tail(a), tail(b))
+    else:
+        return 1 + min(
+                       lev(tail(a), b, currdistance+1),
+                       lev(a, tail(b), currdistance+1),
+                       lev(tail(a), tail(b), currdistance+1)
+                       )
+
+
+def simpledistance(a, b):
+    if a not in b:
+        return 999999
+    else:
+        return len(b) - len(a) + b.find(a)*2  # Prioritize matches happening earlier in the string
+
+
+def find_best_fit(name, bw2=False, values=False, max=10):
+    results = []
+    namelower = name.lower()
+
+    if bw2:
+        if values:
+            relevantfieldnames = valuenamesbw2
+        else:
+            relevantfieldnames = fieldnamesbw2
+    else:
+        if values:
+            relevantfieldnames = valuenames
+        else:
+            relevantfieldnames = fieldnames
+
+    for name in relevantfieldnames:
+        dist = simpledistance(namelower, name)
+        if dist < 100:
+            for fullcase in relevantfieldnames[name]:
+                results.append((fullcase, dist))
+
+    results.sort(key=lambda x: x[1])
+
+    return results[:max]
+
 
 """
 for parser in [EqualOperator, UnequalOperator, Less, LessEqual, Greater, GreaterEqual]:

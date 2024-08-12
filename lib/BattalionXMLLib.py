@@ -7,6 +7,8 @@ try:
 except: # cElementTree not available
     import xml.etree.ElementTree as etree
 
+from lib.searchquery import fieldnames
+
 #import xml.etree.ElementTree.Element as Element
 LOCALTESTING = False
 if not LOCALTESTING:
@@ -123,10 +125,17 @@ class BattalionLevelFile(object):
         self._root = self._tree.getroot()
         self.objects = {}
         self.objects_with_positions = {}
-        
+        self.bw2 = False
+
         for i, child in enumerate(self._root):
             if child.tag == "Object":
                 bwobject = BattalionObject(self, child)
+
+                if not self.bw2:
+                    for node in bwobject._node:
+                        if node.attrib["name"] not in fieldnames:
+                            self.bw2 = True
+                            print("Detected XML as BW2")
                 if hasattr(bwobject, "spawnMatrix") or hasattr(bwobject, "Mat") or hasattr(bwobject, "mMatrix"):
                     self.add_object(bwobject, position=True)
                 else:
@@ -157,6 +166,7 @@ class BattalionFilePaths(object):
         self.resourcepath = None
         self.objectpath = None
         self.preloadpath = None
+
 
         for child in self._tree.getroot():
             print(child.tag)
@@ -317,7 +327,7 @@ class BattalionObject(object):
                                self.mBaseUW, self.mBaseNeutral, self.mBaseAG):
                 if allegiance is not None:
                     self._modelname = allegiance.mpModel.mName
-                    break 
+                    break
 
     def update_xml(self):
         for attr_node in self._node:
@@ -437,16 +447,28 @@ if __name__ == "__main__":
         print(paths.objectpath)
         print(paths.resourcepath)"""
 
-    if False:
+    if True:
         import gzip
         import os
         BW1path = r"D:\Wii games\BattWars\P-G8WP\files\Data\CompoundFiles"
         BW2path = r"D:\Wii games\BW2Folder\files\Data\CompoundFiles"
 
         import csv
+        fieldnames = set()
+        fieldnames.add("id")
+        fieldnames.add("modelname")
+        fieldnames.add("type")
+        fieldnames.add("name")
 
-        with csv.open("table.csv", "w") as tbl:
+        fieldnamesbw2 = set()
+        fieldnamesbw2.add("id")
+        fieldnamesbw2.add("modelname")
+        fieldnamesbw2.add("type")
+        fieldnamesbw2.add("name")
 
+
+        #with csv.open("table.csv", "w") as tbl:
+        if True:
             types = set()
             alltypes = set()
             for fname in os.listdir(BW1path):
@@ -462,6 +484,8 @@ if __name__ == "__main__":
                                 objectcounts = {}
                                 for objid, obj in level_data.objects.items():
                                     for node in obj._node:
+                                        fieldnames.add(node.attrib["name"])
+
                                         if "Matrix" in node.attrib["type"]:
                                             mtype = node.attrib["type"]
                                             #print(node.attrib["type"])
@@ -471,6 +495,8 @@ if __name__ == "__main__":
                                 values = []
 
                                 for objid, obj in preload_data.objects.items():
+                                    for node in obj._node:
+                                        fieldnames.add(node.attrib["name"])
                                     if obj.type == "cWorldFreeListSizeLoader":
                                         for var in (
                                         "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies", "numShadowVolumes",
@@ -494,6 +520,8 @@ if __name__ == "__main__":
             #"mLuaScriptMemory", "mRenderToTextureMemory", "mbRenderToTextureUseMem1", "miMaxTerrainMemorySize",
             #                            "miPhysicsMemorySize", "miActionHeapMemorySize", "mTequilaMemoryHeap"):
             print("BW1")
+
+
             for result in sorted(types, key=lambda x: x[0]):
                 print(result[0], result[1], result[2])
             types = set()
@@ -510,6 +538,8 @@ if __name__ == "__main__":
                                 objectcounts = {}
                                 for objid, obj in level_data.objects.items():
                                     for node in obj._node:
+                                        fieldnamesbw2.add(node.attrib["name"])
+                                    for node in obj._node:
                                         if "Matrix" in node.attrib["type"]:
                                             mtype = node.attrib["type"]
                                             #print(node.attrib["type"])
@@ -519,6 +549,8 @@ if __name__ == "__main__":
                                 values = []
 
                                 for objid, obj in preload_data.objects.items():
+                                    for node in obj._node:
+                                        fieldnamesbw2.add(node.attrib["name"])
                                     if obj.type == "cWorldFreeListSizeLoader":
                                         for var in (
                                         "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies", "numShadowVolumes",
@@ -545,7 +577,17 @@ if __name__ == "__main__":
             for result in sorted(alltypes):
                 print(result)
 
-    from searchquery import create_query
+            with open("fieldnames.txt", "w") as f:
+                for fieldname in sorted(fieldnames):
+                    f.write(fieldname)
+                    f.write("\n")
+
+            with open("fieldnamesbw2.txt", "w") as f:
+                for fieldname in sorted(fieldnamesbw2):
+                    f.write(fieldname)
+                    f.write("\n")
+
+    """from searchquery import create_query
     import gzip
     query = create_query("self.mDamageAmount >= 32")
     results = []
@@ -563,4 +605,4 @@ if __name__ == "__main__":
 
     print(results)
     print([x.name for x in results])
-    print(len(results))
+    print(len(results))"""
