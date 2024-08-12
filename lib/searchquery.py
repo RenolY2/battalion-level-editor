@@ -69,6 +69,14 @@ class Value(Keyword):
     def convert(self):
         return int(self)
 
+    def convert_bool(self):
+        if self.lower() in ("true", "etrue"):
+            return True
+        elif self.lower() in ("false", "efalse"):
+            return False
+        else:
+            raise ValueError("Value should be True or False")
+
 
 class DecimalNumber(Keyword):
     regex = re.compile(r"\d+\.\d+")
@@ -226,7 +234,11 @@ class Equal(List):
 
             for val in values:
                 try:
-                    if isinstance(val, int):
+                    if val is None and self[2].lower() in ("none", "0"):
+                        tmpresult = op.action(val, None)
+                    elif isinstance(val, bool):
+                        tmpresult = op.action(val, self[2].convert_bool())
+                    elif isinstance(val, int):
                         tmpresult = op.action(val, self[2].convert())
                     elif isinstance(val, float):
                         tmpresult = op.action(val, float(self[2]))
@@ -257,7 +269,6 @@ class NumberCompare(List):
                 try:
                     if isinstance(val, str) and val.isdigit():
                         val = int(val)
-
                     if isinstance(val, int):
                         tmpresult = op.action(val, self[2].convert())
                     elif isinstance(val, float):
