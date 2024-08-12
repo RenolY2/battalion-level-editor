@@ -156,9 +156,10 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
             if field:
                 rightmost_dot = field.rfind(".")
                 field = field[rightmost_dot+1:]
+                if rightmost_dot == -1:
+                    field = field.lstrip(" ")
                 if field:
-                    print(field)
-                    bestmatch = find_best_fit(field, bw2=self.editor.level_file.bw2, max=15)
+                    bestmatch = find_best_fit(field, bw2=self.editor.level_file.bw2, values=rightmost_dot==-1, max=15)
                     rect = self.cursorRect()
 
                     self.autocomplete = AutocompleteDropDown(self, [x[0] for x in bestmatch])

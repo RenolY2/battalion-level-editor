@@ -1,4 +1,3 @@
-self
 AgainstAnitAir
 AgainstArtilliery
 AgainstBattleStation

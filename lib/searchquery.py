@@ -7,29 +7,27 @@ autocompletebw2 = []
 
 autocompletefull = []
 
-with open("lib/fieldnames.txt", "r") as f:
-    for fieldname in f:
-        fieldname = fieldname.strip()
-        autocomplete.append(fieldname)
-        autocompletefull.append(fieldname)
-        wordlower = fieldname.lower()
-        if wordlower in fieldnames:
-            fieldnames[wordlower].append(fieldname)
-        else:
-            fieldnames[wordlower] = [fieldname]
 
-fieldnamesbw2 = {}
-with open("lib/fieldnamesbw2.txt", "r") as f:
-    for fieldname in f:
-        fieldname = fieldname.strip()
-        autocompletebw2.append(fieldname)
-        if fieldname not in autocompletefull:
-            autocompletefull.append(fieldname)
-        wordlower = fieldname.lower()
-        if wordlower in fieldnamesbw2:
-            fieldnamesbw2[wordlower].append(fieldname)
-        else:
-            fieldnamesbw2[wordlower] = [fieldname]
+def load_autocomplete(fpath):
+    result = []
+    fullnames = {}
+    with open(fpath, "r") as f:
+        for fieldname in f:
+            fieldname = fieldname.strip()
+            result.append(fieldname)
+
+            wordlower = fieldname.lower()
+            if wordlower in fullnames:
+                fullnames[wordlower].append(fieldname)
+            else:
+                fullnames[wordlower] = [fieldname]
+
+    return result, fullnames
+
+autocomplete, fieldnames = load_autocomplete("lib/fieldnames.txt")
+autocompletebw2, fieldnamesbw2 = load_autocomplete("lib/fieldnamesbw2.txt")
+autocompletevalues, valuenames = load_autocomplete("lib/values.txt")
+autocompletevaluesbw2, valuenamesbw2 = load_autocomplete("lib/valuesbw2.txt")
 
 
 class Field(List):
@@ -409,14 +407,20 @@ def simpledistance(a, b):
         return len(b) - len(a) + b.find(a)*2  # Prioritize matches happening earlier in the string
 
 
-def find_best_fit(name, bw2=False, max=10):
+def find_best_fit(name, bw2=False, values=False, max=10):
     results = []
     namelower = name.lower()
 
     if bw2:
-        relevantfieldnames = fieldnamesbw2
+        if values:
+            relevantfieldnames = valuenamesbw2
+        else:
+            relevantfieldnames = fieldnamesbw2
     else:
-        relevantfieldnames = fieldnames
+        if values:
+            relevantfieldnames = valuenames
+        else:
+            relevantfieldnames = fieldnames
 
     for name in relevantfieldnames:
         dist = simpledistance(namelower, name)
