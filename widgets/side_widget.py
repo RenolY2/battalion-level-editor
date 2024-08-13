@@ -120,7 +120,7 @@ class PikminSideWidget(QWidget):
                 window.activateWindow()
                 window.show()
             else:
-                window = BWObjectEditWindow()
+                window = BWObjectEditWindow(obj.id)
                 window.opennewxml.connect(self.open_new_window)
                 window.move(window.x() + offset, window.y() + offset)
                 self.edit_windows[obj.id] = window
