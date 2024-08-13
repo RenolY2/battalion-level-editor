@@ -207,6 +207,7 @@ class LevelDataTreeView(QTreeWidget):
         self.hud = self._add_group("HUD")
         self.scripts = self._add_group("Scripts")
         self.effects = self._add_group("Effects")
+        self.preload = self._add_group("Preload")
         self.other: ObjectGroup = self._add_group("Other")
         """self.checkpointgroups = self._add_group("Checkpoint groups")
         self.objectroutes = self._add_group("Object point groups")
@@ -250,7 +251,10 @@ class LevelDataTreeView(QTreeWidget):
                 ["cAnimationTriggeredEffect", "cAnimationTriggeredEffectChainItemGroundImpact",
                  "cAnimationTriggeredEffectChainItemSound", "cAnimationTriggeredEffectChainItemTequilaEffect",
                  "cAnimationTriggeredEffectManager", "cTequilaEffectResource", "cSimpleTequilaTaggedEffectBase",
-                 "cTerrainParticleGeneratorBase"]
+                 "cTerrainParticleGeneratorBase"],
+            "preload":
+                ['cPhysicsMaterial', 'cPhysicsGlobalParams', 'cTerrainParticleAnimationBase', 'cWorldFreeListSizeLoader',
+                 'cPhysicsGlobalParamSet', 'cDamageArmourBonus', 'cBailOutData', 'cLevelSettings']
         }
 
         self._categorydistribution = {}
