@@ -340,7 +340,7 @@ class LevelDataTreeView(QTreeWidget):
 
     def reset(self):
         for section in (self.other, self.units, self.components, self.mapobjects, self.scenery,
-                        self.assets, self.hud, self.scripts, self.effects):
+                        self.assets, self.hud, self.scripts, self.effects, self.preload):
             section.remove_children()
 
     def choose_category(self, objecttype):
