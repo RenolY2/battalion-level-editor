@@ -59,13 +59,26 @@ def open_error_dialog(errormsg, self):
 class BWObjectEditWindow(QMdiSubWindow):
     closing = pyqtSignal()
     opennewxml = pyqtSignal(str)
+    saving = pyqtSignal(str)
 
-    def __init__(self):
+    def __init__(self, id):
         super().__init__()
+        self.id = id
         self.resize(900, 500)
         self.setMinimumSize(QSize(300, 300))
-        self.textbox_xml = QTextEdit(self)
-        self.setWidget(self.textbox_xml)
+
+        self.central_widget = QtWidgets.QWidget(self)
+        self._layout = QtWidgets.QVBoxLayout(self.central_widget)
+        self.textbox_xml = QTextEdit(self.central_widget)
+        self.save_xml = QtWidgets.QPushButton("Save", self.central_widget)
+        self.save_xml.setShortcut("Ctrl+S")
+        self.save_xml.pressed.connect(self.action_save_xml)
+
+        self._layout.addWidget(self.textbox_xml)
+        self._layout.addWidget(self.save_xml)
+
+        self.central_widget.setLayout(self._layout)
+        self.setWidget(self.central_widget)
         self.textbox_xml.setLineWrapMode(QTextEdit.NoWrap)
         self.textbox_xml.setContextMenuPolicy(Qt.CustomContextMenu)
         self.textbox_xml.customContextMenuRequested.connect(self.my_context_menu)
@@ -88,6 +101,9 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.id = None
 
         #self.verticalLayout.addWidget(self.textbox_xml)
+
+    def action_save_xml(self):
+        self.saving.emit(self.id)
 
     def my_context_menu(self, position):
         try:
@@ -113,6 +129,9 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.textbox_xml.setText(bwobject.tostring())
         self.id = bwobject.id
         self.setWindowTitle(bwobject.name)
+
+    def get_content(self):
+        return self.textbox_xml.toPlainText()
 
 
 class AddPikObjectWindow(QMdiSubWindow):

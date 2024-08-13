@@ -145,18 +145,29 @@ class PikminSideWidget(QWidget):
                     window.activateWindow()
                     window.show()
                 else:
-                    window = BWObjectEditWindow()
+                    window = BWObjectEditWindow(obj.id)
                     window.opennewxml.connect(self.open_new_window)
                     window.move(window.x()+offset, window.y()+offset)
                     self.edit_windows[obj.id] = window
 
                     def remove_window(id):
                         del self.edit_windows[id]
-
+                    window.saving.connect(self.save_object_data)
                     window.closing.connect(partial(remove_window, obj.id))
                     window.set_content(obj)
                     window.show()
 
+    def save_object_data(self, id):
+        content = self.edit_windows[id].get_content()
+        obj = None
+        if id in self.parent.level_file.objects:
+            obj = self.parent.level_file.objects[id]
+        elif id in self.parent.preload_file.objects:
+            obj = self.parent.preload_file.objects[id]
+
+        if obj is not None:
+            obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
+            self.parent.level_view.do_redraw(force=True)
 
     def _make_labeled_lineedit(self, lineedit, label):
         font = QFont()
