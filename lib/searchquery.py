@@ -1,5 +1,8 @@
-from pypeg2 import *
 import re
+import os
+
+from pypeg2 import *
+
 
 fieldnames = {}
 autocomplete = []
@@ -24,10 +27,13 @@ def load_autocomplete(fpath):
 
     return result, fullnames
 
-autocomplete, fieldnames = load_autocomplete("lib/fieldnames.txt")
-autocompletebw2, fieldnamesbw2 = load_autocomplete("lib/fieldnamesbw2.txt")
-autocompletevalues, valuenames = load_autocomplete("lib/values.txt")
-autocompletevaluesbw2, valuenamesbw2 = load_autocomplete("lib/valuesbw2.txt")
+currpath = __file__
+currdir = os.path.dirname(currpath)
+
+autocomplete, fieldnames = load_autocomplete(os.path.join(currdir, "fieldnames.txt"))
+autocompletebw2, fieldnamesbw2 = load_autocomplete(os.path.join(currdir, "fieldnamesbw2.txt"))
+autocompletevalues, valuenames = load_autocomplete(os.path.join(currdir, "values.txt"))
+autocompletevaluesbw2, valuenamesbw2 = load_autocomplete(os.path.join(currdir, "valuesbw2.txt"))
 
 
 class Field(List):
