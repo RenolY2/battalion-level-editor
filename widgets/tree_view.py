@@ -354,6 +354,12 @@ class LevelDataTreeView(QTreeWidget):
 
         extra_categories = {}
 
+        levelsettings = None
+        for obj in preload.objects.values():
+            if obj.type == "cLevelSettings":
+                levelsettings = obj
+                break
+
         for objectid, object in chain(leveldata.objects.items(), preload.objects.items()):
             object: BattalionObject
             objecttype = object.type
@@ -362,53 +368,20 @@ class LevelDataTreeView(QTreeWidget):
                 print(objecttype)
 
             parent = extra_categories[objecttype]
-            item = NamedItem(parent, object.name, object)
+            name = object.name
+            if levelsettings is not None:
+                if object.type == "cDamageArmourBonus":
+                    if levelsettings.mDamageArmourBonus.id != object.id:
+                        name = object.name+" Unused"
+
+
+            item = NamedItem(parent, name, object)
 
         for categoryname in sorted(extra_categories.keys()):
             category = extra_categories[categoryname]
             target = self.choose_category(categoryname)
             target.addChild(category)
 
-        """for group in boldata.enemypointgroups.groups:
-            group_item = EnemyPointGroup(self.enemyroutes, group)
-
-            for point in group.points:
-                point_item = EnemyRoutePoint(group_item, "Enemy Route Point", point)
-
-        for group in boldata.checkpoints.groups:
-            group_item = CheckpointGroup(self.checkpointgroups, group)
-
-            for point in group.points:
-                point_item = Checkpoint(group_item, "Checkpoint", point)
-
-        for route in boldata.routes:
-            route_item = ObjectPointGroup(self.objectroutes, route)
-
-            for point in route.points:
-                point_item = ObjectRoutePoint(route_item, "Object route point", point)
-
-        for object in boldata.objects.objects:
-            object_item = ObjectEntry(self.objects, "Object", object)
-
-        self.sort_objects()
-
-        for kartpoint in boldata.kartpoints.positions:
-            item = KartpointEntry(self.kartpoints, "Kartpoint", kartpoint)
-
-        for area in boldata.areas.areas:
-            item = AreaEntry(self.areas, "Area", area)
-
-        for respawn in boldata.respawnpoints:
-            item = RespawnEntry(self.respawnpoints, "Respawn", respawn)
-
-        for i, camera in enumerate(boldata.cameras):
-            item = CameraEntry(self.cameras, "Camera", camera, i)
-
-        for i, lightparam in enumerate(boldata.lightparams):
-            item = LightParamEntry(self.lightparams, "LightParam", lightparam, i)
-
-        for mg in boldata.mgentries:
-            item = MGEntry(self.mgentries, "MG", mg)"""
 
     def sort_objects(self):
         self.objects.sort()
