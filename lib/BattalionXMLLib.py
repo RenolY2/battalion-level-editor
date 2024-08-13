@@ -409,7 +409,7 @@ class BattalionObject(object):
 if __name__ == "__main__":
     """with open("../credits_Level_Preload.xml", "r") as f:
         level = BattalionLevelFile(f)
-    
+
     for objid, obj in level.objects.items():
         if obj.type == "cLevelSettings":
             print(obj.mNumPlayers)
@@ -433,7 +433,7 @@ if __name__ == "__main__":
             print(obj.spawnMatrix.to_array())
             new = BWMatrix(*obj.spawnMatrix.to_array())
             print(obj.spawnMatrix.to_array())"""
-    
+
     """alltypes = get_types()
     alltypes.sort()
     with open("types.txt", "w") as f:
@@ -450,10 +450,12 @@ if __name__ == "__main__":
     if True:
         import gzip
         import os
+
         BW1path = r"D:\Wii games\BattWars\P-G8WP\files\Data\CompoundFiles"
         BW2path = r"D:\Wii games\BW2Folder\files\Data\CompoundFiles"
 
         import csv
+
         fieldnames = set()
         fieldnames.add("id")
         fieldnames.add("modelname")
@@ -466,8 +468,15 @@ if __name__ == "__main__":
         fieldnamesbw2.add("type")
         fieldnamesbw2.add("name")
 
+        potentialvalues = set()
+        potentialvalues.add("self")
 
-        #with csv.open("table.csv", "w") as tbl:
+        potentialvaluesbw2 = set()
+        potentialvaluesbw2.add("self")
+
+        preloadtypes = set()
+
+        # with csv.open("table.csv", "w") as tbl:
         if True:
             types = set()
             alltypes = set()
@@ -479,35 +488,51 @@ if __name__ == "__main__":
                     with open(path, "rb") as g:
                         level_data = BattalionLevelFile(g)
                         with open(preload, "rb") as h:
-                            with open(path+".info.txt", "w") as f:
+                            with open(path + ".info.txt", "w") as f:
                                 preload_data = BattalionLevelFile(h)
                                 objectcounts = {}
                                 for objid, obj in level_data.objects.items():
+                                    potentialvalues.add(obj.type)
                                     for node in obj._node:
                                         fieldnames.add(node.attrib["name"])
+                                        potentialvalues.add(node.attrib["type"])
+                                        if node.tag == "Enum" or node.attrib["type"] == "cFxString8":
+                                            for subnode in node:
+                                                potentialvalues.add(subnode.text)
 
                                         if "Matrix" in node.attrib["type"]:
                                             mtype = node.attrib["type"]
-                                            #print(node.attrib["type"])
+                                            # print(node.attrib["type"])
                                             types.add((obj.type, mtype, node.attrib["name"]))
                                             alltypes.add(obj.type)
                                     objectcounts[obj.type] = objectcounts.get(obj.type, 0) + 1
                                 values = []
 
                                 for objid, obj in preload_data.objects.items():
+                                    preloadtypes.add(obj.type)
+                                    potentialvalues.add(obj.type)
                                     for node in obj._node:
                                         fieldnames.add(node.attrib["name"])
+                                        potentialvalues.add(node.attrib["type"])
+                                        if node.tag == "Enum" or node.attrib["type"] == "cFxString8":
+                                            for subnode in node:
+                                                if subnode is not None:
+                                                    potentialvalues.add(subnode.text)
+
                                     if obj.type == "cWorldFreeListSizeLoader":
                                         for var in (
-                                        "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies", "numShadowVolumes",
-                                        "numPolynodes", "numObjInstances", "numObjAnimInstances", "numJoints", "numJointAnims",
-                                        "numBanJoints", "numAnimationBlends", "numMaxTerrainMaterials", "numMaxTroopVoiceMessageQueueItems"):
+                                                "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies",
+                                                "numShadowVolumes",
+                                                "numPolynodes", "numObjInstances", "numObjAnimInstances", "numJoints",
+                                                "numJointAnims",
+                                                "numBanJoints", "numAnimationBlends", "numMaxTerrainMaterials",
+                                                "numMaxTroopVoiceMessageQueueItems"):
                                             val = getattr(obj, var)
                                             values.append((var, val))
                                     elif obj.type == "cLevelSettings":
                                         for var in (
-                                        "mLuaScriptMemory",
-                                        "mTequilaMemoryHeap"):
+                                                "mLuaScriptMemory",
+                                                "mTequilaMemoryHeap"):
                                             val = getattr(obj, var)
                                             values.append((var, val))
                                 f.write("=== Preload values ===\n")
@@ -517,10 +542,9 @@ if __name__ == "__main__":
                                 for objtype in sorted(objectcounts.keys()):
                                     f.write("{0} {1}\n".format(objtype, objectcounts[objtype]))
 
-            #"mLuaScriptMemory", "mRenderToTextureMemory", "mbRenderToTextureUseMem1", "miMaxTerrainMemorySize",
+            # "mLuaScriptMemory", "mRenderToTextureMemory", "mbRenderToTextureUseMem1", "miMaxTerrainMemorySize",
             #                            "miPhysicsMemorySize", "miActionHeapMemorySize", "mTequilaMemoryHeap"):
             print("BW1")
-
 
             for result in sorted(types, key=lambda x: x[0]):
                 print(result[0], result[1], result[2])
@@ -533,35 +557,54 @@ if __name__ == "__main__":
                     with gzip.open(path, "rb") as g:
                         level_data = BattalionLevelFile(g)
                         with gzip.open(preload, "rb") as h:
-                            with open(path+".info.txt", "w") as f:
+                            with open(path + ".info.txt", "w") as f:
                                 preload_data = BattalionLevelFile(h)
                                 objectcounts = {}
                                 for objid, obj in level_data.objects.items():
+                                    potentialvaluesbw2.add(obj.type)
                                     for node in obj._node:
                                         fieldnamesbw2.add(node.attrib["name"])
+                                        potentialvaluesbw2.add(node.attrib["type"])
+                                        if node.tag == "Enum" or node.attrib["type"] == "cFxString8":
+                                            for subnode in node:
+                                                if subnode is not None:
+                                                    potentialvaluesbw2.add(subnode.text)
+
                                     for node in obj._node:
                                         if "Matrix" in node.attrib["type"]:
                                             mtype = node.attrib["type"]
-                                            #print(node.attrib["type"])
+                                            # print(node.attrib["type"])
                                             types.add((obj.type, mtype, node.attrib["name"]))
                                             alltypes.add(obj.type)
                                     objectcounts[obj.type] = objectcounts.get(obj.type, 0) + 1
                                 values = []
 
                                 for objid, obj in preload_data.objects.items():
+                                    preloadtypes.add(obj.type)
+                                    potentialvaluesbw2.add(obj.type)
                                     for node in obj._node:
                                         fieldnamesbw2.add(node.attrib["name"])
+                                        potentialvaluesbw2.add(node.attrib["type"])
+                                        if node.tag == "Enum" or node.attrib["type"] == "cFxString8":
+                                            for subnode in node:
+                                                if subnode is not None:
+                                                    potentialvaluesbw2.add(subnode.text)
+
                                     if obj.type == "cWorldFreeListSizeLoader":
                                         for var in (
-                                        "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies", "numShadowVolumes",
-                                        "numPolynodes", "numObjInstances", "numObjAnimInstances", "numJoints", "numJointAnims",
-                                        "numBanJoints", "numAnimationBlends", "numMaxTerrainMaterials", "numMaxTroopVoiceMessageQueueItems"):
+                                                "numQuadtreeNodes", "numQuadtreeObjLists", "numNodeHierarchies",
+                                                "numShadowVolumes",
+                                                "numPolynodes", "numObjInstances", "numObjAnimInstances", "numJoints",
+                                                "numJointAnims",
+                                                "numBanJoints", "numAnimationBlends", "numMaxTerrainMaterials",
+                                                "numMaxTroopVoiceMessageQueueItems"):
                                             val = getattr(obj, var)
                                             values.append((var, val))
                                     elif obj.type == "cLevelSettings":
                                         for var in (
-                                        "mLuaScriptMemory", "mRenderToTextureMemory", "mbRenderToTextureUseMem1", "miMaxTerrainMemorySize",
-                                        "miPhysicsMemorySize", "miActionHeapMemorySize", "mTequilaMemoryHeap"):
+                                                "mLuaScriptMemory", "mRenderToTextureMemory",
+                                                "mbRenderToTextureUseMem1", "miMaxTerrainMemorySize",
+                                                "miPhysicsMemorySize", "miActionHeapMemorySize", "mTequilaMemoryHeap"):
                                             val = getattr(obj, var)
                                             values.append((var, val))
                                 f.write("n=== Preload values ===\n")
@@ -586,6 +629,24 @@ if __name__ == "__main__":
                 for fieldname in sorted(fieldnamesbw2):
                     f.write(fieldname)
                     f.write("\n")
+
+            potentialvalues.remove(None)
+            with open("values.txt", "w") as f:
+                for fieldname in sorted(potentialvalues):
+                    if " " in fieldname:
+                        continue
+                    f.write(fieldname)
+                    f.write("\n")
+
+            potentialvaluesbw2.remove(None)
+            with open("valuesbw2.txt", "w") as f:
+                for fieldname in sorted(potentialvaluesbw2):
+                    if " " in fieldname:
+                        continue
+                    f.write(fieldname)
+                    f.write("\n")
+
+            print(preloadtypes)
 
     """from searchquery import create_query
     import gzip
