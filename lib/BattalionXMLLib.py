@@ -195,7 +195,7 @@ class BattalionObject(object):
 
         self._referenced_by = set()
 
-        self.update_object_from_xml()
+        self.update_object_from_xml(self._node)
 
         self.height = None
         self.dirty = True
@@ -203,8 +203,33 @@ class BattalionObject(object):
     def add_reference(self, obj):
         self._referenced_by.add(obj)
 
-    def update_object_from_xml(self):
-        for attr_node in self._node:
+    def check_correctness(self, node, level, other):
+        ownattrs = set(x.attrib["name"] for x in self._node)
+        newattrs = set(x.attrib["name"] for x in node)
+        for attr in ownattrs:
+            if attr not in newattrs:
+                raise RuntimeError("Missing attribute: {0}".format(attr))
+
+        for attr in newattrs:
+            if attr not in ownattrs:
+                raise RuntimeError("New attr {0}".format(attr))
+
+        for attr_node in node:
+            if attr_node.tag in ("Pointer", "Resource"):
+                pointers = [subnode.text for subnode in attr_node]
+                for pointer in pointers:
+                    if pointer != "0" and pointer not in level.objects and pointer not in other.objects:
+                        raise RuntimeError("Field {0} has an invalid pointer: {1}".format(attr_node.attrib["name"],
+                                                                                          pointer))
+            else:
+                try:
+                    [convert_from(attr_node.attrib["type"], subnode.text) for subnode in attr_node]
+                except Exception as err:
+                    raise RuntimeError("Invalid value for type {0} in field {1}".format(attr_node.attrib["type"],
+                                                                                        attr_node.attrib["name"]))
+
+    def update_object_from_xml(self, node):
+        for attr_node in node:
             if attr_node.tag in ("Pointer", "Resource"):
                 elementcount = int(attr_node.attrib["elements"])
                 if elementcount == 1:
@@ -356,6 +381,12 @@ class BattalionObject(object):
                     for val, node in zip(vallist, attr_node):
                         node[0].text = convert_to(attr_node.attrib["type"], val)
 
+    def update_object_from_text(self, xmltext, leveldata, preload):
+        xmlnode = etree.fromstring(xmltext)
+        self.check_correctness(xmlnode, leveldata, preload)
+        self.update_object_from_xml(xmlnode)
+        self.resolve_pointers(leveldata, preload)
+
     @property
     def modelname(self):
         return self._modelname
@@ -403,6 +434,7 @@ class BattalionObject(object):
                 return "{0}({1})".format(self.type, self.id)
 
     def tostring(self):
+        self.update_xml()
         return etree.tostring(self._node, encoding="unicode")
 
 
