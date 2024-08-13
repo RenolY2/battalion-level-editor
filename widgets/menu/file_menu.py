@@ -150,7 +150,7 @@ class EditorFileMenu(QMenu):
 
                     self.level_data = level_data
                     self.preload_data = preload_data
-                    self.editor.setup_level_file(level_data, filepath)
+                    self.editor.setup_level_file(level_data, preload_data, filepath)
                     self.current_gen_path = filepath
 
                     # In testing the cursor didn't want to change back unless you moved the cursor

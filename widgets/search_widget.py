@@ -289,9 +289,6 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.shortcut = QtWidgets.QShortcut("Ctrl+E", self)
         self.shortcut.activated.connect(self.editor.pik_control.action_open_edit_object)
 
-
-
-
         self.query_path = "searchqueries/"
 
     def open_help(self):
@@ -312,6 +309,10 @@ class SearchWidget(QtWidgets.QMainWindow):
 
         objects = []
         for object in self.editor.level_file.objects.values():
+            if query.evaluate(object):
+                objects.append(object)
+
+        for object in self.editor.preload_file.objects.values():
             if query.evaluate(object):
                 objects.append(object)
 

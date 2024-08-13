@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QAction, QMenu
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
 from collections import OrderedDict
 from PyQt5.QtGui import QClipboard, QGuiApplication
-
+from itertools import chain
 
 class BolHeader(QTreeWidgetItem):
     def __init__(self):
@@ -345,12 +345,12 @@ class LevelDataTreeView(QTreeWidget):
         else:
             return self.other
 
-    def set_objects(self, leveldata: BattalionLevelFile):
+    def set_objects(self, leveldata: BattalionLevelFile, preload: BattalionLevelFile):
         self.reset()
 
         extra_categories = {}
 
-        for objectid, object in leveldata.objects.items():
+        for objectid, object in chain(leveldata.objects.items(), preload.objects.items()):
             object: BattalionObject
             objecttype = object.type
             if objecttype not in extra_categories:

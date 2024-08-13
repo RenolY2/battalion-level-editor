@@ -10,13 +10,16 @@ from PyQt5.QtCore import Qt
 from widgets.data_editor import choose_data_editor
 from widgets.editor_widgets import BWObjectEditWindow
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import bw_editor
 
 class PikminSideWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         parent = args[0]
 
-        self.parent = parent
+        self.parent: bw_editor.LevelEditor = parent
         self.setMaximumSize(QSize(700, 1500))
         self.setMinimumWidth(300)
         self.verticalLayout = QVBoxLayout(self)
@@ -101,6 +104,34 @@ class PikminSideWidget(QWidget):
 
         self.reset_info()
 
+    def open_new_window(self, id):
+        if id in self.parent.level_file.objects:
+            obj = self.parent.level_file.objects[id]
+        elif id in self.parent.preload_file.objects:
+            obj = self.parent.preload_file.objects[id]
+        else:
+            obj = None
+
+        if obj is not None:
+            offset = (len(self.edit_windows) % 15) * 25
+            if obj.id in self.edit_windows:
+                window = self.edit_windows[obj.id]
+                window.setWindowState(window.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+                window.activateWindow()
+                window.show()
+            else:
+                window = BWObjectEditWindow()
+                window.opennewxml.connect(self.open_new_window)
+                window.move(window.x() + offset, window.y() + offset)
+                self.edit_windows[obj.id] = window
+
+                def remove_window(id):
+                    del self.edit_windows[id]
+
+                window.closing.connect(partial(remove_window, obj.id))
+                window.set_content(obj)
+                window.show()
+
     def action_open_edit_object(self):
         selected = self.parent.level_view.selected
 
@@ -115,6 +146,7 @@ class PikminSideWidget(QWidget):
                     window.show()
                 else:
                     window = BWObjectEditWindow()
+                    window.opennewxml.connect(self.open_new_window)
                     window.move(window.x()+offset, window.y()+offset)
                     self.edit_windows[obj.id] = window
 

@@ -58,6 +58,7 @@ def open_error_dialog(errormsg, self):
 
 class BWObjectEditWindow(QMdiSubWindow):
     closing = pyqtSignal()
+    opennewxml = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -67,6 +68,13 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.setWidget(self.textbox_xml)
         self.textbox_xml.setLineWrapMode(QTextEdit.NoWrap)
         self.textbox_xml.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.textbox_xml.customContextMenuRequested.connect(self.my_context_menu)
+        self.gotoaction = QAction("Open XML for ID", self)
+        self.shortcut = QtWidgets.QShortcut("Ctrl+G", self)
+        self.shortcut.setAutoRepeat(False)
+        self.shortcut.activated.connect(self.goto_id_action)
+
+        self.gotoaction.triggered.connect(self.goto_id_action)
 
         font = QFont()
         font.setFamily("Consolas")
@@ -80,6 +88,23 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.id = None
 
         #self.verticalLayout.addWidget(self.textbox_xml)
+
+    def my_context_menu(self, position):
+        try:
+            context_menu = self.textbox_xml.createStandardContextMenu()
+            context_menu.addAction(self.gotoaction)
+            context_menu.exec(self.mapToGlobal(position))
+            context_menu.destroy()
+            del context_menu
+            #self.context_menu.exec(event.globalPos())
+            #return super().contextMenuEvent(event)
+        except:
+            traceback.print_exc()
+
+    def goto_id_action(self):
+        cursor = self.textbox_xml.textCursor()
+        id = cursor.selectedText()
+        self.opennewxml.emit(id)
 
     def closeEvent(self, event):
         self.closing.emit()
