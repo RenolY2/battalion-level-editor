@@ -82,8 +82,8 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.textbox_xml.setLineWrapMode(QTextEdit.NoWrap)
         self.textbox_xml.setContextMenuPolicy(Qt.CustomContextMenu)
         self.textbox_xml.customContextMenuRequested.connect(self.my_context_menu)
-        self.gotoaction = QAction("Open XML for ID", self)
-        self.shortcut = QtWidgets.QShortcut("Ctrl+G", self)
+        self.gotoaction = QAction("Edit XML for ID", self)
+        self.shortcut = QtWidgets.QShortcut("Ctrl+E", self)
         self.shortcut.setAutoRepeat(False)
         self.shortcut.activated.connect(self.goto_id_action)
 
@@ -109,6 +109,7 @@ class BWObjectEditWindow(QMdiSubWindow):
         try:
             context_menu = self.textbox_xml.createStandardContextMenu()
             context_menu.addAction(self.gotoaction)
+            self.gotoaction.setShortcut("Ctrl+E")
             context_menu.exec(self.mapToGlobal(position))
             context_menu.destroy()
             del context_menu
