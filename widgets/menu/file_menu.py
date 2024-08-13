@@ -41,6 +41,7 @@ class EditorFileMenu(QMenu):
         self.setTitle("File")
 
         self.last_chosen_type = None
+        self.level_paths = None
 
         save_file_shortcut = QShortcut(Qt.CTRL + Qt.Key_S, self)
         save_file_shortcut.activated.connect(self.button_save_level)
@@ -61,8 +62,8 @@ class EditorFileMenu(QMenu):
 
         self.addAction(self.file_load_action)
         self.addAction(self.save_file_action)
-        self.addAction(self.save_file_as_action)
-        self.addAction(self.save_file_copy_as_action)
+        #self.addAction(self.save_file_as_action)
+        #self.addAction(self.save_file_copy_as_action)
 
     def updatestatus(self, progress):
         self.editor.statusbar.showMessage("Loading: {0}%".format(progress))
@@ -95,13 +96,6 @@ class EditorFileMenu(QMenu):
 
             with func_open(filepath, "rb") as f:
                 try:
-                    #self.loaded_archive = Archive.from_file(f)
-                    #root_name = self.loaded_archive.root.name
-                    #coursename = find_file(self.loaded_archive.root, "_course.bol")
-                    #bol_file = self.loaded_archive[root_name + "/" + coursename]
-                    #bol_data = BOL.from_file(bol_file)
-                    #self.setup_bol_file(bol_data, filepath)
-                    #self.leveldatatreeview.set_objects(bol_data)
                     levelpaths = BattalionFilePaths(f)
                     base = os.path.dirname(filepath)
                     print(base, levelpaths.objectpath)
@@ -148,6 +142,7 @@ class EditorFileMenu(QMenu):
                             self.editor.level_view.reloadTerrain(g, partial(progressbar.callback, 30))
                     progressbar.set(100)
 
+                    self.level_paths = levelpaths
                     self.level_data = level_data
                     self.preload_data = preload_data
                     self.editor.setup_level_file(level_data, preload_data, filepath)
@@ -155,11 +150,12 @@ class EditorFileMenu(QMenu):
 
                     # In testing the cursor didn't want to change back unless you moved the cursor
                     # off the window and back so we'll do this
-                    QApplication.setOverrideCursor(Qt.ArrowCursor)
-                    QApplication.setOverrideCursor(Qt.WaitCursor)
-                    QApplication.processEvents()
+                    #QApplication.setOverrideCursor(Qt.ArrowCursor)
+                    #QApplication.setOverrideCursor(Qt.WaitCursor)
+                    #QApplication.processEvents()
                     QApplication.restoreOverrideCursor()
                     QApplication.processEvents()
+                    self.editor.pathsconfig["bol"] = filepath
                 except Exception as error:
                     print("Error appeared while loading:", error)
                     traceback.print_exc()
@@ -168,29 +164,43 @@ class EditorFileMenu(QMenu):
 
     @catch_exception_with_dialog
     def button_save_level(self, *args, **kwargs):
-        if self.current_gen_path is not None:
-            if self.loaded_archive is not None:
-                assert self.loaded_archive_file is not None
-                root_name = self.loaded_archive.root.name
-                file = self.loaded_archive[root_name + "/" + self.loaded_archive_file]
-                file.seek(0)
+        if self.level_paths is not None:
+            levelpaths = self.level_paths
+            progressbar = LoadingProgress()
+            progressbar.progressupdate.connect(self.updatestatus)
 
-                self.level_file.write(file)
+            base = os.path.dirname(self.current_gen_path)
+            progressbar.set(0)
+            for object in self.level_data.objects.values():
+                object.update_xml()
 
-                with open(self.current_gen_path, "wb") as f:
-                    self.loaded_archive.write_arc(f)
+            progressbar.set(20)
 
-                self.set_has_unsaved_changes(False)
-                self.statusbar.showMessage("Saved to {0}".format(self.current_gen_path))
+            for object in self.preload_data.objects.values():
+                object.update_xml()
+            progressbar.set(30)
 
+            if levelpaths.objectpath.endswith(".gz"):
+                with gzip.open(os.path.join(base, levelpaths.objectpath), "wb") as g:
+                    self.level_data.write(g)
             else:
-                with open(self.current_gen_path, "wb") as f:
-                    self.level_file.write(f)
-                    self.set_has_unsaved_changes(False)
+                with open(os.path.join(base, levelpaths.objectpath), "wb") as g:
+                    self.level_data.write(g)
 
-                    self.statusbar.showMessage("Saved to {0}".format(self.current_gen_path))
-        else:
-            self.button_save_level_as()
+            progressbar.set(70)
+
+            if levelpaths.preloadpath.endswith(".gz"):
+                with gzip.open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
+                    self.preload_data.write(g)
+            else:
+                with open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
+                    self.preload_data.write(g)
+
+
+            progressbar.set(100)
+            #self.set_has_unsaved_changes(False)
+        #else:
+        #    self.button_save_level_as()
 
     def button_save_level_as(self, *args, **kwargs):
         self._button_save_level_as(True, *args, **kwargs)

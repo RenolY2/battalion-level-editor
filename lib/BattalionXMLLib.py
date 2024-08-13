@@ -154,7 +154,10 @@ class BattalionLevelFile(object):
         if position:
             self.objects_with_positions[bwobject.id] = bwobject
             assert bwobject.getmatrix() is not None
-                
+
+    def write(self, f):
+        self._tree.write(f)
+
 
 class BattalionFilePaths(object):
     def __init__(self, fileobj):
@@ -379,7 +382,7 @@ class BattalionObject(object):
                 else:
                     vallist = getattr(self, attr_node.attrib["name"])
                     for val, node in zip(vallist, attr_node):
-                        node[0].text = convert_to(attr_node.attrib["type"], val)
+                        node.text = convert_to(attr_node.attrib["type"], val)
 
     def update_object_from_text(self, xmltext, leveldata, preload):
         xmlnode = etree.fromstring(xmltext)
