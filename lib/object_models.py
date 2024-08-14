@@ -21,10 +21,10 @@ class ObjectModels(object):
         self.cube = Cube()
 
         with open("resources/cubev2.obj", "r") as f:
-            self.cubev2 = ModelV2.from_obj(f, scale=2.5)
+            self.cubev2 = ModelV2.from_obj(f, scale=1.5)
 
         with open("resources/camera.obj", "r") as f:
-            self.camera = ModelV2.from_obj(f, scale=2.5)
+            self.camera = ModelV2.from_obj(f, scale=1.5)
 
         with open("resources/billboard.obj", "r") as f:
             self.billboard = Billboard.from_obj(f, scale=5.5, uvcoords=True)
