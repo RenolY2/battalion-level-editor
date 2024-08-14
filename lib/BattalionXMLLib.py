@@ -2,11 +2,10 @@ import json
 
 from functools import partial
 from collections.abc import MutableSequence, Iterable
-import lxml.etree as etree
-"""try:
+try:
     import xml.etree.cElementTree as etree
 except: # cElementTree not available
-    import xml.etree.ElementTree as etree"""
+    import xml.etree.ElementTree as etre
 
 from lib.searchquery import fieldnames
 
