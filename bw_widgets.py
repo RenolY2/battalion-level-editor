@@ -510,11 +510,19 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.MOVE_LEFT = left
         self.MOVE_RIGHT = right
 
-    def do_redraw(self, force=False):
+    def do_redraw(self, force=False, forceselected=False):
         self._frame_invalid = True
 
         if force:
             self.graphics.set_dirty()
+            self._lastrendertime = 0
+            self.update()
+        elif forceselected:
+            modelnames = set()
+            for obj in self.selected:
+                if obj.modelname is not None:
+                    modelnames.add(obj.modelname)
+            self.graphics.set_dirty_limited(modelnames)
             self._lastrendertime = 0
             self.update()
 
@@ -717,6 +725,10 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 #print("select time taken", default_timer() - start)
                 #print("result:", selected)
                 selected = [x for x in selected.keys()]
+                for obj in selected:
+                    mtx = obj.getmatrix()
+                    selected_positions.append(mtx)
+
                 if not shiftpressed:
                     self.selected = selected
                     self.selected_positions = selected_positions
@@ -737,7 +749,9 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
                     self.select_update.emit()
 
-                self.gizmo.move_to_average(self.selected_positions)
+                self.gizmo.move_to_average(self.selected,
+                                           self.bwterrain,
+                                           self.waterheight)
                 if len(selected) == 0:
                     #print("Select did register")
                     self.gizmo.hidden = True
