@@ -20,9 +20,9 @@ class BWMatrix(object):
 
 def boolean_from(bool):
     if bool == "eFalse":
-        return False 
+        return False
     elif bool == "eTrue":
-        return True 
+        return True
 
 
 def boolean_to(bool):
@@ -52,8 +52,34 @@ def vector4_from(vec_text):
     return mtx
 
 
+def decrshift(val, shift):
+    return val//(10**shift)
+
+# For correctly rounding the mInertiaBox value to the original value
+#  ... please don't use such massive floats without a good reason...
+def floatformat(val):
+    strval = "{:f}".format(val)
+
+    if val > 10**36:
+        dot = strval.find(".")
+        value = int(strval[:dot-1])
+        for i in range(19):
+            digit = decrshift(value, i)%10
+            if digit >= 5:
+                value += (10-digit)*(10**i)
+            else:
+                value -= digit*(10**i)
+
+        return str(value)+".000000"
+    else:
+        return strval
+
+
 def vector4_to(vec):
-    return "{0:f},{1:f},{2:f},{3:f}".format(vec.x, vec.y, vec.z, vec.w)
+    return "{0},{1},{2},{3}".format(floatformat(vec.x),
+                                    floatformat(vec.y),
+                                    floatformat(vec.z),
+                                    floatformat(vec.w))
 
 
 def vector4_to_u8(vec):
@@ -61,8 +87,10 @@ def vector4_to_u8(vec):
 
 
 # Pass-through
-default_from = lambda x: x 
+default_from = lambda x: x
 default_to = lambda x: str(x)
+
+
 
 
 CONVERTERS_FROM = {
@@ -97,8 +125,8 @@ def convert_from(valuetype, value):
     if valuetype in CONVERTERS_FROM:
         conv = CONVERTERS_FROM[valuetype]
     else:
-        conv = default_from 
-    
+        conv = default_from
+
     return conv(value)#(conv(val) for val in values)
 
 
