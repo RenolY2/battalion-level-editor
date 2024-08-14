@@ -156,7 +156,8 @@ class BattalionLevelFile(object):
             assert bwobject.getmatrix() is not None
 
     def write(self, f):
-        self._tree.write(f)
+        f.write(b"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
+        self._tree.write(f, encoding="utf-8")
 
 
 class BattalionFilePaths(object):
