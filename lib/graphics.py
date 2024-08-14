@@ -78,6 +78,16 @@ class Graphics(object):
 
         self._dirty = True
 
+    def set_dirty_limited(self, modelnames):
+        self.rw.models.cubev2.mtxdirty = True
+        self.rw.models.camera.mtxdirty = True
+        self.rw.models.billboard.mtxdirty = True
+        for modelname in modelnames:
+            model = self.rw.bwmodelhandler.instancemodels[modelname]
+            model.mtxdirty = True
+
+        self._dirty = True
+
     def reset_dirty(self):
         self._dirty = False
 

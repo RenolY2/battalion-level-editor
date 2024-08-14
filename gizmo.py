@@ -49,34 +49,53 @@ class Gizmo(Model):
     def reset_axis(self):
         self.render_axis = None
 
-    def move_to_average(self, positions):
-        if len(positions) == 0:
+    def move_to_average(self, objects, bwterrain, waterheight):
+        for obj in objects:
+            if obj.getmatrix() is not None:
+                self.hidden = False
+                break
+        else:
             self.hidden = True
             return
-        self.hidden = False
+
 
         avgx = None
         avgy = None
         avgz = None
+        count = 0
+        for obj in objects:
+            mtx = obj.getmatrix()
+            if mtx is not None:
+                count += 1
+                objheight = mtx.y
+                height = bwterrain.check_height(mtx.x, mtx.z)
+                if height is None:
+                    if waterheight is not None and objheight < waterheight:
+                        objheight = waterheight+0.2  # Avoid z-fighting in some cases
+                else:
+                    if waterheight is not None and objheight < waterheight:
+                        objheight = waterheight+0.2  # Avoid z-fighting in some cases
+                    if objheight < height:
+                        objheight = height
 
-        for position in positions:
-            if avgx is None:
-                avgx = position.x
-                avgy = position.y
-                avgz = position.z
-            else:
-                avgx += position.x
-                avgy += position.y
-                avgz += position.z
-        self.position.x = avgx / len(positions)
-        self.position.y = avgy / len(positions)
-        self.position.z = avgz / len(positions)
+                if avgx is None:
+                    avgx = mtx.x
+                    avgy = objheight
+                    avgz = mtx.z
+                else:
+                    avgx += mtx.x
+                    avgy += objheight
+                    avgz += mtx.z
+
+        self.position.x = avgx / count
+        self.position.y = avgy / count
+        self.position.z = avgz / count
         #print("New position is", self.position, len(objects))
 
     def render_collision_check(self, scale, is3d=True):
         if not self.hidden:
             glPushMatrix()
-            glTranslatef(self.position.x, -self.position.z, self.position.y)
+            glTranslatef(self.position.x, self.position.z, self.position.y)
             glScalef(scale, scale, scale)
 
             named_meshes = self.collision.named_meshes
@@ -84,9 +103,9 @@ class Gizmo(Model):
             named_meshes["gizmo_x"].render_colorid(0x1)
             if is3d: named_meshes["gizmo_y"].render_colorid(0x2)
             named_meshes["gizmo_z"].render_colorid(0x3)
-            if is3d: named_meshes["rotation_x"].render_colorid(0x4)
-            named_meshes["rotation_y"].render_colorid(0x5)
-            if is3d: named_meshes["rotation_z"].render_colorid(0x6)
+            #if is3d: named_meshes["rotation_x"].render_colorid(0x4)
+            #named_meshes["rotation_y"].render_colorid(0x5)
+            #if is3d: named_meshes["rotation_z"].render_colorid(0x6)
             if not is3d: named_meshes["middle"].render_colorid(0x7)
             glPopMatrix()
 
@@ -123,16 +142,16 @@ class Gizmo(Model):
         if not self.hidden:
             glColor4f(*X_COLOR)
             self.named_meshes["gizmo_x"].render()
-            if is3d: self.named_meshes["rotation_x"].render()
+            #if is3d: self.named_meshes["rotation_x"].render()
 
 
 
             glColor4f(*Y_COLOR)
             if is3d: self.named_meshes["gizmo_y"].render()
-            self.named_meshes["rotation_y"].render()
+            #.named_meshes["rotation_y"].render()
             glColor4f(*Z_COLOR)
             self.named_meshes["gizmo_z"].render()
-            if is3d: self.named_meshes["rotation_z"].render()
+            #if is3d: self.named_meshes["rotation_z"].render()
             glColor4f(*MIDDLE)
             if not is3d: self.named_meshes["middle"].render()
             """for mesh in self.mesh_list:
@@ -151,7 +170,7 @@ class Gizmo(Model):
 
     def render_scaled(self, scale, is3d=True):
         glPushMatrix()
-        glTranslatef(self.position.x, -self.position.z, self.position.y)
+        glTranslatef(self.position.x, self.position.z, self.position.y)
 
         if self.render_axis == AXIS_X:
             glColor4f(*X_COLOR)

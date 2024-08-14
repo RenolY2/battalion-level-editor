@@ -17,6 +17,24 @@ class BWMatrix(object):
     def to_array(self):
         return self.mtx
 
+    def add_position(self, dx=0, dy=0, dz=0):
+        self.mtx[12] += dx
+        self.mtx[13] += dy
+        self.mtx[14] += dz
+
+    @property
+    def x(self):
+        return self.mtx[12]
+
+    @property
+    def y(self):
+        return self.mtx[13]
+
+    @property
+    def z(self):
+        return self.mtx[14]
+
+
 
 def boolean_from(bool):
     if bool == "eFalse":

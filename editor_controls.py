@@ -169,7 +169,9 @@ class Gizmo2DMoveX(ClickDragAction):
         super().just_released(editor, buttons, event)
         editor.gizmo.hidden = False
         editor.gizmo.reset_axis()
-        editor.gizmo.move_to_average(editor.selected_positions)
+        editor.gizmo.move_to_average(editor.selected,
+                                     editor.bwterrain,
+                                     editor.waterheight)
 
 
 class Gizmo2DMoveXZ(Gizmo2DMoveX):
@@ -180,7 +182,7 @@ class Gizmo2DMoveXZ(Gizmo2DMoveX):
             delta_x = event.x() - self.first_click.x
             delta_z = event.y() - self.first_click.y
             self.first_click = Vector2(event.x(), event.y())
-            editor.move_points.emit(delta_x*editor.zoom_factor, 0, delta_z*editor.zoom_factor)
+            editor.move_points.emit(delta_x*editor.zoom_factor, 0, -delta_z*editor.zoom_factor)
 
 
 class Gizmo2DMoveZ(Gizmo2DMoveX):
@@ -190,7 +192,7 @@ class Gizmo2DMoveZ(Gizmo2DMoveX):
             editor.gizmo.set_render_axis(AXIS_Z)
             delta_z = event.y() - self.first_click.y
             self.first_click = Vector2(event.x(), event.y())
-            editor.move_points.emit(0, 0, delta_z*editor.zoom_factor)
+            editor.move_points.emit(0, 0, -delta_z*editor.zoom_factor)
 
 
 class Gizmo2DRotateY(Gizmo2DMoveX):
@@ -400,7 +402,7 @@ class Gizmo3DMoveZ(Gizmo3DMoveX):
         super().__init__(*args, **kwargs)
         self.axis_name = "gizmo_z"
         self.axis = AXIS_Z
-        self.dir = numpy.array([0, -1, 0, 0])
+        self.dir = numpy.array([0, 1, 0, 0])
 
     def do_delta(self, delta):
         return 0, 0, delta

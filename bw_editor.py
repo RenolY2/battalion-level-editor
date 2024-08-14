@@ -224,7 +224,9 @@ class LevelEditor(QMainWindow):
         elif isinstance(item, (tree_view.LightParamEntry, tree_view.MGEntry)):
             self.level_view.selected = [item.bound_to]"""
 
-        self.level_view.gizmo.move_to_average(self.level_view.selected_positions)
+        self.level_view.gizmo.move_to_average(self.level_view.selected,
+                                              self.level_view.bwterrain,
+                                              self.level_view.waterheight)
         self.level_view.do_redraw()
         self.level_view.select_update.emit()
 
@@ -722,7 +724,7 @@ class LevelEditor(QMainWindow):
                 pos = self.level_view.selected_positions
                 if i != j and pos[i] == pos[j]:
                     print("What the fuck")
-        for pos in self.level_view.selected_positions:
+        for mtx in self.level_view.selected_positions:
             """obj.x += deltax
             obj.z += deltaz
             obj.x = round(obj.x, 6)
@@ -737,9 +739,7 @@ class LevelEditor(QMainWindow):
                     y = self.pikmin_gen_view.collision.collide_ray_downwards(obj.x, obj.z)
                     obj.y = obj.position_y = round(y, 6)
                     obj.offset_y = 0"""
-            pos.x += deltax
-            pos.y += deltay
-            pos.z += deltaz
+            mtx.add_position(deltax, deltay, deltaz)
 
 
         #if len(self.pikmin_gen_view.selected) == 1:
@@ -747,7 +747,7 @@ class LevelEditor(QMainWindow):
         #    self.pik_control.set_info(obj, obj.position, obj.rotation)
 
         #self.pikmin_gen_view.update()
-        self.level_view.do_redraw()
+        self.level_view.do_redraw(forceselected=True)
         self.pik_control.update_info()
         self.set_has_unsaved_changes(True)
 
@@ -863,7 +863,9 @@ class LevelEditor(QMainWindow):
                 pos.y = height
 
         self.pik_control.update_info()
-        self.level_view.gizmo.move_to_average(self.level_view.selected_positions)
+        self.level_view.gizmo.move_to_average(self.level_view.selected,
+                                              self.level_view.bwterrain,
+                                              self.level_view.waterheight)
         self.set_has_unsaved_changes(True)
         self.level_view.do_redraw()
 
@@ -987,7 +989,9 @@ class LevelEditor(QMainWindow):
         self.set_has_unsaved_changes(True)
 
     def update_3d(self):
-        self.level_view.gizmo.move_to_average(self.level_view.selected_positions)
+        self.level_view.gizmo.move_to_average(self.level_view.selected,
+                                              self.level_view.bwterrain,
+                                              self.level_view.waterheight)
         self.level_view.do_redraw()
 
     def select_from_3d_to_treeview(self):
