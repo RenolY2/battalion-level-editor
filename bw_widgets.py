@@ -660,14 +660,13 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.mvp_mat = numpy.dot(self.projectionmatrix, self.modelviewmatrix)
         self.modelviewmatrix_inv = numpy.linalg.inv(self.modelviewmatrix)
 
-        campos = Vector3(self.offset_x, self.camera_height, -self.offset_z)
+        campos = Vector3(self.offset_x, self.camera_height, self.offset_z)
         self.campos = campos
 
         if self.is_topdown():
             gizmo_scale = 3*self.zoom_factor
         else:
             gizmo_scale = (self.gizmo.position - campos).norm() / 130.0
-
 
         self.gizmo_scale = gizmo_scale
 
