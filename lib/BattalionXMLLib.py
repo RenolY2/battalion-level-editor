@@ -157,7 +157,7 @@ class BattalionLevelFile(object):
 
     def write(self, f):
         f.write(b"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
-        self._tree.write(f, encoding="utf-8")
+        self._tree.write(f, encoding="utf-8", short_empty_elements=False)
 
 
 class BattalionFilePaths(object):
@@ -439,7 +439,7 @@ class BattalionObject(object):
 
     def tostring(self):
         self.update_xml()
-        return etree.tostring(self._node, encoding="unicode")
+        return etree.tostring(self._node, encoding="unicode", short_empty_elements=False)
 
 
 if __name__ == "__main__":

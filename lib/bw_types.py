@@ -91,12 +91,18 @@ default_from = lambda x: x
 default_to = lambda x: str(x)
 
 
+def string_from(val):
+    if val is None:
+        return ""
+    else:
+        return str(val)
+
 
 
 CONVERTERS_FROM = {
     "sFloat": float,
     "eBoolean": boolean_from,
-    "cFxString8": default_from,
+    "cFxString8": string_from,
     "sMatrix4x4": matrix4x4_from,
     "cMatrix4x4": matrix4x4_from,
     "sVector4": vector4_from,
