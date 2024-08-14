@@ -180,23 +180,32 @@ class EditorFileMenu(QMenu):
                 object.update_xml()
             progressbar.set(30)
 
+            tmp = BytesIO()
+            print("Writing level data to temp file...")
+            self.level_data.write(tmp)
+            progressbar.set(70)
+            tmp2 = BytesIO()
+
+            print("Writing preload data to temp file...")
+            self.preload_data.write(tmp2)
+
             if levelpaths.objectpath.endswith(".gz"):
                 with gzip.open(os.path.join(base, levelpaths.objectpath), "wb") as g:
-                    self.level_data.write(g)
+                    g.write(tmp.getvalue())
             else:
                 with open(os.path.join(base, levelpaths.objectpath), "wb") as g:
-                    self.level_data.write(g)
+                    g.write(tmp.getvalue())
 
-            progressbar.set(70)
+            progressbar.set(90)
 
             if levelpaths.preloadpath.endswith(".gz"):
                 with gzip.open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
-                    self.preload_data.write(g)
+                    g.write(tmp2.getvalue())
             else:
                 with open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
-                    self.preload_data.write(g)
+                    g.write(tmp2.getvalue())
 
-
+            print("Done!")
             progressbar.set(100)
             #self.set_has_unsaved_changes(False)
         #else:
