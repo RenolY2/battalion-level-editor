@@ -171,6 +171,9 @@ class BattalionFilePaths(object):
         self.objectpath = None
         self.preloadpath = None
 
+        self.objectfilepadding = None
+        self.preloadpadding = None
+
 
         for child in self._tree.getroot():
             print(child.tag)
@@ -182,11 +185,15 @@ class BattalionFilePaths(object):
                         self.resourcepath = child2[0].attrib["name"]
                     elif child2.tag == "objectfiles":
                         self.objectpath = child2[0].attrib["name"]
+                        if "padding" in child2[0].attrib:
+                            self.objectfilepadding = int(child2[0].attrib["padding"])
             elif child.tag == "strings":
                 for lang in child:
                     self.stringpaths[lang.attrib["name"]] = lang.attrib["file"]
             elif child.tag == "preload":
                 self.preloadpath = child[0].attrib["name"]
+                if "padding" in child[0].attrib:
+                    self.preloadpadding = int(child[0].attrib["padding"])
 
 
 class BattalionObject(object):

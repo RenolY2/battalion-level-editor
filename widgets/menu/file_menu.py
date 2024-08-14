@@ -150,9 +150,10 @@ class EditorFileMenu(QMenu):
 
                     # In testing the cursor didn't want to change back unless you moved the cursor
                     # off the window and back so we'll do this
-                    #QApplication.setOverrideCursor(Qt.ArrowCursor)
-                    #QApplication.setOverrideCursor(Qt.WaitCursor)
-                    #QApplication.processEvents()
+                    QApplication.changeOverrideCursor(Qt.ArrowCursor)
+                    QApplication.processEvents()
+                    QApplication.restoreOverrideCursor()
+                    QApplication.processEvents()
                     QApplication.restoreOverrideCursor()
                     QApplication.processEvents()
                     self.editor.pathsconfig["bol"] = filepath
@@ -195,6 +196,9 @@ class EditorFileMenu(QMenu):
             else:
                 with open(os.path.join(base, levelpaths.objectpath), "wb") as g:
                     g.write(tmp.getvalue())
+                    if self.level_paths.objectfilepadding is not None:
+                        if g.tell() < self.level_paths.objectfilepadding:
+                            g.write(b" "*(self.level_paths.objectfilepadding - g.tell()))
 
             progressbar.set(90)
 
@@ -204,6 +208,9 @@ class EditorFileMenu(QMenu):
             else:
                 with open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
                     g.write(tmp2.getvalue())
+                    if self.level_paths.preloadpadding is not None:
+                        if g.tell() < self.level_paths.preloadpadding:
+                            g.write(b" "*(self.level_paths.preloadpadding - g.tell()))
 
             print("Done!")
             progressbar.set(100)
