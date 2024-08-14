@@ -259,12 +259,12 @@ class BattalionObject(object):
                             [convert_from(attr_node.attrib["type"], subnode.text) for subnode in attr_node])
                 #self._attributes[attr_node.attrib["name"]] = Attribute.from_node(attr_node, self._level)
 
-        if hasattr(self, "spawnMatrix"):
-            setattr(self, "getmatrix", lambda: self.spawnMatrix)
-        elif hasattr(self, "Mat"):
+        if hasattr(self, "Mat"):
             setattr(self, "getmatrix", lambda: self.Mat)
         elif hasattr(self, "mMatrix"):
             setattr(self, "getmatrix", lambda: self.mMatrix)
+        elif hasattr(self, "spawnMatrix"):
+            setattr(self, "getmatrix", lambda: self.spawnMatrix)
         else:
             setattr(self, "getmatrix", lambda: None)
 
