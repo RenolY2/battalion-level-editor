@@ -456,9 +456,14 @@ class BattalionObject(object):
         h = currmtx[13]
         originalh = h
         locktosurface = False
+        sticktofloor = False
 
-        if hasattr(self, "mStickToFloor") and not self.mStickToFloor:
-            return h
+        if hasattr(self, "mStickToFloor"):
+            if not self.mStickToFloor:
+                return h
+            else:
+                sticktofloor = True
+
 
         if hasattr(self, "mLockToSurface"):
             if not self.mLockToSurface:
@@ -469,18 +474,20 @@ class BattalionObject(object):
 
         height = bwterrain.check_height(currmtx[12], currmtx[14])
         if height is None:
-            if waterheight is not None and h < waterheight:
-                h = waterheight + 0.2  # Avoid z-fighting in some cases
+            if waterheight is not None:
+                height = waterheight + 0.2  # Avoid z-fighting in some cases
+            else:
+                height = 0
         else:
-            if waterheight is not None and h < waterheight:
-                h = waterheight + 0.2  # Avoid z-fighting in some cases
-            if h < height:
-                h = height
+            if waterheight is not None and height < waterheight:
+                height = waterheight + 0.2  # Avoid z-fighting in some cases
 
         if locktosurface:
-            return abs(currmtx[13]-h) + originalh
+            return abs(currmtx[13]-height) + originalh
+        elif sticktofloor:
+            return originalh+height
         else:
-            return h
+            return height
 
     def tostring(self):
         self.update_xml()
