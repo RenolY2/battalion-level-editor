@@ -266,8 +266,13 @@ class BattalionObject(object):
         else:
             setattr(self, "getmatrix", lambda: None)
 
-    def resolve_pointers(self, level, other=None):
-        for attr_node in self._node:
+    def resolve_pointers(self, level, other=None, othernode=None):
+        if othernode is not None:
+            node = othernode
+        else:
+            node = self._node
+
+        for attr_node in node:
             if attr_node.tag in ("Pointer", "Resource"):
                 elementcount = int(attr_node.attrib["elements"])
                 result = []
@@ -394,7 +399,7 @@ class BattalionObject(object):
         xmlnode = etree.fromstring(xmltext)
         self.check_correctness(xmlnode, leveldata, preload)
         self.update_object_from_xml(xmlnode)
-        self.resolve_pointers(leveldata, preload)
+        self.resolve_pointers(leveldata, preload, xmlnode)
 
     @property
     def modelname(self):
