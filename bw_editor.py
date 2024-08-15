@@ -172,6 +172,9 @@ class LevelEditor(QMainWindow):
 
         if bwmatrix is not None:
             x,y,z = bwmatrix.mtx[12:15]
+            height = obj.calculate_height(self.level_view.bwterrain, self.level_view.waterheight)
+            if height is not None:
+                y = height
             print(x,y,z)
 
             if self.level_view.mode == MODE_TOPDOWN:
@@ -181,7 +184,7 @@ class LevelEditor(QMainWindow):
                 look = self.level_view.camera_direction.copy()
 
                 fac = 100
-                self.level_view.offset_z = (z + look.y * fac)
+                self.level_view.offset_z = (z - look.y * fac)
                 self.level_view.offset_x = x - look.x * fac
                 self.level_view.camera_height = y - look.z * fac
             print("teleported to object")
