@@ -166,7 +166,12 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
             del self.autocomplete
             self.autocomplete: AutocompleteDropDown = None
 
-        if True: #(e.key() == Qt.Key_Tab):
+        if e.key() not in (Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right): #(e.key() == Qt.Key_Tab):
+            if e.key() == Qt.Key_Return:
+                pass
+            elif e.key() != Qt.Key_Tab:
+                super().keyPressEvent(e)
+
             text = self.toPlainText()
             cursor = self.textCursor()
             prev = text.rfind(" ",0, cursor.position())
@@ -180,34 +185,35 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
                     field = field.lstrip(" ")
                 if field:
                     bestmatch = find_best_fit(field, bw2=self.editor.level_file.bw2, values=rightmost_dot==-1, max=15)
-                    rect = self.cursorRect()
+                    if len(bestmatch) > 0:
+                        rect = self.cursorRect()
 
-                    self.autocomplete = AutocompleteDropDown(self, [x[0] for x in bestmatch])
-                    #self.autocomplete.currentIndexChanged.connect(self.update_autocomplete)
-                    self.autocomplete.textActivated.connect(self.update_autocomplete)
-                    self.autocomplete.tabactivated.connect(self.update_autocomplete)
-                    self.autocomplete.move(rect.bottomRight().x(), rect.bottomRight().y()+5)
+                        self.autocomplete = AutocompleteDropDown(self, [x[0] for x in bestmatch])
+                        #self.autocomplete.currentIndexChanged.connect(self.update_autocomplete)
+                        self.autocomplete.textActivated.connect(self.update_autocomplete)
+                        self.autocomplete.tabactivated.connect(self.update_autocomplete)
+                        self.autocomplete.move(rect.bottomRight().x(), rect.bottomRight().y()+5)
 
 
-                    self.autocomplete.show()
-                    #self.autocomplete.showPopup()
-                    self.setFocus()
+                        self.autocomplete.show()
+                        #self.autocomplete.showPopup()
+                        self.setFocus()
 
                     """if bestmatch:
                         cursor.clearSelection()
                         for i in range(len(field)):
                             cursor.deletePreviousChar()
                         cursor.insertText(bestmatch[0][0])"""
-            if e.key() == Qt.Key_Return:
-                pass
-            elif e.key() != Qt.Key_Tab:
-                super().keyPressEvent(e)
+
         else:
 
             if e.key() == Qt.Key_Return and surpressenter:
                 surpressenter = False
             else:
-                super().keyPressEvent(e)
+                if self.autocomplete is not None and e.key() in (Qt.Key_Up, Qt.Key_Down):
+                    pass
+                else:
+                    super().keyPressEvent(e)
                 surpressenter = False
 
 
