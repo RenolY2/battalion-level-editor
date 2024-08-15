@@ -207,10 +207,10 @@ class Gizmo2DRotateY(Gizmo2DMoveX):
             #editor.gizmo.set_render_axis(AXIS_Z)
 
             x, y = editor.mouse_coord_to_world_coord(self.first_click.x, self.first_click.y)
-            angle_start = atan2(-(y + editor.gizmo.position.z), x - editor.gizmo.position.x)
+            angle_start = atan2((y - editor.gizmo.position.z), x - editor.gizmo.position.x)
 
             x, y = editor.mouse_coord_to_world_coord(event.x(), event.y())
-            angle = atan2(-(y + editor.gizmo.position.z), x - editor.gizmo.position.x)
+            angle = atan2((y - editor.gizmo.position.z), x - editor.gizmo.position.x)
             delta = angle_start - angle
 
 
@@ -424,9 +424,9 @@ class Gizmo3DRotateY(Gizmo2DRotateY):
         d = numpy.dot(vec, dirvec)
 
         if d >= 0:
-            return -1
-        else:
             return 1
+        else:
+            return -1
 
     def move(self, editor, buttons, event):
         if editor.gizmo.was_hit[self.axis_name]:
@@ -434,7 +434,7 @@ class Gizmo3DRotateY(Gizmo2DRotateY):
 
             proj = numpy.dot(editor.mvp_mat, numpy.array([
                 editor.gizmo.position.x,
-                -editor.gizmo.position.z,
+                editor.gizmo.position.z,
                 editor.gizmo.position.y,
                 1]
             ))

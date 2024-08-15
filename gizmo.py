@@ -51,6 +51,8 @@ class Gizmo(Model):
 
     def move_to_average(self, objects, bwterrain, waterheight):
         for obj in objects:
+            if obj is None:
+                continue
             if obj.getmatrix() is not None:
                 self.hidden = False
                 break
@@ -98,7 +100,7 @@ class Gizmo(Model):
             if is3d: named_meshes["gizmo_y"].render_colorid(0x2)
             named_meshes["gizmo_z"].render_colorid(0x3)
             #if is3d: named_meshes["rotation_x"].render_colorid(0x4)
-            #named_meshes["rotation_y"].render_colorid(0x5)
+            named_meshes["rotation_y"].render_colorid(0x5)
             #if is3d: named_meshes["rotation_z"].render_colorid(0x6)
             if not is3d: named_meshes["middle"].render_colorid(0x7)
             glPopMatrix()
@@ -142,7 +144,7 @@ class Gizmo(Model):
 
             glColor4f(*Y_COLOR)
             if is3d: self.named_meshes["gizmo_y"].render()
-            #.named_meshes["rotation_y"].render()
+            self.named_meshes["rotation_y"].render()
             glColor4f(*Z_COLOR)
             self.named_meshes["gizmo_z"].render()
             #if is3d: self.named_meshes["rotation_z"].render()

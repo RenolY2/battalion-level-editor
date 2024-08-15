@@ -19,7 +19,7 @@ import PyQt5.QtGui as QtGui
 
 import opengltext
 import py_obj
-
+from lib.vectors import Vector3
 from widgets.menu.menubar import EditorMenuBar
 from widgets.editor_widgets import catch_exception
 from widgets.editor_widgets import AddPikObjectWindow
@@ -836,10 +836,12 @@ class LevelEditor(QMainWindow):
             elif deltarotation.z != 0:
                 rot.rotate_around_x(deltarotation.z)
 
-        if self.rotation_mode.isChecked():
+        #if self.rotation_mode.isChecked():
+        if True:
             middle = self.level_view.gizmo.position
 
-            for position in self.level_view.selected_positions:
+            for mtx in self.level_view.selected_positions:
+                position = Vector3(mtx.x, mtx.y, mtx.z)
                 diff = position - middle
                 diff.y = 0.0
 
@@ -850,9 +852,11 @@ class LevelEditor(QMainWindow):
                     angle += deltarotation.y
                     position.x = middle.x + length * sin(angle)
                     position.z = middle.z + length * cos(angle)
+                    mtx.mtx[12] = position.x
+                    mtx.mtx[14] = position.z
 
         #self.pikmin_gen_view.update()
-        self.level_view.do_redraw()
+        self.level_view.do_redraw(forceselected=True)
         self.set_has_unsaved_changes(True)
         self.pik_control.update_info()
 
@@ -1154,12 +1158,14 @@ if __name__ == "__main__":
         sys.excepthook = except_hook
 
         parser = argparse.ArgumentParser()
-        parser.add_argument("--inputgen", default=None,
+        """parser.add_argument("--inputgen", default=None,
                             help="Path to generator file to be loaded.")
         parser.add_argument("--collision", default=None,
                             help="Path to collision to be loaded.")
         parser.add_argument("--waterbox", default=None,
-                            help="Path to waterbox file to be loaded.")
+                            help="Path to waterbox file to be loaded.")"""
+
+        parser.add_argument("filepath", default=None, help="Path to level to be loaded.")
 
         args = parser.parse_args()
 
@@ -1180,7 +1186,8 @@ if __name__ == "__main__":
             # Debugging
 
             editor_gui.show()
-            editor_gui.file_menu.button_load_level(r"D:\Wii games\BW2Folder\files\Data\CompoundFiles\MP4.xml")
+            if args.filepath is not None:
+                editor_gui.file_menu.button_load_level(args.filepath)
             err_code = app.exec()
 
         if pr is not None:
