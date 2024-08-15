@@ -14,6 +14,7 @@ from lib.searchquery import create_query, find_best_fit, autocompletefull
 
 
 class AutocompleteDropDown(QtWidgets.QComboBox):
+    tabactivated = pyqtSignal()
     def __init__(self, parent, items):
         super().__init__(parent)
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
@@ -21,6 +22,12 @@ class AutocompleteDropDown(QtWidgets.QComboBox):
             self.addItem(item)
 
         self.max = len(items)
+
+    def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
+        if e.key() == Qt.Key_Tab:
+            self.tabactivated.emit()
+        else:
+            super().keyPressEvent(e)
 
     def scroll_up(self):
         if self.maxCount() == 0:
@@ -129,17 +136,28 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
         cursor.insertText(self.autocomplete.currentText())
 
     def keyPressEvent(self, e: QtGui.QKeyEvent):
-        if self.autocomplete is not None and e.key() in (Qt.Key_Up, Qt.Key_Down):
+        surpressenter = False
+
+        if self.autocomplete is not None and e.key() in (Qt.Key_Up, Qt.Key_Down, Qt.Key_Return, Qt.Key_Tab):
             if e.key() == Qt.Key_Up:
                 self.autocomplete.scroll_up()
             elif e.key() == Qt.Key_Down:
                 self.autocomplete.scroll_down()
-            field = self.get_last_field()
-            cursor = self.textCursor()
-            print(field)
-            for i in range(len(field)):
-                cursor.deletePreviousChar()
-            cursor.insertText(self.autocomplete.currentText())
+
+
+            if e.key() in (Qt.Key_Return, Qt.Key_Tab):
+                field = self.get_last_field()
+                cursor = self.textCursor()
+                print(field)
+                for i in range(len(field)):
+                    cursor.deletePreviousChar()
+                cursor.insertText(self.autocomplete.currentText())
+
+                self.autocomplete.hide()
+                self.autocomplete.deleteLater()
+                del self.autocomplete
+                self.autocomplete: AutocompleteDropDown = None
+                surpressenter = True
 
         elif self.autocomplete is not None:
             self.autocomplete.hide()
@@ -164,19 +182,28 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
                     rect = self.cursorRect()
 
                     self.autocomplete = AutocompleteDropDown(self, [x[0] for x in bestmatch])
-                    self.autocomplete.currentIndexChanged.connect(self.update_autocomplete)
+                    #self.autocomplete.currentIndexChanged.connect(self.update_autocomplete)
+                    self.autocomplete.textActivated.connect(self.update_autocomplete)
+                    self.autocomplete.tabactivated.connect(self.update_autocomplete)
                     self.autocomplete.move(rect.bottomRight().x(), rect.bottomRight().y()+5)
 
+
                     self.autocomplete.show()
+                    self.autocomplete.showPopup()
                     self.setFocus()
 
-                    if bestmatch:
+                    """if bestmatch:
                         cursor.clearSelection()
                         for i in range(len(field)):
                             cursor.deletePreviousChar()
-                        cursor.insertText(bestmatch[0][0])
+                        cursor.insertText(bestmatch[0][0])"""
         else:
-            super().keyPressEvent(e)
+
+            if e.key() == Qt.Key_Return and surpressenter:
+                surpressenter = False
+            else:
+                super().keyPressEvent(e)
+                surpressenter = False
 
 
 class HelpWindow(QtWidgets.QMdiSubWindow):
