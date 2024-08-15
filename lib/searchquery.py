@@ -2,7 +2,7 @@ import re
 import os
 
 from pypeg2 import *
-
+from numpy import float32
 
 fieldnames = {}
 autocomplete = []
@@ -244,7 +244,7 @@ class Equal(List):
                         tmpresult = op.action(val, self[2].convert_bool())
                     elif isinstance(val, int):
                         tmpresult = op.action(val, self[2].convert())
-                    elif isinstance(val, float):
+                    elif isinstance(val, (float, float32)):
                         tmpresult = op.action(val, float(self[2]))
                     else:
                         tmpresult = op.action(val, self[2])
@@ -275,7 +275,7 @@ class NumberCompare(List):
                         val = int(val)
                     if isinstance(val, int):
                         tmpresult = op.action(val, self[2].convert())
-                    elif isinstance(val, float):
+                    elif isinstance(val, (float, float32)):
                         tmpresult = op.action(val, float(self[2]))
                     else:
                         tmpresult = False
