@@ -68,15 +68,9 @@ class Gizmo(Model):
             if mtx is not None:
                 count += 1
                 objheight = mtx.y
-                height = bwterrain.check_height(mtx.x, mtx.z)
-                if height is None:
-                    if waterheight is not None and objheight < waterheight:
-                        objheight = waterheight+0.2  # Avoid z-fighting in some cases
-                else:
-                    if waterheight is not None and objheight < waterheight:
-                        objheight = waterheight+0.2  # Avoid z-fighting in some cases
-                    if objheight < height:
-                        objheight = height
+                h = obj.calculate_height(bwterrain, waterheight)
+                if h is not None:
+                    objheight = h
 
                 if avgx is None:
                     avgx = mtx.x

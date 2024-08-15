@@ -263,8 +263,6 @@ class BattalionObject(object):
             setattr(self, "getmatrix", lambda: self.Mat)
         elif hasattr(self, "mMatrix"):
             setattr(self, "getmatrix", lambda: self.mMatrix)
-        elif hasattr(self, "spawnMatrix"):
-            setattr(self, "getmatrix", lambda: self.spawnMatrix)
         else:
             setattr(self, "getmatrix", lambda: None)
 
@@ -444,6 +442,41 @@ class BattalionObject(object):
             else:
                 return "{0}({1})".format(self.type, self.id)
 
+    def calculate_height(self, bwterrain, waterheight):
+        currbwmtx = self.getmatrix()
+        if currbwmtx is None:
+            return None
+
+        currmtx = currbwmtx.mtx
+        h = currmtx[13]
+        originalh = h
+        locktosurface = False
+
+        if hasattr(self, "mStickToFloor") and not self.mStickToFloor:
+            return h
+
+        if hasattr(self, "mLockToSurface"):
+            if not self.mLockToSurface:
+                return h
+            else:
+                currmtx = self.spawnMatrix.mtx
+                locktosurface = True
+
+        height = bwterrain.check_height(currmtx[12], currmtx[14])
+        if height is None:
+            if waterheight is not None and h < waterheight:
+                h = waterheight + 0.2  # Avoid z-fighting in some cases
+        else:
+            if waterheight is not None and h < waterheight:
+                h = waterheight + 0.2  # Avoid z-fighting in some cases
+            if h < height:
+                h = height
+
+        if locktosurface:
+            return abs(currmtx[13]-h) + originalh
+        else:
+            return h
+
     def tostring(self):
         self.update_xml()
         return etree.tostring(self._node, encoding="unicode", short_empty_elements=False)
@@ -535,6 +568,8 @@ if __name__ == "__main__":
                                 preload_data = BattalionLevelFile(h)
                                 objectcounts = {}
                                 for objid, obj in level_data.objects.items():
+                                    if hasattr(obj, "spawnMatrix"):
+                                        assert hasattr(obj, "Mat")
                                     potentialvalues.add(obj.type)
                                     for node in obj._node:
                                         fieldnames.add(node.attrib["name"])
@@ -604,6 +639,8 @@ if __name__ == "__main__":
                                 preload_data = BattalionLevelFile(h)
                                 objectcounts = {}
                                 for objid, obj in level_data.objects.items():
+                                    if hasattr(obj, "spawnMatrix"):
+                                        assert hasattr(obj, "Mat")
                                     potentialvaluesbw2.add(obj.type)
                                     for node in obj._node:
                                         fieldnamesbw2.add(node.attrib["name"])

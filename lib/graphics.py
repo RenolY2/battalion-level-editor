@@ -204,18 +204,9 @@ class Graphics(object):
                     mtx, extradata = default_matrices, default_extradata
 
                 currmtx = obj.getmatrix().mtx.copy()
-
-                height = bwterrain.check_height(currmtx[12], currmtx[14])
-                h = currmtx[13]
-                if height is None:
-                    if self.rw.waterheight is not None and h < waterheight:
-                        currmtx[13] = waterheight+0.2  # Avoid z-fighting in some cases
-                else:
-                    if self.rw.waterheight is not None and h < waterheight:
-                        h = waterheight+0.2  # Avoid z-fighting in some cases
-                    if h < height:
-                        h = height
-                    currmtx[13] = h
+                height = obj.calculate_height(bwterrain, self.rw.waterheight)
+                if height is not None:
+                    currmtx[13] = height
 
                 obj.height = currmtx[13]
 
