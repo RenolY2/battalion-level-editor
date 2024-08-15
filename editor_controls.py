@@ -94,7 +94,7 @@ class TopdownScroll(ClickDragAction):
         x, y = event.x(), event.y()
         d_x, d_y = event.x() - self.first_click.x, event.y() - self.first_click.y
 
-        if editor.zoom_factor > 1.0:
+        if True:#editor.zoom_factor > 1.0:
             adjusted_dx = d_x * editor.zoom_factor  # (1.0 + (self.zoom_factor - 1.0))
             adjusted_dz = d_y * editor.zoom_factor  # (1.0 + (self.zoom_factor - 1.0))
         else:
