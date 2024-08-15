@@ -828,13 +828,16 @@ class LevelEditor(QMainWindow):
 
     def action_rotate_object(self, deltarotation):
         #obj.set_rotation((None, round(angle, 6), None))
-        for rot in self.level_view.selected_rotations:
+        for mtx in self.level_view.selected_positions:
+            if deltarotation.y != 0:
+                mtx.rotate_y(deltarotation.y)
+        """for rot in self.level_view.selected_rotations:
             if deltarotation.x != 0:
                 rot.rotate_around_y(deltarotation.x)
             elif deltarotation.y != 0:
                 rot.rotate_around_z(deltarotation.y)
             elif deltarotation.z != 0:
-                rot.rotate_around_x(deltarotation.z)
+                rot.rotate_around_x(deltarotation.z)"""
 
         #if self.rotation_mode.isChecked():
         if True:

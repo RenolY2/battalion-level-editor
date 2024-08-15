@@ -1,5 +1,6 @@
+from math import sin, cos
 from lib.vectors import Matrix4x4, Vector4, Vector3
-from numpy import array, float32, shape, reshape
+from numpy import array, float32, shape, reshape, ndarray
 TYPES = []
 
 X = 12
@@ -21,6 +22,18 @@ class BWMatrix(object):
         self.mtx[12] += dx
         self.mtx[13] += dy
         self.mtx[14] += dz
+
+    def rotate_y(self, deltay):
+        mymtx = self.mtx.reshape((4,4), order="F")
+        mtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
+            cos(deltay), 0.0, -sin(deltay), 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            sin(deltay), 0.0, cos(deltay), 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]))
+        mtx = mymtx.dot(mtx)
+        flatten = mtx.flatten("F")
+        self.mtx[0:15] = flatten[0:15]
 
     @property
     def x(self):
