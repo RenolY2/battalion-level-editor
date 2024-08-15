@@ -157,7 +157,8 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
                 self.autocomplete.deleteLater()
                 del self.autocomplete
                 self.autocomplete: AutocompleteDropDown = None
-                surpressenter = True
+                if e.key() == Qt.Key_Return:
+                    surpressenter = True
 
         elif self.autocomplete is not None:
             self.autocomplete.hide()
@@ -165,7 +166,7 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
             del self.autocomplete
             self.autocomplete: AutocompleteDropDown = None
 
-        if (e.key() == Qt.Key_Tab):
+        if True: #(e.key() == Qt.Key_Tab):
             text = self.toPlainText()
             cursor = self.textCursor()
             prev = text.rfind(" ",0, cursor.position())
@@ -189,7 +190,7 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
 
 
                     self.autocomplete.show()
-                    self.autocomplete.showPopup()
+                    #self.autocomplete.showPopup()
                     self.setFocus()
 
                     """if bestmatch:
@@ -197,6 +198,10 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
                         for i in range(len(field)):
                             cursor.deletePreviousChar()
                         cursor.insertText(bestmatch[0][0])"""
+            if e.key() == Qt.Key_Return:
+                pass
+            elif e.key() != Qt.Key_Tab:
+                super().keyPressEvent(e)
         else:
 
             if e.key() == Qt.Key_Return and surpressenter:
