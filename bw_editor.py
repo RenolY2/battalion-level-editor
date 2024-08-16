@@ -189,6 +189,8 @@ class LevelEditor(QMainWindow):
                 self.level_view.camera_height = y - look.z * fac
             print("teleported to object")
             self.level_view.do_redraw()
+        else:
+            self.pik_control.action_open_edit_object()
 
     def tree_select_arrowkey(self):
         current = self.leveldatatreeview.selectedItems()
@@ -882,53 +884,17 @@ class LevelEditor(QMainWindow):
     def action_delete_objects(self):
         tobedeleted = []
         for obj in self.level_view.selected:
-            if isinstance(obj, libbol.EnemyPoint):
-                for group in self.level_file.enemypointgroups.groups:
-                    if obj in group.points:
-                        group.points.remove(obj)
-                        break
-
-            elif isinstance(obj, libbol.RoutePoint):
-                for route in self.level_file.routes:
-                    if obj in route.points:
-                        route.points.remove(obj)
-                        break
-
-            elif isinstance(obj, libbol.Checkpoint):
-                for group in self.level_file.checkpoints.groups:
-                    if obj in group.points:
-                        group.points.remove(obj)
-                        break
-
-            elif isinstance(obj, libbol.MapObject):
-                self.level_file.objects.objects.remove(obj)
-            elif isinstance(obj, libbol.KartStartPoint):
-                self.level_file.kartpoints.positions.remove(obj)
-            elif isinstance(obj, libbol.JugemPoint):
-                self.level_file.respawnpoints.remove(obj)
-            elif isinstance(obj, libbol.Area):
-                self.level_file.areas.areas.remove(obj)
-            elif isinstance(obj, libbol.Camera):
-                self.level_file.cameras.remove(obj)
-            elif isinstance(obj, libbol.CheckpointGroup):
-                self.level_file.checkpoints.groups.remove(obj)
-            elif isinstance(obj, libbol.EnemyPointGroup):
-                self.level_file.enemypointgroups.groups.remove(obj)
-            elif isinstance(obj, libbol.Route):
-                self.level_file.routes.remove(obj)
-            elif isinstance(obj, libbol.LightParam):
-                self.level_file.lightparams.remove(obj)
-            elif isinstance(obj, libbol.MGEntry):
-                self.level_file.mgentries.remove(obj)
+            if obj.id in self.level_file.objects:
+                self.level_file.objects[obj.id]
         self.level_view.selected = []
         self.level_view.selected_positions = []
         self.level_view.selected_rotations = []
 
         self.pik_control.reset_info()
-        self.leveldatatreeview.set_objects(self.level_file)
+        self.leveldatatreeview.set_objects(self.level_file, self.preload_file)
         self.level_view.gizmo.hidden = True
         #self.pikmin_gen_view.update()
-        self.level_view.do_redraw()
+        self.level_view.do_redraw(force=True)
         self.set_has_unsaved_changes(True)
 
     @catch_exception
