@@ -60,6 +60,7 @@ class BWObjectEditWindow(QMdiSubWindow):
     closing = pyqtSignal()
     opennewxml = pyqtSignal(str)
     saving = pyqtSignal(str)
+    findobject = pyqtSignal(str)
 
     def __init__(self, id):
         super().__init__()
@@ -85,6 +86,9 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.gotoaction = QAction("Edit XML for ID", self)
         self.shortcut = QtWidgets.QShortcut("Ctrl+E", self)
         self.shortcut.setAutoRepeat(False)
+        self.findaction = QAction("Find ID in Map", self)
+        self.findaction.triggered.connect(self.find_object)
+
         self.shortcut.activated.connect(self.goto_id_action)
 
         self.gotoaction.triggered.connect(self.goto_id_action)
@@ -102,6 +106,17 @@ class BWObjectEditWindow(QMdiSubWindow):
 
         #self.verticalLayout.addWidget(self.textbox_xml)
 
+    def find_object(self):
+        cursor = self.textbox_xml.textCursor()
+        id = cursor.selectedText()
+        self.findobject.emit(id)
+
+    def focusInEvent(self, focusInEvent: QtGui.QFocusEvent) -> None:
+        print("Am now in focus!", self.id)
+
+    def focusOutEvent(self, focusOutEvent: QtGui.QFocusEvent) -> None:
+        print("no longer in focus", self.id)
+
     def action_save_xml(self):
         self.saving.emit(self.id)
 
@@ -110,6 +125,7 @@ class BWObjectEditWindow(QMdiSubWindow):
             context_menu = self.textbox_xml.createStandardContextMenu()
             context_menu.addAction(self.gotoaction)
             self.gotoaction.setShortcut("Ctrl+E")
+            context_menu.addAction(self.findaction)
             context_menu.exec(self.mapToGlobal(position))
             context_menu.destroy()
             del context_menu

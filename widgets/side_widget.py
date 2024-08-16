@@ -46,7 +46,7 @@ class PikminSideWidget(QWidget):
         self.button_remove_object.setToolTip("Hotkey: Delete")
         self.button_ground_object.setToolTip("Hotkey: G")
 
-        self.button_remove_object.setEnabled(False)
+        self.button_remove_object.setEnabled(True)
         self.button_ground_object.setEnabled(False)
         self.button_add_object.setEnabled(False)
 
@@ -104,6 +104,14 @@ class PikminSideWidget(QWidget):
 
         self.reset_info()
 
+    def goto_object(self, id):
+        if id in self.parent.level_file.objects_with_positions:
+            obj = self.parent.level_file.objects_with_positions[id]
+            self.parent.level_view.selected = [obj]
+            self.parent.goto_object(obj)
+            self.parent.level_view.select_update.emit()
+            self.parent.level_view.do_redraw(force=True)
+
     def open_new_window(self, id):
         if id in self.parent.level_file.objects:
             obj = self.parent.level_file.objects[id]
@@ -122,6 +130,7 @@ class PikminSideWidget(QWidget):
             else:
                 window = BWObjectEditWindow(obj.id)
                 window.opennewxml.connect(self.open_new_window)
+                window.findobject.connect(self.goto_object)
                 window.move(window.x() + offset, window.y() + offset)
                 self.edit_windows[obj.id] = window
 
@@ -147,6 +156,7 @@ class PikminSideWidget(QWidget):
                 else:
                     window = BWObjectEditWindow(obj.id)
                     window.opennewxml.connect(self.open_new_window)
+                    window.findobject.connect(self.goto_object)
                     window.move(window.x()+offset, window.y()+offset)
                     self.edit_windows[obj.id] = window
 
@@ -166,7 +176,10 @@ class PikminSideWidget(QWidget):
             obj = self.parent.preload_file.objects[id]
 
         if obj is not None:
-            obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
+            try:
+                obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
+            except Exception as err:
+                print(err)
             self.parent.level_view.do_redraw(force=True)
 
     def _make_labeled_lineedit(self, lineedit, label):

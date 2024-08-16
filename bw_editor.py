@@ -157,6 +157,27 @@ class LevelEditor(QMainWindow):
             else:
                 self.setWindowTitle("Battalion Level Editor")
 
+    def goto_object(self, obj):
+        bwmatrix = obj.getmatrix()
+        x, y, z = bwmatrix.mtx[12:15]
+        height = obj.calculate_height(self.level_view.bwterrain, self.level_view.waterheight)
+        if height is not None:
+            y = height
+        print(x, y, z)
+
+        if self.level_view.mode == MODE_TOPDOWN:
+            self.level_view.offset_z = z
+            self.level_view.offset_x = -x
+        else:
+            look = self.level_view.camera_direction.copy()
+
+            fac = 100
+            self.level_view.offset_z = (z - look.y * fac)
+            self.level_view.offset_x = x - look.x * fac
+            self.level_view.camera_height = y - look.z * fac
+        print("teleported to object")
+        self.level_view.do_redraw()
+
     @catch_exception_with_dialog
     def do_goto_action(self, item, index):
         print(item, index)
@@ -171,24 +192,7 @@ class LevelEditor(QMainWindow):
         bwmatrix = obj.getmatrix()
 
         if bwmatrix is not None:
-            x,y,z = bwmatrix.mtx[12:15]
-            height = obj.calculate_height(self.level_view.bwterrain, self.level_view.waterheight)
-            if height is not None:
-                y = height
-            print(x,y,z)
-
-            if self.level_view.mode == MODE_TOPDOWN:
-                self.level_view.offset_z = z
-                self.level_view.offset_x = -x
-            else:
-                look = self.level_view.camera_direction.copy()
-
-                fac = 100
-                self.level_view.offset_z = (z - look.y * fac)
-                self.level_view.offset_x = x - look.x * fac
-                self.level_view.camera_height = y - look.z * fac
-            print("teleported to object")
-            self.level_view.do_redraw()
+           self.goto_object(obj)
         else:
             self.pik_control.action_open_edit_object()
 
