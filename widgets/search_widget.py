@@ -11,6 +11,7 @@ from widgets.editor_widgets import open_error_dialog
 from widgets.tree_view import LevelDataTreeView, ObjectGroup, NamedItem
 from widgets.menu.menubar import Menu
 from lib.searchquery import create_query, find_best_fit, autocompletefull
+from lib.BattalionXMLLib import BattalionObject
 
 
 class AutocompleteDropDown(QtWidgets.QComboBox):
@@ -75,7 +76,13 @@ class SearchTreeView(LevelDataTreeView):
 
             parent = extra_categories[objecttype]
             item = NamedItem(parent, object.name, object)
-            item.setText(1, ", ".join(str(x) for x in values))
+            writtenvalues = []
+            for val in values:
+                if isinstance(val, BattalionObject):
+                    writtenvalues.append(val.name)
+                else:
+                    writtenvalues.append(str(val))
+            item.setText(1, ", ".join(writtenvalues))
 
         for categoryname in sorted(extra_categories.keys()):
             category = extra_categories[categoryname]
