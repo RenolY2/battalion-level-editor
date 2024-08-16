@@ -58,13 +58,15 @@ class SearchTreeView(LevelDataTreeView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setMaximumWidth(9999)
+        self.setColumnCount(2)
+        self.setHeaderLabels(["XML Object", "Searched Values"])
 
     def set_objects(self, objects):
         self.reset()
 
         extra_categories = {}
 
-        for object in objects:
+        for object, values in objects:
             #object: BattalionObject
             objecttype = object.type
             if objecttype not in extra_categories:
@@ -73,6 +75,7 @@ class SearchTreeView(LevelDataTreeView):
 
             parent = extra_categories[objecttype]
             item = NamedItem(parent, object.name, object)
+            item.setText(1, ", ".join(str(x) for x in values))
 
         for categoryname in sorted(extra_categories.keys()):
             category = extra_categories[categoryname]
@@ -92,6 +95,16 @@ def cursor_select(cursor, start, end):
     pass
 
 
+def find_rightmost(collection, text, start, end):
+    rightmost = -1
+    for symbol in collection:
+        sympos = text.rfind(symbol, start, end)
+        if sympos > rightmost:
+            rightmost = sympos
+
+    return rightmost
+
+
 class AutocompleteTextEdit(QtWidgets.QTextEdit):
     def __init__(self, parent, editor):
         super().__init__(parent)
@@ -104,16 +117,18 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
     def get_last_field(self):
         text = self.toPlainText()
         cursor = self.textCursor()
-        prev = text.rfind(" ", 0, cursor.position())
+        prev = find_rightmost([" ", ">", "<", "=", "!"], text, 0, cursor.position())#text.rfind(" ", 0, cursor.position())
         if prev == -1:
-            prev = 0
-        field = text[prev:cursor.position()]
+            field = text[0:cursor.position()]
+        else:
+            field = text[prev+1:cursor.position()]
+
         if field:
             rightmost_dot = field.rfind(".")
             field = field[rightmost_dot + 1:]
             if field:
 
-                return text[rightmost_dot+1:cursor.position()]
+                return field#text[rightmost_dot+1:cursor.position()]
             else:
                 return ""
         else:
@@ -144,7 +159,6 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
             elif e.key() == Qt.Key_Down:
                 self.autocomplete.scroll_down()
 
-
             if e.key() in (Qt.Key_Return, Qt.Key_Tab):
                 field = self.get_last_field()
                 cursor = self.textCursor()
@@ -174,10 +188,11 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
 
             text = self.toPlainText()
             cursor = self.textCursor()
-            prev = text.rfind(" ",0, cursor.position())
+            prev = find_rightmost([" ", ">", "<", "=", "!"], text, 0, cursor.position()) #text.rfind(" ",0, cursor.position())
             if prev == -1:
-                prev = 0
-            field = text[prev:cursor.position()]
+                field = text[0:cursor.position()]
+            else:
+                field = text[prev+1:cursor.position()]
             if field:
                 rightmost_dot = field.rfind(".")
                 field = field[rightmost_dot+1:]
@@ -348,14 +363,17 @@ class SearchWidget(QtWidgets.QMainWindow):
         objects = []
         for object in self.editor.level_file.objects.values():
             if query.evaluate(object):
-                objects.append(object)
+                values = query.get_values(object)
+                objects.append((object, values))
 
         for object in self.editor.preload_file.objects.values():
             if query.evaluate(object):
-                objects.append(object)
+                values = query.get_values(object)
+                objects.append((object, values))
 
         self.treeview.set_objects(objects)
         self.treeview.expandAll()
+        self.treeview.resizeColumnToContents(0)
 
     def action_load_query(self):
         filepath, choosentype = QtWidgets.QFileDialog.getOpenFileName(

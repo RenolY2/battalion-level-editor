@@ -224,6 +224,9 @@ class StringContentCheck(List):
 
             return result
 
+    def get_values(self, obj):
+        return self[0].evaluate(obj)
+
 
 class Equal(List):
     grammar = Field, maybe_some(whitespace), [EqualOperator, UnequalOperator], maybe_some(whitespace), [DecimalNumber, Value]
@@ -257,6 +260,9 @@ class Equal(List):
 
             return result
 
+    def get_values(self, obj):
+        return self[0].evaluate(obj)
+
 
 class NumberCompare(List):
     grammar = Field, maybe_some(whitespace), [UnequalOperator, EqualOperator, LessEqual, Less, GreaterEqual, Greater], maybe_some(whitespace), [DecimalNumber, Integer]
@@ -289,12 +295,18 @@ class NumberCompare(List):
 
             return result
 
+    def get_values(self, obj):
+        return self[0].evaluate(obj)
+
 
 class Comparison(List):
     grammar = [Equal, NumberCompare, StringContentCheck]
 
     def evaluate(self, obj):
         return self[0].evaluate(obj)
+
+    def get_values(self, obj):
+        return self[0].get_values(obj)
 
 
 class AndOrUnit(List):
@@ -329,6 +341,14 @@ class AndOrUnit(List):
 
             return result
 
+    def get_values(self, obj):
+        values = []
+        for unit in self:
+            if hasattr(unit, "get_values"):
+                values.extend(unit.get_values(obj))
+
+        return values
+
 
 class BracketedUnit(List):
     grammar = "(", AndOrUnit, ")"
@@ -336,6 +356,13 @@ class BracketedUnit(List):
     def evaluate(self, obj):
         return self[0].evaluate(obj)
 
+    def get_values(self, obj):
+        values = []
+        for unit in self:
+            if hasattr(unit, "get_values"):
+                values.extend(unit.get_values(obj))
+
+        return values
 
 class QueryGrammar(AndOrUnit):
     grammar = [BracketedUnit, AndOrUnit], maybe_some(maybe_some(whitespace), [And, Or], maybe_some(whitespace), [BracketedUnit, AndOrUnit])
