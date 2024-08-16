@@ -210,6 +210,10 @@ class BattalionObject(object):
 
         self.height = None
         self.dirty = True
+        self.deleted = False
+
+    def delete(self):
+        self.deleted = True
 
     def add_reference(self, obj):
         self._referenced_by.add(obj)
@@ -415,7 +419,10 @@ class BattalionObject(object):
 
     @property
     def id(self):
-        return self._node.attrib["id"]
+        if self.deleted:
+            return "0"
+        else:
+            return self._node.attrib["id"]
 
     @property
     def type(self):
@@ -452,8 +459,13 @@ class BattalionObject(object):
         if currbwmtx is None:
             return None
 
+
         currmtx = currbwmtx.mtx
         h = currmtx[13]
+
+        if self.type in ("cMapZone", ):
+            return h
+
         originalh = h
         locktosurface = False
         sticktofloor = False
@@ -486,8 +498,10 @@ class BattalionObject(object):
             return abs(currmtx[13]-height) + originalh
         elif sticktofloor:
             return originalh+height
-        else:
+        elif originalh < height:
             return height
+        else:
+            return originalh
 
     def tostring(self):
         self.update_xml()
