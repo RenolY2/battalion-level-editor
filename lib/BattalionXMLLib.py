@@ -153,6 +153,17 @@ class BattalionLevelFile(object):
             if obj.id in self.objects_with_positions:
                 del self.objects_with_positions[obj.id]
 
+        deleted_refs = set(obj.id for obj in objects)
+        newroot = etree.Element("Instances")
+        for node in self._root:
+            if node.tag == "Object":
+                if node.attrib["id"] not in deleted_refs:
+                    newroot.append(node)
+            else:
+                newroot.append(node)
+
+        self._tree._setroot(newroot)
+        self._root = self._tree.getroot()
 
     def resolve_pointers(self, other):
         for bwobject in self.objects.values():
@@ -186,7 +197,6 @@ class BattalionFilePaths(object):
 
         self.objectfilepadding = None
         self.preloadpadding = None
-
 
         for child in self._tree.getroot():
             print(child.tag)
@@ -232,7 +242,7 @@ class BattalionObject(object):
     def add_reference(self, obj):
         self._referenced_by.add(obj)
 
-    def delete_references(self, references): #unfinished
+    def delete_references(self, references):
         for attr_node in self._node:
             if attr_node.tag in ("Pointer", "Resource"):
                 fieldname = attr_node.attrib["name"]
@@ -249,6 +259,7 @@ class BattalionObject(object):
                         for ref in references:
                             if obj == ref:
                                 pointers[i] = None
+        self.update_xml()
 
     def check_correctness(self, node, level, other):
         ownattrs = set(x.attrib["name"] for x in self._node)
