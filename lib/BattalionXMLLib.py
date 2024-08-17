@@ -136,22 +136,35 @@ class BattalionLevelFile(object):
                         if node.attrib["name"] not in fieldnames:
                             self.bw2 = True
                             print("Detected XML as BW2")
-                if hasattr(bwobject, "spawnMatrix") or hasattr(bwobject, "Mat") or hasattr(bwobject, "mMatrix"):
-                    self.add_object(bwobject, position=True)
-                else:
-                    self.add_object(bwobject, position=False)
+
+                self.add_object(bwobject)
                 if callback is not None: callback(len(self._root), i)
+
+    def delete_objects(self, objects):
+        for obj in objects:
+            assert not obj.deleted
+
+        for k, v in self.objects.items():
+            v.delete_references(objects)
+
+        for obj in objects:
+            if obj.id in self.objects:
+                del self.objects[obj.id]
+            if obj.id in self.objects_with_positions:
+                del self.objects_with_positions[obj.id]
+
 
     def resolve_pointers(self, other):
         for bwobject in self.objects.values():
             bwobject.resolve_pointers(self, other)
 
-    def add_object(self, bwobject, position):
+    def add_object(self, bwobject):
         if bwobject in self.objects:
             raise ObjectIDAlreadyExists()
-            
+
         self.objects[bwobject.id] = bwobject
-        if position:
+        hasposition = hasattr(bwobject, "spawnMatrix") or hasattr(bwobject, "Mat") or hasattr(bwobject, "mMatrix")
+        if hasposition:
             self.objects_with_positions[bwobject.id] = bwobject
             assert bwobject.getmatrix() is not None
 
@@ -213,10 +226,29 @@ class BattalionObject(object):
         self.deleted = False
 
     def delete(self):
+        self._custom_name = "DELETED"
         self.deleted = True
 
     def add_reference(self, obj):
         self._referenced_by.add(obj)
+
+    def delete_references(self, references): #unfinished
+        for attr_node in self._node:
+            if attr_node.tag in ("Pointer", "Resource"):
+                fieldname = attr_node.attrib["name"]
+                pointers = [subnode.text for subnode in attr_node]
+                if len(pointers) == 1:
+                    for ref in references:
+                        if getattr(self, fieldname) == ref:
+                            setattr(self, fieldname, None)
+                            break
+                elif len(pointers) > 1:
+                    ptrlist = getattr(self, fieldname)
+                    for i in range(len(pointers)):
+                        obj = pointers[i]
+                        for ref in references:
+                            if obj == ref:
+                                pointers[i] = None
 
     def check_correctness(self, node, level, other):
         ownattrs = set(x.attrib["name"] for x in self._node)
@@ -465,6 +497,8 @@ class BattalionObject(object):
 
         if self.type in ("cMapZone", ):
             return h
+        #elif self.type == "cObjectiveMarker":
+        #    if self.
 
         originalh = h
         locktosurface = False

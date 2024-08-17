@@ -887,9 +887,12 @@ class LevelEditor(QMainWindow):
 
     def action_delete_objects(self):
         tobedeleted = []
+
+        self.level_file.delete_objects(self.level_view.selected)
+        self.preload_file.delete_objects(self.level_view.selected)
         for obj in self.level_view.selected:
-            if obj.id in self.level_file.objects:
-                self.level_file.objects[obj.id]
+            obj.delete()
+
         self.level_view.selected = []
         self.level_view.selected_positions = []
         self.level_view.selected_rotations = []
