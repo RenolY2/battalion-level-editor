@@ -169,6 +169,10 @@ class BattalionLevelFile(object):
         for bwobject in self.objects.values():
             bwobject.resolve_pointers(self, other)
 
+    def add_object_new(self, bwobject):
+        self.add_object(bwobject)
+        self._root.append(bwobject._node)
+
     def add_object(self, bwobject):
         if bwobject in self.objects:
             raise ObjectIDAlreadyExists()

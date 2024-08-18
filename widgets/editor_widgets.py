@@ -219,9 +219,9 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
             mtx.mtx[14] -= self.offsety*4
 
         if obj.is_preload():
-            self.editor.preload_file.add_object(obj)
+            self.editor.preload_file.add_object_new(obj)
         else:
-            self.editor.level_file.add_object(obj)
+            self.editor.level_file.add_object_new(obj)
 
         self.donotreset = True
         self.textbox_xml.setText(content.replace(oldid, newid))
