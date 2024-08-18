@@ -250,12 +250,12 @@ class RotateCamera3D(ClickDragAction):
 
         self.first_click = Vector2(curr_x, curr_y)
 
-        editor.camera_horiz = (editor.camera_horiz - diff_x * (pi / 500)) % (2 * pi)
-        editor.camera_vertical = (editor.camera_vertical - diff_y * (pi / 600))
-        if editor.camera_vertical > pi / 2.0:
-            editor.camera_vertical = pi / 2.0
-        elif editor.camera_vertical < -pi / 2.0:
-            editor.camera_vertical = -pi / 2.0
+        editor.camera_horiz = (editor.camera_horiz - diff_x * 0.0062831853) % 6.28318530718  # (pi / 500) % (2 * pi)
+        editor.camera_vertical = (editor.camera_vertical - diff_y * 0.00523598775)  # pi / 600
+        if editor.camera_vertical > 1.57079632679:  # pi / 2
+            editor.camera_vertical = 1.57079632679  # pi / 2
+        elif editor.camera_vertical < -1.57079632679:  # -pi / 2
+            editor.camera_vertical = -1.57079632679  # -pi / 2
 
         # print(self.camera_vertical, "hello")
         editor.do_redraw()
@@ -287,7 +287,7 @@ class Select3D(ClickDragAction):
         editor.camera_direction.normalize()
 
         ray = editor.create_ray_from_mouseclick(event.x(), event.y())
-        editor.selectionbox_projected_origin = ray.origin + ray.direction*ufac# * 0.1
+        editor.selectionbox_projected_origin = ray.origin + ray.direction*ufac  # * 0.1
 
     def move(self, editor, buttons, event):
         upleft = editor.create_ray_from_mouseclick(self.first_click.x, event.y())
@@ -295,9 +295,9 @@ class Select3D(ClickDragAction):
         downright = editor.create_ray_from_mouseclick(event.x(), self.first_click.y)
 
         editor.selectionbox_projected_coords = (
-            upleft.origin + upleft.direction*ufac,# * 0.1,
-            upright.origin + upright.direction*ufac,# * 0.1,
-            downright.origin + downright.direction*ufac# * 0.1
+            upleft.origin + upleft.direction*ufac,  # * 0.1,
+            upright.origin + upright.direction*ufac,  # * 0.1,
+            downright.origin + downright.direction*ufac  # * 0.1
         )
 
         #selectendx, selectendz = editor.mouse_coord_to_world_coord(event.x(), event.y())
@@ -382,7 +382,7 @@ class Gizmo3DMoveX(Gizmo2DMoveX):
                 editor.move_points.emit(*self.do_delta(delta_x))
 
             else:
-                fac = 1/3.0
+                fac = 0.3333333  # 1/3.0
                 editor.move_points.emit(*self.do_delta(delta_x * editor.gizmo_scale * fac))
 
 
