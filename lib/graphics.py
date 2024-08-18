@@ -242,6 +242,37 @@ class Graphics(object):
 
         # self.models.cubev2.mtxdirty = True
 
+
+        glActiveTexture(GL_TEXTURE0)
+        glEnable(GL_TEXTURE_2D)
+
+        cam_x, cam_z = rw.cam_x, rw.cam_z
+
+        if self.render_everything_once:
+            for mtx, x, z, modelname in self.models_scene:
+                rw.bwmodelhandler.rendermodel(modelname, mtx, rw.bwterrain, 0)
+            self.render_everything_once = False
+
+        for meshname in self.scene.renderedmodels:
+            if meshname in self.scene.modelinstances:
+                mtxlist = self.scene.modelinstances[meshname]
+                if not mtxlist:
+                    mtx, extradata = None, None
+                else:
+                    mtx = numpy.concatenate(mtxlist)
+            else:
+                mtx, extradata = None, None
+
+            #if len(mtx) > 0:
+            model = self.rw.bwmodelhandler.instancemodels[meshname]
+            model.bind(mtx, numpy.array([], dtype=numpy.uint8))
+            model.instancedrender(self.rw.bwmodelhandler.textures)
+            model.unbind()
+
+        if self.rw.is_topdown():
+            glClear(GL_DEPTH_BUFFER_BIT)
+
+
         drawn = 0
         for objtype, model in self.scene.model.items():
             if not visible(objtype):
@@ -313,42 +344,5 @@ class Graphics(object):
 
         glEnable(GL_CULL_FACE)
 
-        glActiveTexture(GL_TEXTURE0)
-        glEnable(GL_TEXTURE_2D)
 
-        cam_x, cam_z = rw.cam_x, rw.cam_z
-
-        if self.render_everything_once:
-            for mtx, x, z, modelname in self.models_scene:
-                rw.bwmodelhandler.rendermodel(modelname, mtx, rw.bwterrain, 0)
-            self.render_everything_once = False
-
-        for meshname in self.scene.renderedmodels:
-            if meshname in self.scene.modelinstances:
-                mtxlist = self.scene.modelinstances[meshname]
-                if not mtxlist:
-                    mtx, extradata = None, None
-                else:
-                    mtx = numpy.concatenate(mtxlist)
-            else:
-                mtx, extradata = None, None
-
-            #if len(mtx) > 0:
-            model = self.rw.bwmodelhandler.instancemodels[meshname]
-            model.bind(mtx, numpy.array([], dtype=numpy.uint8))
-            model.instancedrender(self.rw.bwmodelhandler.textures)
-            model.unbind()
-        """else:
-            inrange = []
-            for mtx, x, z, modelname in self.models_scene:
-                if abs(cam_x - x) < 1000 and abs(cam_z - z) < 1000:
-                    dist = (cam_x - x)**2 + (cam_z - z)**2
-                    inrange.append((modelname, mtx, dist))
-
-            inrange.sort(key=lambda x: x[2])
-            for i, v in enumerate(inrange):
-                if i > 400:
-                    break
-
-                rw.bwmodelhandler.rendermodel(v[0], v[1], rw.bwterrain, 0)"""
 
