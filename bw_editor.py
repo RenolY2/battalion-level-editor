@@ -270,7 +270,7 @@ class LevelEditor(QMainWindow):
         self.horizontalLayout.addWidget(self.pik_control)
 
         QtWidgets.QShortcut(Qt.Key_G, self).activated.connect(self.action_ground_objects)
-        #QtWidgets.QShortcut(Qt.CTRL + Qt.Key_A, self).activated.connect(self.shortcut_open_add_item_window)
+        QtWidgets.QShortcut(Qt.CTRL + Qt.Key_A, self).activated.connect(self.shortcut_open_add_item_window)
         QtWidgets.QShortcut(Qt.CTRL + Qt.Key_E, self).activated.connect(self.action_open_edit)
         self.statusbar = QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
@@ -334,7 +334,7 @@ class LevelEditor(QMainWindow):
 
         self.level_view.customContextMenuRequested.connect(self.mapview_showcontextmenu)
 
-        self.pik_control.button_add_object.pressed.connect(self.button_open_add_item_window)
+        #self.pik_control.button_add_object.pressed.connect(self.button_open_add_item_window)
         #self.pik_control.button_move_object.pressed.connect(self.button_move_objects)
         self.level_view.move_points.connect(self.action_move_objects)
         self.level_view.height_update.connect(self.action_change_object_heights)
@@ -580,7 +580,7 @@ class LevelEditor(QMainWindow):
         self.pikmin_gen_view.do_redraw()
         self.set_has_unsaved_changes(True)
 
-    def button_open_add_item_window(self):
+    """def button_open_add_item_window(self):
         if self.add_object_window is None:
             self.add_object_window = AddPikObjectWindow()
             self.add_object_window.button_savetext.pressed.connect(self.button_add_item_window_save)
@@ -594,10 +594,11 @@ class LevelEditor(QMainWindow):
 
         elif self.level_view.mousemode == mkdd_widgets.MOUSE_MODE_ADDWP:
             self.level_view.set_mouse_mode(mkdd_widgets.MOUSE_MODE_NONE)
-            self.pik_control.button_add_object.setChecked(False)
+            self.pik_control.button_add_object.setChecked(False)"""
 
     def shortcut_open_add_item_window(self):
-        if self.add_object_window is None:
+        self.pik_control.button_add_object.pressed.emit()
+        """if self.add_object_window is None:
             self.add_object_window = AddPikObjectWindow()
             self.add_object_window.button_savetext.pressed.connect(self.button_add_item_window_save)
             self.add_object_window.closing.connect(self.button_add_item_window_close)
@@ -607,7 +608,7 @@ class LevelEditor(QMainWindow):
                 self.add_object_window.template_menu.setCurrentIndex(self.addobjectwindow_last_selected)
 
 
-            self.add_object_window.show()
+            self.add_object_window.show()"""
 
     @catch_exception
     def button_add_item_window_save(self):

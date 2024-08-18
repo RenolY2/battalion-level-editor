@@ -15,6 +15,10 @@ from PyQt5.QtCore import Qt
 import PyQt5.QtGui as QtGui
 
 from widgets.data_editor import choose_data_editor
+from lib.BattalionXMLLib import BattalionObject
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import bw_editor
 
 
 def catch_exception(func):
@@ -61,6 +65,7 @@ class BWObjectEditWindow(QMdiSubWindow):
     opennewxml = pyqtSignal(str)
     saving = pyqtSignal(str)
     findobject = pyqtSignal(str)
+    focusobj = pyqtSignal(str)
 
     def __init__(self, id):
         super().__init__()
@@ -111,11 +116,13 @@ class BWObjectEditWindow(QMdiSubWindow):
         id = cursor.selectedText()
         self.findobject.emit(id)
 
-    def focusInEvent(self, focusInEvent: QtGui.QFocusEvent) -> None:
-        print("Am now in focus!", self.id)
+    # Select object belonging to this window if window is activated
+    def changeEvent(self, changeEvent: QtCore.QEvent) -> None:
+        super().changeEvent(changeEvent)
 
-    def focusOutEvent(self, focusOutEvent: QtGui.QFocusEvent) -> None:
-        print("no longer in focus", self.id)
+        if changeEvent.type() == QtCore.QEvent.ActivationChange:
+            if self.isActiveWindow():
+                self.focusobj.emit(self.id)
 
     def action_save_xml(self):
         self.saving.emit(self.id)
@@ -149,6 +156,78 @@ class BWObjectEditWindow(QMdiSubWindow):
 
     def get_content(self):
         return self.textbox_xml.toPlainText()
+
+
+class AddBWObjectWindow(QtWidgets.QMainWindow):
+    closing = pyqtSignal()
+    addobject = pyqtSignal(str, bool)
+
+    def __init__(self, editor):
+        super().__init__()
+        self.editor: bw_editor.LevelEditor = editor
+        self.resize(900, 500)
+        self.setMinimumSize(QSize(300, 300))
+        self.basewidget = QtWidgets.QWidget(self)
+
+        self.setCentralWidget(self.basewidget)
+
+        self.vlayout = QtWidgets.QVBoxLayout(self)
+        self.basewidget.setLayout(self.vlayout)
+
+        self.textbox_xml = QTextEdit(self.basewidget)
+
+
+        self.add_object_on_map = QtWidgets.QPushButton("Add Object On Map", self)
+        self.add_object = QtWidgets.QPushButton("Add Object", self)
+        self.add_object.pressed.connect(self.action_add_object)
+        self.add_object_on_map.setEnabled(False)
+
+        self.vlayout.addWidget(self.textbox_xml)
+
+        self.hlayout = QtWidgets.QHBoxLayout(self)
+        self.hlayout.addWidget(self.add_object_on_map)
+        self.hlayout.addWidget(self.add_object)
+        self.vlayout.addLayout(self.hlayout)
+
+        self.textbox_xml.textChanged.connect(self.resetoffset)
+        self.offsetx = 0
+        self.offsety = 0
+        self.donotreset = False
+
+    def resetoffset(self):
+        if not self.donotreset:
+            self.offsetx = 0
+            self.offsety = 0
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.closing.emit()
+
+    def action_add_object(self):
+        content = self.textbox_xml.toPlainText()
+        obj = BattalionObject.create_from_text(content, self.editor.level_file, self.editor.preload_file)
+        oldid = obj.id
+        obj.choose_unique_id(self.editor.level_file, self.editor.preload_file)
+        newid = obj.id
+
+        self.offsety += 1
+        if self.offsety > 5:
+            self.offsety = 0
+            self.offsetx += 1
+        mtx = obj.getmatrix()
+        if mtx is not None:
+            mtx.mtx[12] += self.offsetx*4
+            mtx.mtx[14] -= self.offsety*4
+
+        if obj.is_preload():
+            self.editor.preload_file.add_object(obj)
+        else:
+            self.editor.level_file.add_object(obj)
+
+        self.donotreset = True
+        self.textbox_xml.setText(content.replace(oldid, newid))
+        self.donotreset = False
+
+        self.editor.level_view.do_redraw(force=True)
 
 
 class AddPikObjectWindow(QMdiSubWindow):
