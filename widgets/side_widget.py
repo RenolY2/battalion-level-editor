@@ -8,11 +8,12 @@ import PyQt5.QtCore as QtCore
 from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
 from PyQt5.QtCore import Qt
 from widgets.data_editor import choose_data_editor
-from widgets.editor_widgets import BWObjectEditWindow
+from widgets.editor_widgets import BWObjectEditWindow, AddBWObjectWindow
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
+
 
 class PikminSideWidget(QWidget):
     def __init__(self, *args, **kwargs):
@@ -34,7 +35,7 @@ class PikminSideWidget(QWidget):
         self.verticalLayout.setObjectName("verticalLayout")
 
         self.button_add_object = QPushButton("Add Object", parent)
-
+        self.button_add_object.pressed.connect(self.open_add_window)
         self.button_remove_object = QPushButton("Remove Object(s)", parent)
         self.button_ground_object = QPushButton("Ground Object(s)", parent)
         #self.button_move_object = QPushButton(parent)
@@ -48,7 +49,7 @@ class PikminSideWidget(QWidget):
 
         self.button_remove_object.setEnabled(True)
         self.button_ground_object.setEnabled(False)
-        self.button_add_object.setEnabled(False)
+        self.button_add_object.setEnabled(True)
 
         self.button_edit_object.pressed.connect(self.action_open_edit_object)
         self.button_add_object.setCheckable(True)
@@ -103,6 +104,25 @@ class PikminSideWidget(QWidget):
         self.edit_windows = {}
 
         self.reset_info()
+        self.add_window = None
+
+    def select_obj(self, id):
+        if id in self.parent.level_file.objects_with_positions:
+            obj = self.parent.level_file.objects_with_positions[id]
+            self.parent.level_view.selected = [obj]
+            self.parent.level_view.select_update.emit()
+            self.parent.level_view.do_redraw(force=True)
+
+    def handle_close(self, field):
+        setattr(self, field, None)
+
+    def open_add_window(self):
+        if self.add_window is not None:
+            self.add_window.setFocus()
+        else:
+            self.add_window = AddBWObjectWindow(self.parent)
+            self.add_window.closing.connect(partial(self.handle_close, "add_window"))
+            self.add_window.show()
 
     def goto_object(self, id):
         if id in self.parent.level_file.objects_with_positions:
@@ -130,6 +150,7 @@ class PikminSideWidget(QWidget):
             else:
                 window = BWObjectEditWindow(obj.id)
                 window.opennewxml.connect(self.open_new_window)
+                window.focusobj.connect(self.select_obj)
                 window.findobject.connect(self.goto_object)
                 window.move(window.x() + offset, window.y() + offset)
                 self.edit_windows[obj.id] = window
@@ -157,6 +178,7 @@ class PikminSideWidget(QWidget):
                     window = BWObjectEditWindow(obj.id)
                     window.opennewxml.connect(self.open_new_window)
                     window.findobject.connect(self.goto_object)
+                    window.focusobj.connect(self.select_obj)
                     window.move(window.x()+offset, window.y()+offset)
                     self.edit_windows[obj.id] = window
 

@@ -169,6 +169,10 @@ class BattalionLevelFile(object):
         for bwobject in self.objects.values():
             bwobject.resolve_pointers(self, other)
 
+    def add_object_new(self, bwobject):
+        self.add_object(bwobject)
+        self._root.append(bwobject._node)
+
     def add_object(self, bwobject):
         if bwobject in self.objects:
             raise ObjectIDAlreadyExists()
@@ -234,6 +238,12 @@ class BattalionObject(object):
         self.height = None
         self.dirty = True
         self.deleted = False
+
+    def choose_unique_id(self, level, preload):
+        assert not self.deleted
+
+        while self.id in level.objects or self.id in preload.objects:
+            self._node.attrib["id"] = str(int(self.id)+7)
 
     def delete(self):
         self._custom_name = "DELETED"
@@ -442,6 +452,13 @@ class BattalionObject(object):
                     for val, node in zip(vallist, attr_node):
                         node.text = convert_to(attr_node.attrib["type"], val)
 
+    @classmethod
+    def create_from_text(cls, xmltext, leveldata, preload):
+        xmlnode = etree.fromstring(xmltext)
+        obj = cls(leveldata, xmlnode)
+        obj.resolve_pointers(leveldata, preload)
+        return obj
+
     def update_object_from_text(self, xmltext, leveldata, preload):
         xmlnode = etree.fromstring(xmltext)
         self.check_correctness(xmlnode, leveldata, preload)
@@ -547,6 +564,10 @@ class BattalionObject(object):
             return height
         else:
             return originalh
+
+    def is_preload(self):
+        return self.type in ('cPhysicsMaterial', 'cPhysicsGlobalParams', 'cTerrainParticleAnimationBase', 'cWorldFreeListSizeLoader',
+        'cPhysicsGlobalParamSet', 'cDamageArmourBonus', 'cBailOutData', 'cLevelSettings')
 
     def tostring(self):
         self.update_xml()
