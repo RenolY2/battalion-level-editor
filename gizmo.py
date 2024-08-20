@@ -49,7 +49,7 @@ class Gizmo(Model):
     def reset_axis(self):
         self.render_axis = None
 
-    def move_to_average(self, objects, bwterrain, waterheight):
+    def move_to_average(self, objects, bwterrain, waterheight, gamerunning):
         for obj in objects:
             if obj is None:
                 continue
@@ -66,22 +66,28 @@ class Gizmo(Model):
         avgz = None
         count = 0
         for obj in objects:
-            mtx = obj.getmatrix()
+            if gamerunning:
+                mtx = obj.mtxoverride
+            else:
+                mtx = obj.getmatrix()
+                if mtx is not None:
+                    mtx = mtx.mtx
             if mtx is not None:
                 count += 1
-                objheight = mtx.y
-                h = obj.calculate_height(bwterrain, waterheight)
-                if h is not None:
-                    objheight = h
+                objheight = mtx[13]
+                if not gamerunning:
+                    h = obj.calculate_height(bwterrain, waterheight)
+                    if h is not None:
+                        objheight = h
 
                 if avgx is None:
-                    avgx = mtx.x
+                    avgx = mtx[12]
                     avgy = objheight
-                    avgz = mtx.z
+                    avgz = mtx[14]
                 else:
-                    avgx += mtx.x
+                    avgx += mtx[12]
                     avgy += objheight
-                    avgz += mtx.z
+                    avgz += mtx[14]
 
         self.position.x = avgx / count
         self.position.y = avgy / count

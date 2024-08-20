@@ -203,12 +203,15 @@ class Graphics(object):
                 else:
                     mtx, extradata = default_matrices, default_extradata
 
-                currmtx = obj.getmatrix().mtx.copy()
-                height = obj.calculate_height(bwterrain, self.rw.waterheight)
-                if height is not None:
-                    currmtx[13] = height
+                if rw.dolphin.running and obj.mtxoverride is not None:
+                    currmtx = obj.mtxoverride.copy()
+                else:
+                    currmtx = obj.getmatrix().mtx.copy()
+                    height = obj.calculate_height(bwterrain, self.rw.waterheight)
+                    if height is not None:
+                        currmtx[13] = height
 
-                obj.height = currmtx[13]
+                    obj.height = currmtx[13]
 
                 mtx.append(currmtx)
                 iconoffset = obj.iconoffset

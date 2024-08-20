@@ -734,22 +734,29 @@ class LevelEditor(QMainWindow):
                 pos = self.level_view.selected_positions
                 if i != j and pos[i] == pos[j]:
                     print("What the fuck")
-        for mtx in self.level_view.selected_positions:
-            """obj.x += deltax
-            obj.z += deltaz
-            obj.x = round(obj.x, 6)
-            obj.z = round(obj.z, 6)
-            obj.position_x = obj.x
-            obj.position_z = obj.z
-            obj.offset_x = 0
-            obj.offset_z = 0
-
-            if self.editorconfig.getboolean("GroundObjectsWhenMoving") is True:
-                if self.pikmin_gen_view.collision is not None:
-                    y = self.pikmin_gen_view.collision.collide_ray_downwards(obj.x, obj.z)
-                    obj.y = obj.position_y = round(y, 6)
-                    obj.offset_y = 0"""
-            mtx.add_position(deltax, deltay, deltaz)
+        if self.dolphin.running:
+            for obj in self.level_view.selected:
+                if obj.mtxoverride is not None:
+                    obj.mtxoverride[12] += deltax
+                    obj.mtxoverride[13] += deltay
+                    obj.mtxoverride[14] += deltaz
+        else:
+            for mtx in self.level_view.selected_positions:
+                """obj.x += deltax
+                obj.z += deltaz
+                obj.x = round(obj.x, 6)
+                obj.z = round(obj.z, 6)
+                obj.position_x = obj.x
+                obj.position_z = obj.z
+                obj.offset_x = 0
+                obj.offset_z = 0
+    
+                if self.editorconfig.getboolean("GroundObjectsWhenMoving") is True:
+                    if self.pikmin_gen_view.collision is not None:
+                        y = self.pikmin_gen_view.collision.collide_ray_downwards(obj.x, obj.z)
+                        obj.y = obj.position_y = round(y, 6)
+                        obj.offset_y = 0"""
+                mtx.add_position(deltax, deltay, deltaz)
 
 
         #if len(self.pikmin_gen_view.selected) == 1:

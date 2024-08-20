@@ -32,11 +32,14 @@ class Game(object):
         self.object_addresses = {}
         self.running = False
         self.timer = 0.0
+        self.do_once = False
 
     def initialize(self):
         self.dolphin.reset()
         self.object_addresses = {}
         self.running = False
+
+        self.do_once = True
 
         if self.dolphin.find_dolphin():
             if self.dolphin.init_shared_memory():
@@ -113,47 +116,90 @@ class Game(object):
     def logic(self, renderer, delta, diff):
         if not self.running:
             return
+
         renderer: bw_widgets.BolMapViewer
+
         if len(self.object_addresses) == 0:
             self.setup_address_map(renderer.level_file.objects)
-
         self.timer += delta
+        if self.timer > 0.1:
+            self.timer = 0
+        else:
+            return
+        updateobjects = []
+        updateobjectsonce = []
+
+        for objid, obj in renderer.level_file.objects_with_positions.items():
+            if obj in renderer.selected:
+                continue
+
+            addr = self.object_addresses[obj.id]
+            mtxstart = 0x30
+            if obj.type == "cMapZone":
+                mtxstart += 8
+            if obj.type in ("cTroop", "cGroundVehicle", "cAirVehicle", "cWaterVehicle"):
+                updateobjects.append(obj)
+                mtxarray = [self.dolphin.read_float(addr + mtxstart + i * 4) for i in range(16)]
+                obj.set_mtx_override(mtxarray)
+
+            elif self.do_once:
+                updateobjects.append(obj)
+
+                mtxarray = [self.dolphin.read_float(addr+mtxstart+i*4) for i in range(16)]
+                obj.set_mtx_override(mtxarray)
+
+        #if doonce:
+        #    renderer.do_redraw(forcespecific=updateobjectsonce)
+        #    doonce = False
+
         for obj in renderer.selected:
             if obj.id in self.object_addresses:
-                mtx = obj.getmatrix().mtx
+                if obj.mtxoverride is not None:
+                    mtx = obj.mtxoverride
+                    objheight = mtx[13]
+                else:
+                    mtx = obj.getmatrix().mtx
+                    objheight = obj.height
                 addr = self.object_addresses[obj.id]
                 mtxstart = 0x30
                 if obj.type == "cMapZone":
                     mtxstart += 8
 
                 # Validate matrix to make sure we're overwriting the right spot
+                tests = []
                 for i in range(12):
-                    assert -1.0 <= self.dolphin.read_float(addr + mtxstart + i*4) <= 1.0
-                assert self.dolphin.read_float(addr + mtxstart + 0x3C) == 1.0
+                    # Sometimes a value is ever so slightly above 1.0 so need to round
+                    tests.append(-1.0 <= round(self.dolphin.read_float(addr + mtxstart + i*4), 2) <= 1.0)
 
-                self.dolphin.write_float(addr + mtxstart, mtx[0])
-                self.dolphin.write_float(addr + mtxstart + 0x4, mtx[1])
-                self.dolphin.write_float(addr + mtxstart + 0x8, mtx[2])
-                self.dolphin.write_float(addr + mtxstart + 0xC, mtx[3])
+                tests.append(self.dolphin.read_float(addr + mtxstart + 0x3C) == 1.0)
+                if all(tests):
 
-                self.dolphin.write_float(addr + mtxstart + 0x10, mtx[4])
-                self.dolphin.write_float(addr + mtxstart + 0x14, mtx[5])
-                self.dolphin.write_float(addr + mtxstart + 0x18, mtx[6])
-                self.dolphin.write_float(addr + mtxstart + 0x1C, mtx[7])
+                    self.dolphin.write_float(addr + mtxstart, mtx[0])
+                    self.dolphin.write_float(addr + mtxstart + 0x4, mtx[1])
+                    self.dolphin.write_float(addr + mtxstart + 0x8, mtx[2])
+                    self.dolphin.write_float(addr + mtxstart + 0xC, mtx[3])
 
-                self.dolphin.write_float(addr + mtxstart + 0x20, mtx[8])
-                self.dolphin.write_float(addr + mtxstart + 0x24, mtx[9])
-                self.dolphin.write_float(addr + mtxstart + 0x28, mtx[10])
-                self.dolphin.write_float(addr + mtxstart + 0x2C, mtx[11])
+                    self.dolphin.write_float(addr + mtxstart + 0x10, mtx[4])
+                    self.dolphin.write_float(addr + mtxstart + 0x14, mtx[5])
+                    self.dolphin.write_float(addr + mtxstart + 0x18, mtx[6])
+                    self.dolphin.write_float(addr + mtxstart + 0x1C, mtx[7])
 
-                self.dolphin.write_float(addr + mtxstart + 0x30, mtx[12])
-                #self.dolphin.write_float(addr + mtxstart + 0x34, mtx[13])
-                self.dolphin.write_float(addr + mtxstart + 0x38, mtx[14])
+                    self.dolphin.write_float(addr + mtxstart + 0x20, mtx[8])
+                    self.dolphin.write_float(addr + mtxstart + 0x24, mtx[9])
+                    self.dolphin.write_float(addr + mtxstart + 0x28, mtx[10])
+                    self.dolphin.write_float(addr + mtxstart + 0x2C, mtx[11])
+
+                    self.dolphin.write_float(addr + mtxstart + 0x30, mtx[12])
+                    self.dolphin.write_float(addr + mtxstart + 0x34, objheight)
+                    self.dolphin.write_float(addr + mtxstart + 0x38, mtx[14])
+                else:
+                    print("warning, mtx test failed for", hex(addr), obj.name)
 
         #renderer.do_redraw()
-
-        if self.timer >= 60.0:
-            self.timer = 0.0
+        renderer.do_redraw(forcespecific=updateobjects)
+        self.do_once = False
+        #if self.timer >= 60.0:
+        #    self.timer = 0.0
 
     def deref(self, val):
         return self.dolphin.read_uint32(val)

@@ -171,7 +171,8 @@ class Gizmo2DMoveX(ClickDragAction):
         editor.gizmo.reset_axis()
         editor.gizmo.move_to_average(editor.selected,
                                      editor.bwterrain,
-                                     editor.waterheight)
+                                     editor.waterheight,
+                                     editor.dolphin.running)
 
 
 class Gizmo2DMoveXZ(Gizmo2DMoveX):

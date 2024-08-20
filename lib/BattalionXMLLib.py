@@ -8,7 +8,7 @@ except: # cElementTree not available
     import xml.etree.ElementTree as etre
 
 from lib.searchquery import fieldnames
-
+from numpy import array, float32
 #import xml.etree.ElementTree.Element as Element
 LOCALTESTING = False
 if not LOCALTESTING:
@@ -239,6 +239,8 @@ class BattalionObject(object):
         self.dirty = True
         self.deleted = False
 
+        self.mtxoverride = None
+
     def choose_unique_id(self, level, preload):
         assert not self.deleted
 
@@ -251,6 +253,9 @@ class BattalionObject(object):
 
     def add_reference(self, obj):
         self._referenced_by.add(obj)
+
+    def set_mtx_override(self, values):
+        self.mtxoverride = array(values, dtype=float32)
 
     def delete_references(self, references):
         for attr_node in self._node:
