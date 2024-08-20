@@ -695,6 +695,7 @@ class BWModelV2(ModelV2):
         self.texnames = []
         self.mesh_list = []
         self._triangles = []
+        self.lowestpoint = None
 
         self.vertexshader = Shader.create("""
         #version 330 compatibility
@@ -797,6 +798,91 @@ class BWModelV2(ModelV2):
 
             offset, vertexcount = meshdata
             glDrawArraysInstanced(GL_TRIANGLES, offset, vertexcount, self._count)
+
+
+class LineDrawing(object):
+    def __init__(self):
+        self.vertexshader = Shader.create("""
+        #version 330 compatibility
+        layout(location = 0) in vec3 vert;
+        layout(location = 1) in vec4 color;
+
+        out vec4 fragColor;
+
+        mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 1.0);
+
+        void main(void)
+        {   
+            fragColor = color;
+            gl_Position = gl_ModelViewProjectionMatrix* mtx*vec4(vert, 1.0);
+        }   
+
+
+        """)
+
+        self.fragshader = Shader.create("""
+        #version 330
+        in vec4 fragColor;
+        out vec4 finalColor;
+
+        void main (void)
+        {
+            finalColor = fragColor;
+        }  
+        """)
+
+        self.vao = None
+        self.program = Program(self.vertexshader, self.fragshader)
+        self.vbo = VertexColorBuffer(*self.vertexshader.get_locations( "vert", "color"))
+
+        self.lines = []
+        self.dirty = True
+
+    def reset_lines(self):
+        self.lines = []
+        self.dirty = True
+
+    def add_line(self, pos1, pos2, color):
+        self.lines.extend(pos1)
+        self.lines.extend(color)
+        self.lines.extend(pos2)
+        self.lines.extend(color)
+
+    def add_line_2(self, pos1, color1, pos2, color2):
+        self.lines.extend(pos1)
+        self.lines.extend(color1)
+        self.lines.extend(pos2)
+        self.lines.extend(color2)
+
+    def build_mesh(self):
+        if self.vao is None:
+            self.vao = glGenVertexArrays(1)
+        glBindVertexArray(self.vao)
+
+        self.vbo.init()
+        self.vbo.load_data(numpy.array(self.lines, dtype=numpy.float32))
+        self.dirty = False
+
+    def bind(self):
+        if not self.program.compiled():
+            self.program.compile()
+
+        if self.vao is None or self.dirty:
+            self.build_mesh()
+
+        self.program.bind()
+        glBindVertexArray(self.vao)
+
+    def unbind(self):
+        glUseProgram(0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindVertexArray(0)
+
+    def render(self):
+        glDrawArrays(GL_LINES, 0, len(self.lines)//6)
 
 
 class TexturedModel(object):
