@@ -226,7 +226,7 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
         self.donotreset = True
         self.textbox_xml.setText(content.replace(oldid, newid))
         self.donotreset = False
-
+        self.editor.leveldatatreeview.set_objects(self.editor.level_file, self.editor.preload_file)
         self.editor.level_view.do_redraw(force=True)
 
 
