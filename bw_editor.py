@@ -235,7 +235,8 @@ class LevelEditor(QMainWindow):
 
         self.level_view.gizmo.move_to_average(self.level_view.selected,
                                               self.level_view.bwterrain,
-                                              self.level_view.waterheight)
+                                              self.level_view.waterheight,
+                                              self.dolphin.running)
         self.level_view.do_redraw()
         self.level_view.select_update.emit()
 
