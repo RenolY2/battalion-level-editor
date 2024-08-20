@@ -1,9 +1,15 @@
 from OpenGL.GL import *
 from math import pi, atan2, degrees, sin, cos
 
+#from lib.memorylib import Dolphin
+#from bw_widgets import BolMapViewer, MODE_TOPDOWN, MODE_3D
+#from lib.vectors import Vector3
+
 from lib.memorylib import Dolphin
-from bw_widgets import BolMapViewer, MODE_TOPDOWN, MODE_3D
 from lib.vectors import Vector3
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import bw_widgets
 
 EVERYTHING_OK = 0
 DOLPHIN_FOUND_NO_GAME = 1
@@ -23,40 +29,26 @@ def angle_diff(angle1, angle2):
 class Game(object):
     def __init__(self):
         self.dolphin = Dolphin()
-        self.karts = []
-        self.kart_targets = []
-        self.kart_headings = []
-
-        for i in range(8):
-            self.karts.append([None, Vector3(0.0, 0.0, 0.0)])
-            self.kart_targets.append(Vector3(0.0, 0.0, 0.0))
-            self.kart_headings.append(Vector3(0.0, 0.0, 0.0))
-        self.stay_focused_on_player = -1
-
+        self.object_addresses = {}
+        self.running = False
         self.timer = 0.0
-        self.last_angle = 0.0
-        self.last_x = 0.0
-        self.last_z = 0.0
-        
-        self.last_kart_x = None
-        self.last_kart_z = None
-
-        self.last_angles = []
 
     def initialize(self):
-        self.stay_focused_on_player = -1
         self.dolphin.reset()
+        self.object_addresses = {}
+        self.running = False
+
         if self.dolphin.find_dolphin():
             if self.dolphin.init_shared_memory():
                 gameid = bytes(self.dolphin.read_ram(0, 4))
                 print(gameid)
-                if gameid in (b"GM4P", b"GM4J"):
-                    return "PAL/NTSC-J version of MKDD currently isn't supported for Dolphin hooking."
-                elif gameid != b"GM4E":
-                    return "Game doesn't seem to be MKDD: Found Game ID '{0}'.".format(str(gameid, encoding="ascii"))
+                if gameid != b"G8WE":
+                    return "Not supported: Found Game ID '{0}'.".format(str(gameid, encoding="ascii"))
                 else:
+
+
                     print("Success!")
-                    
+                    self.running = True
                     return ""
             else:
                 self.dolphin.reset()
@@ -65,7 +57,7 @@ class Game(object):
             self.dolphin.reset()
             return "Dolphin not found."
 
-    def render_visual(self, renderer: BolMapViewer, selected):
+    def render_visual(self, renderer, selected):
         p = 0
         for valid, kartpos in self.karts:
             if valid:
@@ -109,7 +101,7 @@ class Game(object):
                 renderer.models.render_player_position_colored(self.kart_targets[p], False, p)
             p += 1
 
-    def render_collision(self, renderer: BolMapViewer, objlist):
+    def render_collision(self, renderer, objlist):
         if self.dolphin.memory is not None:
             idbase = 0x100000
             offset = len(objlist)
@@ -118,135 +110,110 @@ class Game(object):
                 renderer.models.render_generic_position_colored_id(pos, idbase + (offset) * 4)
                 offset += 1
 
-    def logic(self, renderer: BolMapViewer, delta, diff):
+    def logic(self, renderer, delta, diff):
+        if not self.running:
+            return
+        renderer: bw_widgets.BolMapViewer
+        if len(self.object_addresses) == 0:
+            self.setup_address_map(renderer.level_file.objects)
+
         self.timer += delta
-        if self.dolphin.memory is not None:
-            kartctrlPtr = self.dolphin.read_uint32(0x803CC588)
-            if kartctrlPtr is None or not self.dolphin.address_valid(kartctrlPtr):
-                self.dolphin.reset()
-                for i in range(8):
-                    self.karts[i][0] = None
-            else:
-                for i in range(8):
-                    kartPtr = self.dolphin.read_uint32(kartctrlPtr + 0xA0 + i * 4)
-                    if self.dolphin.address_valid(kartPtr):
-                        
-                        x = self.dolphin.read_float(kartPtr + 0x23C)
-                        y = self.dolphin.read_float(kartPtr + 0x240)
-                        z = self.dolphin.read_float(kartPtr + 0x244)
-                        self.karts[i][0] = kartPtr
+        for obj in renderer.selected:
+            if obj.id in self.object_addresses:
+                mtx = obj.getmatrix().mtx
+                addr = self.object_addresses[obj.id]
+                mtxstart = 0x30
+                if obj.type == "cMapZone":
+                    mtxstart += 8
 
-                        self.kart_headings[i].x = self.dolphin.read_float(kartPtr + 0x308)
-                        self.kart_headings[i].y = self.dolphin.read_float(kartPtr + 0x30C)
-                        self.kart_headings[i].z = self.dolphin.read_float(kartPtr + 0x310)
+                # Validate matrix to make sure we're overwriting the right spot
+                for i in range(12):
+                    assert -1.0 <= self.dolphin.read_float(addr + mtxstart + i*4) <= 1.0
+                assert self.dolphin.read_float(addr + mtxstart + 0x3C) == 1.0
 
-                        karttarget = self.dolphin.read_uint32(kartctrlPtr + 0x1C0 + i*4)
+                self.dolphin.write_float(addr + mtxstart, mtx[0])
+                self.dolphin.write_float(addr + mtxstart + 0x4, mtx[1])
+                self.dolphin.write_float(addr + mtxstart + 0x8, mtx[2])
+                self.dolphin.write_float(addr + mtxstart + 0xC, mtx[3])
 
-                        if self.dolphin.address_valid(karttarget):
-                            clpoint = self.dolphin.read_uint32(karttarget)
-                            if self.dolphin.address_valid(clpoint):
-                                vec3ptr = self.dolphin.read_uint32(clpoint+4)
-                                if self.dolphin.address_valid(vec3ptr):
-                                    self.kart_targets[i].x = self.dolphin.read_float(vec3ptr)
-                                    self.kart_targets[i].y = self.dolphin.read_float(vec3ptr+4)
-                                    self.kart_targets[i].z = self.dolphin.read_float(vec3ptr+8)
-                                    
-                                    if self.last_kart_x is None:
-                                        self.last_kart_x = self.kart_targets[i].x
-                                    
-                                    if self.last_kart_z is None:
-                                        self.last_kart_z = self.kart_targets[i].z
-                    else:
-                        x = y = z = 0.0
-                        y = -50000
-                        self.karts[i][0] = None
+                self.dolphin.write_float(addr + mtxstart + 0x10, mtx[4])
+                self.dolphin.write_float(addr + mtxstart + 0x14, mtx[5])
+                self.dolphin.write_float(addr + mtxstart + 0x18, mtx[6])
+                self.dolphin.write_float(addr + mtxstart + 0x1C, mtx[7])
 
-                    if not self.karts[i][0] in renderer.selected:
-                        self.karts[i][1].x = x
-                        self.karts[i][1].y = y
-                        self.karts[i][1].z = z
-                    else:
-                        """diff_x = self.last_kart_x - x 
-                        diff_z = self.last_kart_z - z 
-                        
-                        self.last_kart_x = x
-                        self.last_kart_z = z
-                        
-                        self.dolphin.write_float(kartPtr + 0x23C, x + diff_x)
-                        self.dolphin.write_float(kartPtr + 0x240, self.karts[i][1].y)
-                        self.dolphin.write_float(kartPtr + 0x244, z+diff_z)"""
-                        self.dolphin.write_float(kartPtr + 0x23C, self.karts[i][1].x)
-                        self.dolphin.write_float(kartPtr + 0x240, self.karts[i][1].y)
-                        self.dolphin.write_float(kartPtr + 0x244, self.karts[i][1].z)
+                self.dolphin.write_float(addr + mtxstart + 0x20, mtx[8])
+                self.dolphin.write_float(addr + mtxstart + 0x24, mtx[9])
+                self.dolphin.write_float(addr + mtxstart + 0x28, mtx[10])
+                self.dolphin.write_float(addr + mtxstart + 0x2C, mtx[11])
 
-            if self.stay_focused_on_player >= 0:
-                if renderer.mode == MODE_TOPDOWN:
-                    renderer.offset_x = -self.karts[self.stay_focused_on_player][1].x
-                    renderer.offset_z = -self.karts[self.stay_focused_on_player][1].z
-                else:
-                    x = self.kart_headings[self.stay_focused_on_player].x
-                    z = self.kart_headings[self.stay_focused_on_player].z
+                self.dolphin.write_float(addr + mtxstart + 0x30, mtx[12])
+                #self.dolphin.write_float(addr + mtxstart + 0x34, mtx[13])
+                self.dolphin.write_float(addr + mtxstart + 0x38, mtx[14])
 
-
-                    angletmp = atan2(x,z) - pi/2.0
-                    diff1 = angle_diff(angletmp, self.last_angle)
-                    diff2 = angle_diff(self.last_angle, angletmp)
-                    if diff1 < diff2:
-                        diff = -diff1
-                    else:
-                        diff = diff2
-
-                    if abs(diff) < 0.001:
-                        angle = angletmp
-                    else:
-                        angle = self.last_angle + diff * delta*3
-
-                    self.last_angle = angle
-
-                    newx = sin(angle + pi/2.0)
-                    newz = cos(angle + pi/2.0)
-
-                    #renderer.offset_x = (self.karts[self.stay_focused_on_player][1].x
-                    #                     - self.kart_headings[self.stay_focused_on_player].x*1000)
-                    #renderer.offset_z = -(self.karts[self.stay_focused_on_player][1].z
-                    #                      - self.kart_headings[self.stay_focused_on_player].z*1000)
-                    renderer.offset_x = (self.karts[self.stay_focused_on_player][1].x
-                                         - newx * 1000)
-                    renderer.offset_z = -(self.karts[self.stay_focused_on_player][1].z
-                                          - newz * 1000)
-                    height = self.karts[self.stay_focused_on_player][1].y
-                    #if height < renderer.camera_height:
-                    renderer.camera_height = height+500
-
-                    #angle = atan2(self.kart_headings[self.stay_focused_on_player].x,
-                    #              self.kart_headings[self.stay_focused_on_player].z) - pi/2.0
-                    renderer.camera_horiz = angle
-
-                    if diff >= 1/60.0 and False:
-                        diffx = x - self.last_x
-                        diffz = z - self.last_z
-
-                        x += diffx*0.01
-                        z += diffz*0.01
-                        renderer.camera_horiz = atan2(x, z) - pi/2.0
-
-                        self.last_x = x
-                        self.last_z = z
-                        #self.last_angles.append()
-                        """interpolate = (self.timer % 10.0)/10.0
-                        if interpolate <= 0.01:
-                            #renderer.camera_horiz = angle
-                            #self.last_angle = angle
-                            self.last_x = (1-interpolate)*self.last_x + interpolate*x
-                            self.last_z = (1 - interpolate) * self.last_z + interpolate * z
-                            #renderer.camera_horiz = atan2(x, z) - pi/2.0
-                        else:
-                            tmpx = (1-interpolate)*self.last_x + interpolate*x
-                            tmpz = (1 - interpolate) * self.last_z + interpolate * z
-                            renderer.camera_horiz = atan2(tmpx, tmpz) - pi / 2.0
-                        print(renderer.camera_horiz)"""
-                    #renderer.canvas_height =
-            renderer.do_redraw()
+        #renderer.do_redraw()
 
         if self.timer >= 60.0:
             self.timer = 0.0
+
+    def deref(self, val):
+        return self.dolphin.read_uint32(val)
+
+    def resolve_id(self, id):
+        dataptr = 0x803b0b28
+
+        bucketindex = (id%0x400)*8  # My guess, seems like ids are stored in 0x400 different buckets for quicker lookup
+        valptr = dataptr + 0x60C + bucketindex
+
+        next = self._get_val(valptr, self.deref(valptr), 0)  # Get next value as long as end of list hasn't been reached?
+        if next != 0:
+            while next != 0:
+                if self.deref(next+0xC) == id:
+                    return next
+                nextptr = next
+                next = self._get_val(dataptr+0x60C+bucketindex, self.deref(nextptr), 0)
+
+        next = dataptr + 0x260C
+        nextval = 0
+        while True:
+            nextval = self._get_val(dataptr+0x260C, next, 0)
+            if nextval == 0:
+                return 0
+            if self.deref(nextval+0xC) == id:
+                return nextval
+            next = self.deref(nextval)
+
+        return None
+
+    # Compare 80252310
+    def _get_val(self, val1, val2, val3):
+        if val2+val3 != val1:
+            return val2
+        else:
+            return 0
+
+    def setup_address_map(self, objects):
+        for objectid, object in objects.items():
+            mtx = object.getmatrix()
+            if mtx is not None:
+                address = self.resolve_id(int(objectid))
+                self.object_addresses[objectid] = address
+
+
+if __name__ == "__main__":
+    bwgame = Game()
+    print(bwgame.initialize())
+
+    ptr = bwgame.resolve_id(450001876)
+    print(hex(ptr))
+    """r9 = bwgame.deref(ptr+0x10)
+    r0 = bwgame.deref(r9+0xA4)
+    r3 = bwgame.deref(r9+0xA0) #LHA
+    r3 = ptr + r3
+
+    print("Calling function {0} with value {1}".format(hex(r0), hex(r3)))"""
+    import time
+
+    while True:
+        time.sleep(1)
+        val = bwgame.dolphin.read_float(ptr+0x60)
+        bwgame.dolphin.write_float(ptr+0x60, val+1)

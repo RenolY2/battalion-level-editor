@@ -53,13 +53,21 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
         #self.choose_bco_area = QtWidgets.QAction("Highlight Collision Area (BCO)")
 
+        self.dolphin_menu = Menu(self, "Dolphin (Experimental)")
+        self.hook_game_action = self.dolphin_menu.addAction("Enable Live Edit",
+                                                            self.hook_game)
+
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
         self.addAction(self.collision_menu.menuAction())
         self.addAction(self.misc_menu.menuAction())
+        self.addAction(self.dolphin_menu.menuAction())
 
         self.last_obj_select_pos = 0
-
+    
+    def hook_game(self):
+        self.editor.dolphin.initialize()
+    
     def close_search(self):
         self.search_window = None
 
