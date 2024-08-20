@@ -203,6 +203,7 @@ class PikminSideWidget(QWidget):
             except Exception as err:
                 print(err)
             self.parent.level_view.do_redraw(force=True)
+        self.parent.leveldatatreeview.updatenames()
 
     def _make_labeled_lineedit(self, lineedit, label):
         font = QFont()

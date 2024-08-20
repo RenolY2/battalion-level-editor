@@ -74,12 +74,14 @@ class NamedItem(QTreeWidgetItem):
     def __init__(self, parent, name, bound_to, index=None):
         super().__init__(parent)
         self.setText(0, name)
+        self.setText(1, bound_to.extra_detail_name())
         self.bound_to = bound_to
         self.index = index
         self.update_name()
 
     def update_name(self):
-        pass
+        self.setText(0, self.bound_to.name)
+        self.setText(1, self.bound_to.extra_detail_name())
 
 
 class EnemyRoutePoint(NamedItem):
@@ -193,8 +195,9 @@ class LevelDataTreeView(QTreeWidget):
         super().__init__(*args)
         self.setMaximumWidth(600)
         self.resize(200, self.height())
-        self.setColumnCount(1)
-        self.setHeaderLabel("XML Objects")
+        self.setColumnCount(2)
+        self.setHeaderLabels(["XML Objects", "Details"])
+
 
         #self.bolheader = BolHeader()
         #self.addTopLevelItem(self.bolheader)
@@ -221,6 +224,7 @@ class LevelDataTreeView(QTreeWidget):
 
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.run_context_menu)
+        self.expanded.connect(self.resizeheader)
 
         categorydistributionreverse = {
             "mapobjects":
@@ -261,6 +265,9 @@ class LevelDataTreeView(QTreeWidget):
         for k, v in categorydistributionreverse.items():
             for name in v:
                 self._categorydistribution[name] = getattr(self, k)
+
+    def resizeheader(self):
+        self.resizeColumnToContents(0)
 
     def run_context_menu(self, pos):
         item = self.itemAt(pos)
@@ -359,8 +366,12 @@ class LevelDataTreeView(QTreeWidget):
             if obj.type == "cLevelSettings":
                 levelsettings = obj
                 break
-
+        sorteditems = []
         for objectid, object in chain(leveldata.objects.items(), preload.objects.items()):
+            sorteditems.append((object.name, object))
+        sorteditems.sort(key=lambda x: x[0])
+
+        for name, object in sorteditems:
             object: BattalionObject
             objecttype = object.type
             if objecttype not in extra_categories:
@@ -382,6 +393,15 @@ class LevelDataTreeView(QTreeWidget):
             target = self.choose_category(categoryname)
             target.addChild(category)
 
+    def updatenames(self):
+        category: QTreeWidgetItem
+        for category in (self.units, self.components, self.mapobjects, self.scenery, self.assets, self.hud,
+                         self.scripts, self.effects, self.preload, self.other):
+            for i in range(category.childCount()):
+                subcategory = category.child(i)
+                for j in range(subcategory.childCount()):
+                    item = subcategory.child(j)
+                    item.update_name()
 
     def sort_objects(self):
         self.objects.sort()
