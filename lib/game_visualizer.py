@@ -132,6 +132,8 @@ class Game(object):
         for objid, obj in renderer.level_file.objects_with_positions.items():
             if obj in renderer.selected:
                 continue
+            if obj.id not in self.object_addresses:
+                continue
 
             addr = self.object_addresses[obj.id]
             mtxstart = 0x30
