@@ -502,6 +502,12 @@ class BattalionObject(object):
             modelname = base.model.mName
         elif hasattr(base, "mBAN_Model"):
             modelname = base.mBAN_Model.mName
+        elif self.type == "cGlobalScriptEntity":
+            return "{0}({1})".format(self.mpScript.mName, self.id)
+        elif hasattr(base, "mName") and base.mName != "":
+            return "{0}({1})".format(self.mName, self.id)
+        #elif self.type ==
+
 
         if self._custom_name:
             if modelname:
@@ -513,6 +519,12 @@ class BattalionObject(object):
                 return "{0}({2},{1})".format(self.type, self.id, modelname)
             else:
                 return "{0}({1})".format(self.type, self.id)
+
+    def extra_detail_name(self):
+        if self.type == "cMapZone":
+            return self.mZoneType
+        else:
+            return ""
 
     def calculate_height(self, bwterrain, waterheight):
         currbwmtx = self.getmatrix()
@@ -616,6 +628,55 @@ if __name__ == "__main__":
         print(paths.resourcepath)"""
 
     if True:
+        import gzip
+        import os
+
+        BW1path = r"D:\Wii games\BattWars\P-G8WP\files\Data\CompoundFiles"
+        BW2path = r"D:\Wii games\BW2Folder\files\Data\CompoundFiles"
+
+        import csv
+
+
+        # with csv.open("table.csv", "w") as tbl:
+        if True:
+            types = set()
+            alltypes = set()
+            for fname in os.listdir(BW1path):
+
+                path = os.path.join(BW1path, fname)
+                if path.endswith("_Level.xml"):
+                    ids = []
+                    preload = path.replace("_Level.xml", "_Level_preload.xml")
+                    print(path)
+                    with open(path, "rb") as g:
+                        level_data = BattalionLevelFile(g)
+                        with open(preload, "rb") as h:
+                            with open(path + ".info.txt", "w") as f:
+                                preload_data = BattalionLevelFile(h)
+                                objectcounts = {}
+                                for objid, obj in level_data.objects.items():
+                                    ids.append(int(objid))
+
+                                for objid, obj in preload_data.objects.items():
+                                    ids.append(int(objid))
+
+                    trail = {}
+                    for id in ids:
+                        trailvalue = id%0x400
+                        if trailvalue in trail:
+                            trail[trailvalue].append(id)
+                        else:
+                            trail[trailvalue] = [id]
+
+                    for i,v in trail.items():
+                        if len(v) > 1:
+                            print(i, v)
+                            for value in v:
+                                print(level_data.objects[str(value)].type)
+                    break
+
+
+    if False:
         import gzip
         import os
 
