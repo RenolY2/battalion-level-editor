@@ -169,7 +169,10 @@ class Dolphin(object):
     
     def read_uint32(self, addr):
         assert addr >= 0x80000000
-        value = self.read_ram(addr-0x80000000, 4)
+        if addr >= 0x90000000:
+            value = self.read_ram(0x2040000+addr-0x90000000, 4)
+        else:
+            value = self.read_ram(addr-0x80000000, 4)
 
         if not value:
             return None
@@ -178,11 +181,17 @@ class Dolphin(object):
     
     def write_uint32(self, addr, val):
         assert addr >= 0x80000000
-        return self.write_ram(addr - 0x80000000, pack(">I", val))
+        if addr >= 0x90000000:
+            return self.write_ram(0x2040000 + addr - 0x90000000, pack(">I", val))
+        else:
+            return self.write_ram(addr - 0x80000000, pack(">I", val))
 
     def read_float(self, addr):
         assert addr >= 0x80000000
-        value = self.read_ram(addr - 0x80000000, 4)
+        if addr >= 0x90000000:
+            value = self.read_ram(0x2040000 + addr - 0x90000000, 4)
+        else:
+            value = self.read_ram(addr - 0x80000000, 4)
 
         if not value:
             return None
@@ -191,7 +200,10 @@ class Dolphin(object):
 
     def write_float(self, addr, val):
         assert addr >= 0x80000000
-        return self.write_ram(addr - 0x80000000, pack(">f", val))
+        if addr >= 0x90000000:
+            return self.write_ram(0x2040000 + addr - 0x90000000, pack(">f", val))
+        else:
+            return self.write_ram(addr - 0x80000000, pack(">f", val))
 
     
 """with open("ctypes.txt", "w") as f:

@@ -34,27 +34,43 @@ class Game(object):
         self.timer = 0.0
         self.do_once = False
         self.visualize = False
+        self.objectlist_address = None
 
-    def initialize(self, level_file=None, shutdown=False):
+    def initialize(self, level_file=None, shutdown=False, matchoverride=False):
         self.dolphin.reset()
         self.object_addresses = {}
         self.running = False
 
         self.do_once = True
+        self.objectlist_address = None
 
         if shutdown:
             return ""
-
+        # BW1 PAL: 803b6f08
+        # BW2 805c3ca8
         if self.dolphin.find_dolphin():
             if self.dolphin.init_shared_memory():
                 gameid = bytes(self.dolphin.read_ram(0, 4))
                 print(gameid)
-                if gameid != b"G8WE":
+                if gameid == b"G8WE":  # US BW1
+                    self.objectlist_address = 0x803b0b28
+                elif gameid == b"G8WP":  # PAL BW1
+                    self.objectlist_address = 0x803b6f08
+                elif gameid == b"G8WJ":  # JP BW1
+                    self.objectlist_address = 0x803b5f88
+                elif gameid == b"RBWE":  # US BW2
+                    self.objectlist_address = 0x805c3ca8
+                elif gameid == b"RBWP": # PAL BW2
+                    self.objectlist_address = 0x805c5828
+                elif gameid == b"RBWJ":  # JP BW2
+                    self.objectlist_address = 0x805c5d68
+
+                if self.objectlist_address is None:
                     return "Not supported: Found Game ID '{0}'.".format(str(gameid, encoding="ascii"))
                 else:
                     found, notfound = self.setup_address_map(level_file.objects)
                     print("{0} vs {1} objects found/not found".format(found, notfound))
-                    if found > notfound:
+                    if found > notfound or matchoverride:
                         print("Success!")
 
                         self.running = True
@@ -168,6 +184,8 @@ class Game(object):
         #    doonce = False
 
         for obj in renderer.selected:
+            if not hasattr(obj, "id"):
+                continue
             if obj.id in self.object_addresses:
                 if obj.mtxoverride is not None:
                     mtx = obj.mtxoverride
@@ -220,7 +238,7 @@ class Game(object):
         return self.dolphin.read_uint32(val)
 
     def resolve_id(self, id):
-        dataptr = 0x803b0b28
+        dataptr = self.objectlist_address
 
         bucketindex = (id%0x400)*8  # My guess, seems like ids are stored in 0x400 different buckets for quicker lookup
         valptr = dataptr + 0x60C + bucketindex
@@ -269,12 +287,17 @@ class Game(object):
         return objectsfound, objectsnotfound
 
 
-if __name__ == "__main__":
-    bwgame = Game()
-    print(bwgame.initialize())
+class LevelFileDummy(object):
+    def __init__(self):
+        self.objects = {}
 
-    ptr = bwgame.resolve_id(450001876)
-    print(hex(ptr))
+if __name__ == "__main__":
+
+    bwgame = Game()
+    print(bwgame.initialize(LevelFileDummy(), matchoverride=True))
+
+    #ptr = bwgame.resolve_id(450001876)
+    #print(hex(ptr))
     """r9 = bwgame.deref(ptr+0x10)
     r0 = bwgame.deref(r9+0xA4)
     r3 = bwgame.deref(r9+0xA0) #LHA
@@ -282,8 +305,15 @@ if __name__ == "__main__":
 
     print("Calling function {0} with value {1}".format(hex(r0), hex(r3)))"""
     import time
-
+    from binascii import unhexlify, hexlify
+    offset = 0
     while True:
-        time.sleep(1)
-        val = bwgame.dolphin.read_float(ptr+0x60)
-        bwgame.dolphin.write_float(ptr+0x60, val+1)
+        value = bwgame.dolphin.read_ram(offset, 16)
+
+        if value[:4] == unhexlify("029F0010"):
+            print(hex(offset))
+            print(hexlify(value))
+        offset += 16
+        #time.sleep(1)
+        #val = bwgame.dolphin.read_float(ptr+0x60)
+        #bwgame.dolphin.write_float(ptr+0x60, val+1)
