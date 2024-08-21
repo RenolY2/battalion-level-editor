@@ -161,7 +161,7 @@ class FilterViewMenu(QMenu):
                 cfg["View Filter Toggles"][type+"_3D"] = str(toggle.is_selectable())
 
     def object_3d_visible(self, objtype):
-        if objtype in self.toggles.items():
+        if objtype in self.toggles:
             return self.toggles[objtype].is_selectable()
         else:
             return True
