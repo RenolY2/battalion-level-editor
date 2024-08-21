@@ -9,6 +9,8 @@ class ObjectViewSelectionToggle(object):
         self.name = name
         self.menuparent = menuparent
 
+        self.option3d_exists = option3d_exists
+
         self.action_view_toggle = QAction("{0} visible".format(name), menuparent)
         self.action_select_toggle = QAction("{0} 3D visible".format(name), menuparent)
         self.action_view_toggle.setCheckable(True)
@@ -92,7 +94,7 @@ class FilterViewMenu(QMenu):
         self.hide_all = QAction("Hide All", self)
         self.hide_all.triggered.connect(self.handle_hide_all)
         self.addAction(self.hide_all)
-
+        self.addSeparator()
         self.groundtroops = ObjectViewSelectionToggle("Troops", self, True)
         self.groundvehicles = ObjectViewSelectionToggle("Ground Vehicles", self, True)
         self.airvehicles = ObjectViewSelectionToggle("Air Vehicles", self, True)
@@ -118,6 +120,8 @@ class FilterViewMenu(QMenu):
             action.action_view_toggle.triggered.connect(self.emit_update)
             action.action_select_toggle.triggered.connect(self.emit_update)
 
+        self.addSeparator()
+
         for action in (self.groundtroops, self.groundvehicles, self.airvehicles, self.watervehicles,
                        self.buildings, self.pickups, self.destroyableobjects, self.scenerycluster):
             action.add_3d()
@@ -139,8 +143,25 @@ class FilterViewMenu(QMenu):
         self.toggles["cSceneryCluster"] = self.scenerycluster
         self.toggles["cWaypoint"] = self.waypoints
 
+    def restore(self, cfg):
+        for type, toggle in self.toggles.items():
+            if "View Filter Toggles" in cfg:
+                visible = cfg["View Filter Toggles"].getboolean(type, fallback=False)
+                visible3d = cfg["View Filter Toggles"].getboolean(type+"_3D", fallback=False)
+                toggle.action_view_toggle.setChecked(visible)
+                if toggle.option3d_exists:
+                    toggle.action_select_toggle.setChecked(visible3d)
+
+    def save(self, cfg):
+        if "View Filter Toggles" not in cfg:
+            cfg["View Filter Toggles"] = {}
+        for type, toggle in self.toggles.items():
+            cfg["View Filter Toggles"][type] = str(toggle.is_visible())
+            if toggle.option3d_exists:
+                cfg["View Filter Toggles"][type+"_3D"] = str(toggle.is_selectable())
+
     def object_3d_visible(self, objtype):
-        if objtype in self.toggles:
+        if objtype in self.toggles.items():
             return self.toggles[objtype].is_selectable()
         else:
             return True

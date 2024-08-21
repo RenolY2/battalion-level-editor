@@ -71,6 +71,8 @@ class LevelEditor(QMainWindow):
         self.level_view.set_editorconfig(self.configuration["editor"])
         self.level_view.visibility_menu = self.menubar.visibility_menu
         self.menubar.visibility_menu.filter_update.connect(self.level_view.graphics.set_dirty)
+        self.menubar.visibility_menu.filter_update.connect(self.save_filter_settings)
+        self.menubar.visibility_menu.restore(self.configuration)
 
         self.pathsconfig = self.configuration["default paths"]
         self.editorconfig = self.configuration["editor"]
@@ -101,6 +103,10 @@ class LevelEditor(QMainWindow):
         self.dolphin = Game()
         self.level_view.dolphin = self.dolphin
         self.last_chosen_type = ""
+
+    def save_filter_settings(self):
+        self.menubar.visibility_menu.save(self.configuration)
+        save_cfg(self.configuration)
 
     @catch_exception
     def reset(self):

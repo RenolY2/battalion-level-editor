@@ -193,6 +193,9 @@ class EditorFileMenu(QMenu):
             if levelpaths.objectpath.endswith(".gz"):
                 with gzip.open(os.path.join(base, levelpaths.objectpath), "wb") as g:
                     g.write(tmp.getvalue())
+                    if self.level_paths.objectfilepadding is not None:
+                        if g.tell() < self.level_paths.objectfilepadding:
+                            g.write(b"\x00"*(self.level_paths.objectfilepadding - g.tell()))
             else:
                 with open(os.path.join(base, levelpaths.objectpath), "wb") as g:
                     g.write(tmp.getvalue())
@@ -205,6 +208,9 @@ class EditorFileMenu(QMenu):
             if levelpaths.preloadpath.endswith(".gz"):
                 with gzip.open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
                     g.write(tmp2.getvalue())
+                    if self.level_paths.preloadpadding is not None:
+                        if g.tell() < self.level_paths.preloadpadding:
+                            g.write(b"\x00"*(self.level_paths.preloadpadding - g.tell()))
             else:
                 with open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
                     g.write(tmp2.getvalue())
