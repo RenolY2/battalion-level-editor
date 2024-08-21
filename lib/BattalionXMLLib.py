@@ -498,35 +498,38 @@ class BattalionObject(object):
 
     @property
     def name(self):
-        modelname = ""
-        if hasattr(self, "mBase"):
-            base = self.mBase
-        else:
-            base = self
-
-        if hasattr(base, "mpModel"):
-            modelname = base.mpModel.mName
-        elif hasattr(base, "model"):
-            modelname = base.model.mName
-        elif hasattr(base, "mBAN_Model"):
-            modelname = base.mBAN_Model.mName
-        elif self.type == "cGlobalScriptEntity":
-            return "{0}({1})".format(self.mpScript.mName, self.id)
-        elif hasattr(base, "mName") and base.mName != "":
-            return "{0}({1})".format(self.mName, self.id)
-        #elif self.type ==
-
-
-        if self._custom_name:
-            if modelname:
-                return "{0}({2},{1})".format(self._custom_name, self.id, modelname)
+        try:
+            modelname = ""
+            if hasattr(self, "mBase"):
+                base = self.mBase
             else:
-                return "{0}({1})".format(self._custom_name, self.id)
-        else:
-            if modelname:
-                return "{0}({2},{1})".format(self.type, self.id, modelname)
+                base = self
+
+            if hasattr(base, "mpModel"):
+                modelname = base.mpModel.mName
+            elif hasattr(base, "model"):
+                modelname = base.model.mName
+            elif hasattr(base, "mBAN_Model"):
+                modelname = base.mBAN_Model.mName
+            elif self.type == "cGlobalScriptEntity":
+                return "{0}({1})".format(self.mpScript.mName, self.id)
+            elif hasattr(base, "mName") and base.mName != "":
+                return "{0}({1})".format(self.mName, self.id)
+            #elif self.type ==
+
+            if self._custom_name:
+                if modelname:
+                    return "{0}({2},{1})".format(self._custom_name, self.id, modelname)
+                else:
+                    return "{0}({1})".format(self._custom_name, self.id)
             else:
-                return "{0}({1})".format(self.type, self.id)
+                if modelname:
+                    return "{0}({2},{1})".format(self.type, self.id, modelname)
+                else:
+                    return "{0}({1})".format(self.type, self.id)
+        except Exception as err:
+            print("Error on", self.id, self.type, err)
+            return "{0}({1})".format(self.type, self.id)
 
     def extra_detail_name(self):
         if self.type == "cMapZone":
