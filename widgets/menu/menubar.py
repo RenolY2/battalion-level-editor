@@ -56,6 +56,10 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.dolphin_menu = Menu(self, "Dolphin (Experimental)")
         self.hook_game_action = self.dolphin_menu.addAction("Enable Live Edit",
                                                             self.hook_game)
+        self.hook_game_action.setCheckable(True)
+        self.hook_game_view_action = self.dolphin_menu.addAction("Enable Live View",
+                                                            self.hook_game_visualize)
+        self.hook_game_view_action.setCheckable(True)
 
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
@@ -66,7 +70,45 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.last_obj_select_pos = 0
     
     def hook_game(self):
-        self.editor.dolphin.initialize()
+        if not self.editor.dolphin.running or self.editor.dolphin.visualize:
+            self.editor.dolphin.running = False
+            for objid, obj in self.editor.level_file.objects_with_positions.items():
+                obj.set_mtx_override(None)
+            failure = self.editor.dolphin.initialize()
+            if not failure:
+                self.editor.dolphin.visualize = False
+                self.hook_game_action.setChecked(True)
+                self.hook_game_view_action.setChecked(False)
+
+            self.editor.level_view.do_redraw(force=True)
+        else:
+            self.editor.dolphin.initialize(shutdown=True)
+            #for objid, obj in self.editor.level_file.objects_with_positions.items():
+            self.hook_game_action.setChecked(False)
+            self.hook_game_view_action.setChecked(False)
+
+            for objid, obj in self.editor.level_file.objects_with_positions.items():
+                obj.set_mtx_override(None)
+            self.editor.level_view.do_redraw(force=True)
+
+    def hook_game_visualize(self):
+        if not self.editor.dolphin.running or not self.editor.dolphin.visualize:
+            failure = self.editor.dolphin.initialize()
+            if not failure:
+                self.editor.dolphin.visualize = True
+                self.hook_game_action.setChecked(False)
+                self.hook_game_view_action.setChecked(True)
+            self.editor.level_view.do_redraw(force=True)
+        else:
+            self.editor.dolphin.initialize(shutdown=True)
+            # for objid, obj in self.editor.level_file.objects_with_positions.items():
+
+            self.hook_game_action.setChecked(False)
+            self.hook_game_view_action.setChecked(False)
+
+            for objid, obj in self.editor.level_file.objects_with_positions.items():
+                obj.set_mtx_override(None)
+            self.editor.level_view.do_redraw(force=True)
     
     def close_search(self):
         self.search_window = None

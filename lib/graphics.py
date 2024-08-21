@@ -377,7 +377,7 @@ class Graphics(object):
         self.scene.lines.unbind()
 
     def render_waypoint(self, rw, obj):
-        if rw.dolphin.running:
+        if rw.dolphin.do_visualize() and obj.mtxoverride is not None:
             startp = obj.mtxoverride
             next1 = obj.NextWP.mtxoverride if obj.NextWP is not None else None
             next2 = obj.mOptionalNextWP1.mtxoverride if obj.mOptionalNextWP1 is not None else None

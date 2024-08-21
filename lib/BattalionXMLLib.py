@@ -255,7 +255,10 @@ class BattalionObject(object):
         self._referenced_by.add(obj)
 
     def set_mtx_override(self, values):
-        self.mtxoverride = array(values, dtype=float32)
+        if values is None:
+            self.mtxoverride = None
+        else:
+            self.mtxoverride = array(values, dtype=float32)
 
     def delete_references(self, references):
         for attr_node in self._node:

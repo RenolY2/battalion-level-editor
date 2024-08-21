@@ -49,7 +49,7 @@ class Gizmo(Model):
     def reset_axis(self):
         self.render_axis = None
 
-    def move_to_average(self, objects, bwterrain, waterheight, gamerunning):
+    def move_to_average(self, objects, bwterrain, waterheight):
         for obj in objects:
             if obj is None:
                 continue
@@ -66,7 +66,7 @@ class Gizmo(Model):
         avgz = None
         count = 0
         for obj in objects:
-            if gamerunning:
+            if gamerunning and obj.mtxoverride is not None:
                 mtx = obj.mtxoverride
             else:
                 mtx = obj.getmatrix()

@@ -33,13 +33,17 @@ class Game(object):
         self.running = False
         self.timer = 0.0
         self.do_once = False
+        self.visualize = False
 
-    def initialize(self):
+    def initialize(self, shutdown=False):
         self.dolphin.reset()
         self.object_addresses = {}
         self.running = False
 
         self.do_once = True
+
+        if shutdown:
+            return ""
 
         if self.dolphin.find_dolphin():
             if self.dolphin.init_shared_memory():
@@ -113,6 +117,9 @@ class Game(object):
                 renderer.models.render_generic_position_colored_id(pos, idbase + (offset) * 4)
                 offset += 1
 
+    def do_visualize(self):
+        return self.running and self.visualize
+
     def logic(self, renderer, delta, diff):
         if not self.running:
             return
@@ -128,27 +135,30 @@ class Game(object):
             return
         updateobjects = []
         updateobjectsonce = []
+        if self.visualize:
+            for objid, obj in renderer.level_file.objects_with_positions.items():
+                if obj in renderer.selected:
+                    continue
+                if obj.id not in self.object_addresses:
+                    continue
 
-        for objid, obj in renderer.level_file.objects_with_positions.items():
-            if obj in renderer.selected:
-                continue
-            if obj.id not in self.object_addresses:
-                continue
+                addr = self.object_addresses[obj.id]
+                mtxstart = 0x30
+                if obj.type == "cMapZone":
+                    mtxstart += 8
+                if obj.type in ("cTroop", "cGroundVehicle", "cAirVehicle", "cWaterVehicle"):
+                    updateobjects.append(obj)
+                    mtxarray = [self.dolphin.read_float(addr + mtxstart + i * 4) for i in range(16)]
+                    obj.set_mtx_override(mtxarray)
 
-            addr = self.object_addresses[obj.id]
-            mtxstart = 0x30
-            if obj.type == "cMapZone":
-                mtxstart += 8
-            if obj.type in ("cTroop", "cGroundVehicle", "cAirVehicle", "cWaterVehicle"):
-                updateobjects.append(obj)
-                mtxarray = [self.dolphin.read_float(addr + mtxstart + i * 4) for i in range(16)]
-                obj.set_mtx_override(mtxarray)
+                elif self.do_once:
+                    updateobjects.append(obj)
 
-            elif self.do_once:
-                updateobjects.append(obj)
-
-                mtxarray = [self.dolphin.read_float(addr+mtxstart+i*4) for i in range(16)]
-                obj.set_mtx_override(mtxarray)
+                    mtxarray = [self.dolphin.read_float(addr+mtxstart+i*4) for i in range(16)]
+                    obj.set_mtx_override(mtxarray)
+        else:
+            for objid, obj in renderer.level_file.objects_with_positions.items():
+                obj.set_mtx_override(None)
 
         #if doonce:
         #    renderer.do_redraw(forcespecific=updateobjectsonce)
