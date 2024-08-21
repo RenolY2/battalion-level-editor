@@ -759,7 +759,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 self.gizmo.move_to_average(self.selected,
                                            self.bwterrain,
                                            self.waterheight,
-                                           self.dolphin.running)
+                                           self.dolphin.do_visualize())
                 if len(selected) == 0:
                     #print("Select did register")
                     self.gizmo.hidden = True

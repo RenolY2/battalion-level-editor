@@ -4,6 +4,7 @@ import bw_widgets
 from widgets.menu.menu import Menu
 from widgets.filter_view import FilterViewMenu
 from widgets.search_widget import SearchWidget
+from widgets.editor_widgets import open_error_dialog
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
@@ -61,6 +62,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                                                             self.hook_game_visualize)
         self.hook_game_view_action.setCheckable(True)
 
+
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
         self.addAction(self.collision_menu.menuAction())
@@ -68,17 +70,24 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.addAction(self.dolphin_menu.menuAction())
 
         self.last_obj_select_pos = 0
-    
+
+    def reset_hook(self):
+        self.hook_game_action.setChecked(False)
+        self.hook_game_view_action.setChecked(False)
+        self.editor.dolphin.initialize(shutdown=True)
+
     def hook_game(self):
         if not self.editor.dolphin.running or self.editor.dolphin.visualize:
             self.editor.dolphin.running = False
             for objid, obj in self.editor.level_file.objects_with_positions.items():
                 obj.set_mtx_override(None)
-            failure = self.editor.dolphin.initialize()
+            failure = self.editor.dolphin.initialize(self.editor.level_file)
             if not failure:
                 self.editor.dolphin.visualize = False
                 self.hook_game_action.setChecked(True)
                 self.hook_game_view_action.setChecked(False)
+            else:
+                open_error_dialog(failure, None)
 
             self.editor.level_view.do_redraw(force=True)
         else:
@@ -93,11 +102,13 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
     def hook_game_visualize(self):
         if not self.editor.dolphin.running or not self.editor.dolphin.visualize:
-            failure = self.editor.dolphin.initialize()
+            failure = self.editor.dolphin.initialize(self.editor.level_file)
             if not failure:
                 self.editor.dolphin.visualize = True
                 self.hook_game_action.setChecked(False)
                 self.hook_game_view_action.setChecked(True)
+            else:
+                open_error_dialog(failure, None)
             self.editor.level_view.do_redraw(force=True)
         else:
             self.editor.dolphin.initialize(shutdown=True)

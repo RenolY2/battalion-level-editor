@@ -35,7 +35,7 @@ class Game(object):
         self.do_once = False
         self.visualize = False
 
-    def initialize(self, shutdown=False):
+    def initialize(self, level_file=None, shutdown=False):
         self.dolphin.reset()
         self.object_addresses = {}
         self.running = False
@@ -52,11 +52,15 @@ class Game(object):
                 if gameid != b"G8WE":
                     return "Not supported: Found Game ID '{0}'.".format(str(gameid, encoding="ascii"))
                 else:
+                    found, notfound = self.setup_address_map(level_file.objects)
+                    print("{0} vs {1} objects found/not found".format(found, notfound))
+                    if found > notfound:
+                        print("Success!")
 
-
-                    print("Success!")
-                    self.running = True
-                    return ""
+                        self.running = True
+                        return ""
+                    else:
+                        return "Level mismatch, cannot hook. {0} objects found, {1} objects not found".format(found, notfound)
             else:
                 self.dolphin.reset()
                 return "Dolphin found but game isn't running."
@@ -126,8 +130,7 @@ class Game(object):
 
         renderer: bw_widgets.BolMapViewer
 
-        if len(self.object_addresses) == 0:
-            self.setup_address_map(renderer.level_file.objects)
+
         self.timer += delta
         if self.timer > 0.1:
             self.timer = 0
@@ -250,11 +253,20 @@ class Game(object):
             return 0
 
     def setup_address_map(self, objects):
+        self.object_addresses = {}
+        objectsnotfound = 0
+        objectsfound = 0
         for objectid, object in objects.items():
             mtx = object.getmatrix()
             if mtx is not None:
                 address = self.resolve_id(int(objectid))
-                self.object_addresses[objectid] = address
+                if address is not None and address != 0:
+                    self.object_addresses[objectid] = address
+                    objectsfound += 1
+                else:
+                    objectsnotfound += 1
+
+        return objectsfound, objectsnotfound
 
 
 if __name__ == "__main__":

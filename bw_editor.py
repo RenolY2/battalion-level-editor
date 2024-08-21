@@ -104,6 +104,7 @@ class LevelEditor(QMainWindow):
 
     @catch_exception
     def reset(self):
+        self.menubar.reset_hook()
         self.last_position_clicked = []
         self.loaded_archive = None
         self.loaded_archive_file = None
@@ -131,6 +132,7 @@ class LevelEditor(QMainWindow):
         #self.pik_control.button_move_object.setChecked(False)
         self._window_title = ""
         self._user_made_change = False
+
 
         self.addobjectwindow_last_selected = None
         self.addobjectwindow_last_selected_category = None
@@ -213,30 +215,11 @@ class LevelEditor(QMainWindow):
         self.level_view.selected_rotations = []
         if hasattr(item, "bound_to"):
             self.level_view.selected = [item.bound_to]
-        """if isinstance(item, (tree_view.CameraEntry, tree_view.RespawnEntry, tree_view.AreaEntry, tree_view.ObjectEntry,
-                             tree_view.KartpointEntry, tree_view.EnemyRoutePoint, tree_view.ObjectRoutePoint)):
-            bound_to = item.bound_to
-            self.level_view.selected = [bound_to]
-            self.level_view.selected_positions = [bound_to.position]
-
-            if hasattr(bound_to, "rotation"):
-                self.level_view.selected_rotations = [bound_to.rotation]
-
-        elif isinstance(item, tree_view.Checkpoint):
-            bound_to = item.bound_to
-            self.level_view.selected = [bound_to]
-            self.level_view.selected_positions = [bound_to.start, bound_to.end]
-        elif isinstance(item, (tree_view.EnemyPointGroup, tree_view.CheckpointGroup, tree_view.ObjectPointGroup)):
-            self.level_view.selected = [item.bound_to]
-        elif isinstance(item, tree_view.BolHeader) and self.level_file is not None:
-            self.level_view.selected = [self.level_file]
-        elif isinstance(item, (tree_view.LightParamEntry, tree_view.MGEntry)):
-            self.level_view.selected = [item.bound_to]"""
 
         self.level_view.gizmo.move_to_average(self.level_view.selected,
                                               self.level_view.bwterrain,
                                               self.level_view.waterheight,
-                                              self.dolphin.running)
+                                              self.dolphin.do_visualize())
         self.level_view.do_redraw()
         self.level_view.select_update.emit()
 
@@ -890,7 +873,8 @@ class LevelEditor(QMainWindow):
         self.pik_control.update_info()
         self.level_view.gizmo.move_to_average(self.level_view.selected,
                                               self.level_view.bwterrain,
-                                              self.level_view.waterheight)
+                                              self.level_view.waterheight,
+                                              self.dolphin.do_visualize())
         self.set_has_unsaved_changes(True)
         self.level_view.do_redraw()
 
@@ -983,7 +967,8 @@ class LevelEditor(QMainWindow):
     def update_3d(self):
         self.level_view.gizmo.move_to_average(self.level_view.selected,
                                               self.level_view.bwterrain,
-                                              self.level_view.waterheight)
+                                              self.level_view.waterheight,
+                                              self.dolphin.do_visualize())
         self.level_view.do_redraw()
 
     def select_from_3d_to_treeview(self):
