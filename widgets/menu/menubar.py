@@ -62,6 +62,9 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                                                             self.hook_game_visualize)
         self.hook_game_view_action.setCheckable(True)
 
+        self.apply_live_positions_action = self.dolphin_menu.addAction("Apply Live Positions to Selected",
+                                                                self.apply_live_positions)
+
 
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
@@ -70,6 +73,14 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.addAction(self.dolphin_menu.menuAction())
 
         self.last_obj_select_pos = 0
+
+    def apply_live_positions(self):
+        if self.editor.dolphin.do_visualize():
+            for obj in self.editor.level_view.selected:
+                if obj.mtxoverride is not None and obj.getmatrix() is not None:
+                    mtx = obj.getmatrix().mtx
+                    for i in range(16):
+                        mtx[i] = obj.mtxoverride[i]
 
     def reset_hook(self):
         self.hook_game_action.setChecked(False)
@@ -86,6 +97,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                 self.editor.dolphin.visualize = False
                 self.hook_game_action.setChecked(True)
                 self.hook_game_view_action.setChecked(False)
+                self.apply_live_positions_action.setEnabled(False)
             else:
                 open_error_dialog(failure, None)
 
@@ -95,7 +107,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
             #for objid, obj in self.editor.level_file.objects_with_positions.items():
             self.hook_game_action.setChecked(False)
             self.hook_game_view_action.setChecked(False)
-
+            self.apply_live_positions_action.setEnabled(False)
             for objid, obj in self.editor.level_file.objects_with_positions.items():
                 obj.set_mtx_override(None)
             self.editor.level_view.do_redraw(force=True)
@@ -107,6 +119,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                 self.editor.dolphin.visualize = True
                 self.hook_game_action.setChecked(False)
                 self.hook_game_view_action.setChecked(True)
+                self.apply_live_positions_action.setEnabled(True)
             else:
                 open_error_dialog(failure, None)
             self.editor.level_view.do_redraw(force=True)
@@ -116,7 +129,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
             self.hook_game_action.setChecked(False)
             self.hook_game_view_action.setChecked(False)
-
+            self.apply_live_positions_action.setEnabled(False)
             for objid, obj in self.editor.level_file.objects_with_positions.items():
                 obj.set_mtx_override(None)
             self.editor.level_view.do_redraw(force=True)
