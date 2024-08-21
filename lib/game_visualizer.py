@@ -165,7 +165,8 @@ class Game(object):
                 mtxstart = 0x30
                 if obj.type == "cMapZone":
                     mtxstart += 8
-                if obj.type in ("cTroop", "cGroundVehicle", "cAirVehicle", "cWaterVehicle"):
+                if obj.type in ("cTroop", "cGroundVehicle", "cAirVehicle", "cWaterVehicle",
+                                "cCamera", "cBuilding", "cObjectiveMarker"):
                     updateobjects.append(obj)
                     mtxarray = [self.dolphin.read_float(addr + mtxstart + i * 4) for i in range(16)]
                     obj.set_mtx_override(mtxarray)
