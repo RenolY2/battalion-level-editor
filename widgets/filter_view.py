@@ -123,7 +123,7 @@ class FilterViewMenu(QMenu):
         self.addSeparator()
 
         for action in (self.groundtroops, self.groundvehicles, self.airvehicles, self.watervehicles,
-                       self.buildings, self.pickups, self.destroyableobjects, self.scenerycluster):
+                       self.buildings, self.capturepoints, self.pickups, self.destroyableobjects, self.scenerycluster):
             action.add_3d()
 
         self.toggles = {}
