@@ -27,7 +27,7 @@ def angle_diff(angle1, angle2):
 
 
 class Game(object):
-    def __init__(self):
+    def __init__(self, shutdowncallback=None):
         self.dolphin = Dolphin()
         self.object_addresses = {}
         self.running = False
@@ -35,14 +35,18 @@ class Game(object):
         self.do_once = False
         self.visualize = False
         self.objectlist_address = None
+        self.shutdowncallback = shutdowncallback
+        self.current_address = None
 
-    def initialize(self, level_file=None, shutdown=False, matchoverride=False):
+    def initialize(self, level_file=None, shutdown=False, matchoverride=False, shutdowncallback=None):
         self.dolphin.reset()
         self.object_addresses = {}
         self.running = False
+        self.shutdowncallback = shutdowncallback
 
         self.do_once = True
         self.objectlist_address = None
+        self.current_address = None
 
         if shutdown:
             return ""
@@ -72,7 +76,7 @@ class Game(object):
                     print("{0} vs {1} objects found/not found".format(found, notfound))
                     if found > notfound or matchoverride:
                         print("Success!")
-
+                        self.current_address = self.dolphin.read_uint32(self.objectlist_address)
                         self.running = True
                         return ""
                     else:
@@ -152,6 +156,25 @@ class Game(object):
             self.timer = 0
         else:
             return
+
+        fails = 0
+        for id, addr in self.object_addresses.items():
+            try:
+                newaddr = self.resolve_id(int(id))
+                if newaddr != addr:
+                    fails += 1
+            except Exception as err:
+                print(err)
+                fails = 10
+
+            if fails >= min(5, len(self.object_addresses)):
+                self.running = False
+                print("Object address mismatch, likely level or game change: Shutting down Dolphin hook.")
+                if self.shutdowncallback is not None:
+                    self.shutdowncallback()
+                return
+
+
         updateobjects = []
         updateobjectsonce = []
         if self.visualize:

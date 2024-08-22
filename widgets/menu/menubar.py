@@ -85,14 +85,21 @@ class EditorMenuBar(QtWidgets.QMenuBar):
     def reset_hook(self):
         self.hook_game_action.setChecked(False)
         self.hook_game_view_action.setChecked(False)
+        self.apply_live_positions_action.setEnabled(False)
         self.editor.dolphin.initialize(shutdown=True)
+
+
+    def reset_hook_with_error_message(self):
+        self.reset_hook()
+        open_error_dialog("Level or game change detected! Dolphin hook has been shut down.", None)
 
     def hook_game(self):
         if not self.editor.dolphin.running or self.editor.dolphin.visualize:
             self.editor.dolphin.running = False
             for objid, obj in self.editor.level_file.objects_with_positions.items():
                 obj.set_mtx_override(None)
-            failure = self.editor.dolphin.initialize(self.editor.level_file)
+            failure = self.editor.dolphin.initialize(self.editor.level_file,
+                                                     shutdowncallback=self.reset_hook_with_error_message)
             if not failure:
                 self.editor.dolphin.visualize = False
                 self.hook_game_action.setChecked(True)
@@ -100,6 +107,9 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                 self.apply_live_positions_action.setEnabled(False)
             else:
                 open_error_dialog(failure, None)
+                self.hook_game_action.setChecked(False)
+                self.hook_game_view_action.setChecked(False)
+                self.apply_live_positions_action.setEnabled(False)
 
             self.editor.level_view.do_redraw(force=True)
         else:
@@ -114,7 +124,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
     def hook_game_visualize(self):
         if not self.editor.dolphin.running or not self.editor.dolphin.visualize:
-            failure = self.editor.dolphin.initialize(self.editor.level_file)
+            failure = self.editor.dolphin.initialize(self.editor.level_file,
+                                                     shutdowncallback=self.reset_hook_with_error_message)
             if not failure:
                 self.editor.dolphin.visualize = True
                 self.hook_game_action.setChecked(False)
@@ -122,6 +133,9 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                 self.apply_live_positions_action.setEnabled(True)
             else:
                 open_error_dialog(failure, None)
+                self.hook_game_action.setChecked(False)
+                self.hook_game_view_action.setChecked(False)
+                self.apply_live_positions_action.setEnabled(False)
             self.editor.level_view.do_redraw(force=True)
         else:
             self.editor.dolphin.initialize(shutdown=True)
