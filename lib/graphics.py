@@ -382,34 +382,46 @@ class Graphics(object):
             next1 = obj.NextWP.mtxoverride if obj.NextWP is not None else None
             next2 = obj.mOptionalNextWP1.mtxoverride if obj.mOptionalNextWP1 is not None else None
             next3 = obj.mOptionalNextWP2.mtxoverride if obj.mOptionalNextWP2 is not None else None
+
+            startpheight = startp[13]
+            next1height = next1[13] if next1 is not None else None
+            next2height = next2[13] if next2 is not None else None
+            next3height = next3[13] if next3 is not None else None
         else:
             startp = obj.getmatrix().mtx
             next1 = obj.NextWP.getmatrix().mtx if obj.NextWP is not None else None
             next2 = obj.mOptionalNextWP1.getmatrix().mtx if obj.mOptionalNextWP1 is not None else None
             next3 = obj.mOptionalNextWP2.getmatrix().mtx if obj.mOptionalNextWP2 is not None else None
 
+            startpheight = obj.height+0.5 if obj.height is not None else startp[13]
+            if next1 is not None:
+                next1height = obj.NextWP.height+0.5 if obj.NextWP.height is not None else next1[13]
+            if next2 is not None:
+                next2height = obj.mOptionalNextWP1.height+0.5 if obj.mOptionalNextWP1.height is not None else next2[13]
+            if next3 is not None:
+                next3height = obj.mOptionalNextWP2.height+0.5 if obj.mOptionalNextWP2.height is not None else next3[13]
+
         if obj in self.scene.not_startpoint:
             start = BLUE
         else:
             start = GREEN
 
-        startp = (startp[12], obj.height+0.5, startp[14])
-
+        startp = (startp[12], startpheight, startp[14])
 
         if next1 is not None:
-            next1 = (next1[12], obj.NextWP.height+0.5, next1[14])
+            next1 = (next1[12], next1height, next1[14])
             if obj.NextWP.NextWP is None:
                 self.scene.lines.add_line_2(startp, start, next1, RED)
             else:
                 self.scene.lines.add_line_2(startp, start, next1, LIGHTBLUE)
         if next2 is not None:
-            next2 = (next2[12], obj.mOptionalNextWP1.height+0.5, next2[14])
+            next2 = (next2[12], next2height, next2[14])
             if obj.mOptionalNextWP1.NextWP is None:
-                self.scene.lines.add_line_2(startp, start, next1, RED)
+                self.scene.lines.add_line_2(startp, start, next2, RED)
             else:
                 self.scene.lines.add_line_2(startp, start, next2, PURPLE)
         if next3 is not None:
-            next3 = (next3[12], obj.mOptionalNextWP2.height+0.5, next3[14])
+            next3 = (next3[12], next3height, next3[14])
             if obj.mOptionalNextWP2.NextWP is None:
                 self.scene.lines.add_line_2(startp, start, next3, RED)
             else:
