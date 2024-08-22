@@ -167,9 +167,14 @@ class Game(object):
                     mtxstart += 8
                 if obj.type in ("cTroop", "cGroundVehicle", "cAirVehicle", "cWaterVehicle",
                                 "cCamera", "cBuilding", "cObjectiveMarker"):
-                    updateobjects.append(obj)
+
                     mtxarray = [self.dolphin.read_float(addr + mtxstart + i * 4) for i in range(16)]
-                    obj.set_mtx_override(mtxarray)
+                    mtxoverride = obj.mtxoverride
+
+                    # Test if the object has moved compared to last time and only move then.
+                    if mtxoverride is None or any(mtxoverride[i] != mtxarray[i] for i in (0, 1, 2, 12, 13, 14)):
+                        updateobjects.append(obj)
+                        obj.set_mtx_override(mtxarray)
 
                 elif self.do_once:
                     updateobjects.append(obj)
