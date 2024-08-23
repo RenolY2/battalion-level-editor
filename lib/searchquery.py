@@ -170,13 +170,6 @@ class GreaterEqual(Keyword):
         parse(">=", GreaterEqual)
 
 
-class References(Keyword):
-    grammar = Enum(K("references"))
-
-    def action(self, a, b):
-        return b.lower() in a.get_pointers()
-
-
 class Contains(Keyword):
     grammar = Enum(K("contains"))
 
@@ -208,7 +201,7 @@ class Or(Keyword):
 
 
 class StringContentCheck(List):
-    grammar = Field, maybe_some(whitespace), [Contains, Excludes, References], maybe_some(whitespace), Value
+    grammar = Field, maybe_some(whitespace), [Contains, Excludes], maybe_some(whitespace), Value
 
     def evaluate(self, obj):
         values = self[0].evaluate(obj)
@@ -220,9 +213,7 @@ class StringContentCheck(List):
 
             for val in values:
                 try:
-                    if isinstance(val, str) and not isinstance(op, References):
-                        tmpresult = op.action(val, self[2])
-                    elif isinstance(op, References):
+                    if isinstance(val, str):
                         tmpresult = op.action(val, self[2])
                     else:
                         tmpresult = False

@@ -331,14 +331,30 @@ class BattalionObject(object):
         else:
             setattr(self, "getmatrix", lambda: None)
 
-    def get_pointers(self):
+    @property
+    def references(self):
         result = []
         for attr_node in self._node:
             if attr_node.tag in ("Pointer", "Resource"):
-                elementcount = int(attr_node.attrib["elements"])
-                for subnode in attr_node:
-                    if subnode.text != "0":
-                        result.append(subnode.text)
+                pointers = getattr(self, attr_node.attrib["name"])
+                if isinstance(pointers, list):
+                    for val in pointers:
+                        if val is not None:
+                            result.append(val)
+                elif pointers is not None:
+                    result.append(pointers)
+        return result
+
+    @property
+    def enums(self):
+        result = []
+        for attr_node in self._node:
+            if attr_node.tag == "Enum":
+                enums = getattr(self, attr_node.attrib["name"])
+                if isinstance(enums, list):
+                    result.extend(enums)
+                else:
+                    result.append(enums)
         return result
 
     def resolve_pointers(self, level, other=None, othernode=None):
