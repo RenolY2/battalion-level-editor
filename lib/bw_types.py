@@ -132,6 +132,7 @@ def string_from(val):
 
 CONVERTERS_FROM = {
     "sFloat": float,
+    "sFloat32": float,
     "eBoolean": boolean_from,
     "cFxString8": string_from,
     "sMatrix4x4": matrix4x4_from,
@@ -148,6 +149,7 @@ CONVERTERS_FROM = {
 
 CONVERTERS_TO = {
     "sFloat": lambda x: "{:f}".format(x),
+    "sFloat32": lambda x: "{:f}".format(x),
     "eBoolean": boolean_to,
     "sMatrix4x4": matrix4x4_to,
     "cMatrix4x4": matrix4x4_to,
