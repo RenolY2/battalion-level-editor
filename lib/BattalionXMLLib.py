@@ -331,6 +331,16 @@ class BattalionObject(object):
         else:
             setattr(self, "getmatrix", lambda: None)
 
+    def get_pointers(self):
+        result = []
+        for attr_node in self._node:
+            if attr_node.tag in ("Pointer", "Resource"):
+                elementcount = int(attr_node.attrib["elements"])
+                for subnode in attr_node:
+                    if subnode.text != "0":
+                        result.append(subnode.text)
+        return result
+
     def resolve_pointers(self, level, other=None, othernode=None):
         if othernode is not None:
             node = othernode

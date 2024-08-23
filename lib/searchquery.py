@@ -1,6 +1,5 @@
 import re
 import os
-
 from pypeg2 import *
 from numpy import float32
 
@@ -37,10 +36,13 @@ autocompletevaluesbw2, valuenamesbw2 = load_autocomplete(os.path.join(currdir, "
 
 
 class Field(List):
-    grammar = Keyword("self"), ".", word, maybe_some(".", word)
+    grammar = Keyword("self"), optional(".", word, maybe_some(".", word))
 
     def evaluate(self, obj):
-        return self._evaluate_recursive(obj, self)
+        if len(self) == 0:
+            return [obj]
+        else:
+            return self._evaluate_recursive(obj, self)
 
     def _evaluate_recursive(self, obj, remainingfields):
         values = []
@@ -168,6 +170,13 @@ class GreaterEqual(Keyword):
         parse(">=", GreaterEqual)
 
 
+class References(Keyword):
+    grammar = Enum(K("references"))
+
+    def action(self, a, b):
+        return b.lower() in a.get_pointers()
+
+
 class Contains(Keyword):
     grammar = Enum(K("contains"))
 
@@ -199,7 +208,7 @@ class Or(Keyword):
 
 
 class StringContentCheck(List):
-    grammar = Field, maybe_some(whitespace), [Contains, Excludes], maybe_some(whitespace), Value
+    grammar = Field, maybe_some(whitespace), [Contains, Excludes, References], maybe_some(whitespace), Value
 
     def evaluate(self, obj):
         values = self[0].evaluate(obj)
@@ -211,7 +220,9 @@ class StringContentCheck(List):
 
             for val in values:
                 try:
-                    if isinstance(val, str):
+                    if isinstance(val, str) and not isinstance(op, References):
+                        tmpresult = op.action(val, self[2])
+                    elif isinstance(op, References):
                         tmpresult = op.action(val, self[2])
                     else:
                         tmpresult = False
