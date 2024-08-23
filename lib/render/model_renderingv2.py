@@ -290,6 +290,12 @@ class VertexBuffer(object):
         glBindBuffer(GL_ARRAY_BUFFER, self._buffer)
 
 
+class VertexPositionBuffer(VertexBuffer):
+    def __init__(self, vtx_attr_index):
+        super().__init__()
+        self.add_attribute(vtx_attr_index, 3, GL_FLOAT, GL_FALSE, 3 * 4, 0*4)
+
+
 class VertexColorBuffer(VertexBuffer):
     def __init__(self, vtx_attr_index, color_attr_index):
         super().__init__()
@@ -883,6 +889,96 @@ class LineDrawing(object):
 
     def render(self):
         glDrawArrays(GL_LINES, 0, len(self.lines)//6)
+
+
+class WireframeModel(object):
+    def __init__(self, modelfile):
+        self.vertexshader = Shader.create("""
+        #version 330 compatibility
+        layout(location = 0) in vec3 vert;
+
+        out vec4 fragColor;
+        uniform mat4 modelmtx;
+        uniform vec4 size;
+        uniform vec4 color;
+        
+        mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 1.0);
+        
+        mat4 scalemtx = mat4(size.x, 0.0, 0.0, 0.0,
+                            0.0, size.y, 0.0, 0.0,
+                            0.0, 0.0, size.z, 0.0,
+                            0.0, 0.0, 0.0, 1.0);    
+    
+        
+        void main(void)
+        {   
+            fragColor = color;
+            gl_Position = gl_ModelViewProjectionMatrix* mtx*modelmtx*scalemtx*vec4(vert, 1.0);
+        }   
+
+
+        """)
+
+        self.fragshader = Shader.create("""
+        #version 330
+        in vec4 fragColor;
+        out vec4 finalColor;
+
+        void main (void)
+        {
+            finalColor = fragColor;
+        }  
+        """)
+        self.lines = []
+        self.vao = None
+        self.program = Program(self.vertexshader, self.fragshader)
+        self.vbo = VertexPositionBuffer(self.vertexshader.get_location("vert"))
+        self.load_lines(modelfile)
+
+    def load_lines(self, objfile):
+        vertices = []
+        with open(objfile) as f:
+            for line in f:
+                line = line.strip()
+                args = line.split(" ")
+                cmd = args[0] if len(args) > 0 else ""
+                print(args)
+                if cmd == "v":
+                    vertices.append((float(args[1]), float(args[2]), float(args[3])))
+                elif cmd == "l":
+                    v1, v2 = int(args[1])-1, int(args[2])-1
+                    self.lines.extend(vertices[v1])
+                    self.lines.extend(vertices[v2])
+
+    def build_mesh(self):
+        if self.vao is None:
+            self.vao = glGenVertexArrays(1)
+        glBindVertexArray(self.vao)
+
+        self.vbo.init()
+        self.vbo.load_data(numpy.array(self.lines, dtype=numpy.float32))
+        self.dirty = False
+
+    def bind(self):
+        if not self.program.compiled():
+            self.program.compile()
+
+        if self.vao is None or self.dirty:
+            self.build_mesh()
+
+        self.program.bind()
+        glBindVertexArray(self.vao)
+
+    def unbind(self):
+        glUseProgram(0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindVertexArray(0)
+
+    def render(self):
+        glDrawArrays(GL_LINES, 0, len(self.lines)//3)
 
 
 class TexturedModel(object):

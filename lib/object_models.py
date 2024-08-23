@@ -4,7 +4,7 @@ from OpenGL.GL import *
 from .model_rendering import (GenericObject, Model, TexturedModel,
                               GenericFlyer, GenericLongLegs, GenericChappy, GenericSnakecrow,
                               GenericSwimmer, Cube)
-from lib.render.model_renderingv2 import ModelV2, Billboard
+from lib.render.model_renderingv2 import ModelV2, Billboard, WireframeModel
 with open("lib/color_coding.json", "r") as f:
     colors = json.load(f)
 
@@ -28,6 +28,9 @@ class ObjectModels(object):
 
         with open("resources/billboard.obj", "r") as f:
             self.billboard = Billboard.from_obj(f, scale=5.5, uvcoords=True)
+
+        self.wireframe_cube = WireframeModel("resources/cubewireframe.obj")
+        self.wireframe_cylinder = WireframeModel("resources/cylinderwireframe.obj")
 
         #self.checkpointleft = Cube(colors["CheckpointLeft"])
         #self.checkpointright = Cube(colors["CheckpointRight"])
@@ -71,8 +74,8 @@ class ObjectModels(object):
         with open("resources/unitcylinder.obj", "r") as f:
             self.cylinder = Model.from_obj(f, rotate=True)
 
-        with open("resources/unitcube_wireframe.obj", "r") as f:
-            self.wireframe_cube = Model.from_obj(f, rotate=True)
+        #with open("resources/unitcube_wireframe.obj", "r") as f:
+        #    self.wireframe_cube = Model.from_obj(f, rotate=True)
 
         with open("resources/arrow_head.obj", "r") as f:
             self.arrow_head = Model.from_obj(f, rotate=True, scale=300.0)

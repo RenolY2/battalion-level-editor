@@ -30,6 +30,7 @@ LIGHTBLUE = (0.7, 0.7, 1.0)
 GREEN = (0.0, 1.0, 0.0)
 PURPLE = (1.0, 1.0, 0.0)
 
+
 class Scene(object):
     def __init__(self):
         self.objects = {}
@@ -37,6 +38,8 @@ class Scene(object):
 
         self.modelinstances = {}
         self.renderedmodels = []
+        self.wireframeboxes = []
+        self.wireframecylinders = []
 
         self.lines = LineDrawing()
         self.not_startpoint = {}
@@ -50,6 +53,8 @@ class Scene(object):
 
     def fullreset(self):
         self.renderedmodels = []
+        self.wireframeboxes = []
+        self.wireframecylinders = []
         self.lines.reset_lines()
 
     def reset(self):
@@ -226,6 +231,21 @@ class Graphics(object):
 
                 mtx.append(currmtx)
 
+                if obj.type == "cMapZone":
+                    mtx = obj.getmatrix()
+                    if obj in selected:
+                        color = object_colors["SelectionColor"]
+                    else:
+                        color = (0.0, 0.0, 1.0, 1.0)
+                    radius = obj.mRadius
+                    size = obj.mSize
+
+                    if radius > 0:
+                        self.scene.wireframecylinders.append((mtx, color, (radius, radius, radius, 1)))
+                    if size.x > 0 and size.y > 0 and size.z > 0:
+                        self.scene.wireframeboxes.append((mtx, color, (size.x, size.y, size.z, 1)))
+
+
                 if obj.type == "cWaypoint":
                     if obj.NextWP is not None:
                         self.scene.not_startpoint[obj.NextWP] = True
@@ -375,6 +395,35 @@ class Graphics(object):
         self.scene.lines.bind()
         self.scene.lines.render()
         self.scene.lines.unbind()
+
+        if visible("cMapZone"):
+            glLineWidth(2.0)
+            if len(self.scene.wireframeboxes) > 0:
+                self.rw.models.wireframe_cube.bind()
+                mtxuniform = rw.models.wireframe_cube.program.getuniformlocation("modelmtx")
+                sizeuniform = rw.models.wireframe_cube.program.getuniformlocation("size")
+                coloruniform = rw.models.wireframe_cube.program.getuniformlocation("color")
+
+                for mtx, color, size in self.scene.wireframeboxes:
+                    glUniformMatrix4fv(mtxuniform, 1, False, mtx.mtx)
+                    glUniform4f(sizeuniform, size[0], size[1], size[2], size[3])
+                    glUniform4f(coloruniform, color[0], color[1], color[2], color[3])
+                    rw.models.wireframe_cube.render()
+                self.rw.models.wireframe_cube.unbind()
+            if len(self.scene.wireframecylinders) > 0:
+                self.rw.models.wireframe_cylinder.bind()
+                mtxuniform = rw.models.wireframe_cylinder.program.getuniformlocation("modelmtx")
+                sizeuniform = rw.models.wireframe_cylinder.program.getuniformlocation("size")
+                coloruniform = rw.models.wireframe_cylinder.program.getuniformlocation("color")
+
+                for mtx, color, size in self.scene.wireframecylinders:
+                    glUniformMatrix4fv(mtxuniform, 1, False, mtx.mtx)
+                    glUniform4f(sizeuniform, size[0], size[1], size[2], size[3])
+                    glUniform4f(coloruniform, color[0], color[1], color[2], color[3])
+                    rw.models.wireframe_cylinder.render()
+                self.rw.models.wireframe_cylinder.unbind()
+
+            glLineWidth(1.0)
 
     def render_waypoint(self, rw, obj):
         if rw.dolphin.do_visualize() and obj.mtxoverride is not None:
