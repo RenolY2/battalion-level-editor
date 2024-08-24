@@ -719,7 +719,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 selected_rotations = []
                 #for i in range(0, clickwidth*clickheight, 4):
                 start = default_timer()
-
+                selectionfail = False
                 for i in range(0, clickwidth*clickheight, 13):
                     # | (pixels[i*3+0] << 16)
                     if pixels[i * 3] != 0xFF:
@@ -727,8 +727,14 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                         if value != 0:
                             index = (value >> 4) & 0xFFFF
                             misc = value & 0xFF
-                            selected[objlist[index]] = True
+                            if not 0 < index < len(objlist):
+                                print("Selection failure, index", index, "vs", len(objlist), "objects")
+                                selectionfail = True
+                                break
 
+                            selected[objlist[index]] = True
+                if selectionfail:
+                    selected = {}
                 #print("select time taken", default_timer() - start)
                 #print("result:", selected)
                 selected = [x for x in selected.keys()]
