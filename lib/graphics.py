@@ -195,6 +195,8 @@ class Graphics(object):
         vismenu: FilterViewMenu = self.rw.visibility_menu
         visible = vismenu.object_visible
         visible3d = vismenu.object_3d_visible
+        if self.render_everything_once:
+            vismenu.visibility_override = True
 
         empty = False
         #self.set_dirty()
@@ -299,7 +301,7 @@ class Graphics(object):
         if self.render_everything_once:
             for mtx, x, z, modelname in self.models_scene:
                 rw.bwmodelhandler.rendermodel(modelname, mtx, rw.bwterrain, 0)
-            self.render_everything_once = False
+
 
         for meshname in self.scene.renderedmodels:
             if meshname in self.scene.modelinstances:
@@ -319,6 +321,7 @@ class Graphics(object):
 
         if self.rw.is_topdown():
             glClear(GL_DEPTH_BUFFER_BIT)
+
 
 
         drawn = 0
@@ -424,6 +427,11 @@ class Graphics(object):
                 self.rw.models.wireframe_cylinder.unbind()
 
             glLineWidth(1.0)
+
+        if self.render_everything_once:
+            self.render_everything_once = False
+            vismenu.visibility_override = False
+            self.rw.do_redraw(force=True)
 
     def render_waypoint(self, rw, obj):
         if rw.dolphin.do_visualize() and obj.mtxoverride is not None:

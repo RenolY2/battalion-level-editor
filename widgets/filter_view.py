@@ -86,6 +86,7 @@ class FilterViewMenu(QMenu):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setTitle("Filter View")
+        self.visibility_override = False
 
         self.show_all = QAction("Show All", self)
         self.show_all.triggered.connect(self.handle_show_all)
@@ -161,12 +162,18 @@ class FilterViewMenu(QMenu):
                 cfg["View Filter Toggles"][type+"_3D"] = str(toggle.is_selectable())
 
     def object_3d_visible(self, objtype):
+        if self.visibility_override:
+            return True
+
         if objtype in self.toggles:
             return self.toggles[objtype].is_selectable()
         else:
             return True
 
     def object_visible(self, objtype):
+        if self.visibility_override:
+            return True
+
         if objtype in self.toggles:
             return self.toggles[objtype].is_visible()
         else:
