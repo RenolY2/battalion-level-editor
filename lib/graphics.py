@@ -30,6 +30,14 @@ LIGHTBLUE = (0.7, 0.7, 1.0)
 GREEN = (0.0, 1.0, 0.0)
 PURPLE = (1.0, 1.0, 0.0)
 
+ZONECOLORS = {
+    "ZONETYPE_DEFAULT": (128/255.0, 128/255.0, 128/255.0, 1.0),
+    "ZONETYPE_MISSIONBOUNDARY": (92/255.0, 0/255.0, 0/255.0, 1.0),
+    "ZONETYPE_WORLDBOUNDARY": (145/255.0, 124/255.0, 0/255.0, 1.0),
+    "ZONETYPE_NOGOAREA": (0/255.0, 128/255.0, 125/255.0, 1.0),
+    "ZONETYPE_FORD": (0/255.0, 76/255.0, 255/255.0, 1.0)
+}
+
 
 class Scene(object):
     def __init__(self):
@@ -238,7 +246,10 @@ class Graphics(object):
                     if obj in selected:
                         color = object_colors["SelectionColor"]
                     else:
-                        color = (0.0, 0.0, 1.0, 1.0)
+                        if obj.mZoneType in ZONECOLORS:
+                            color = ZONECOLORS[obj.mZoneType]
+                        else:
+                            color = (0.0, 0.0, 1.0, 1.0)
                     radius = obj.mRadius
                     size = obj.mSize
 
