@@ -19,6 +19,13 @@ def load_autocomplete(fpath):
             result.append(fieldname)
 
             wordlower = fieldname.lower()
+            if "_" in wordlower:  # Ignore numbers at start to not interfere with writing decimal values
+                print(wordlower.split("_", 1))
+                l, r = wordlower.split("_", 1)
+                if l.isdigit():
+                    assert len(r) > 0
+
+                    wordlower = r
             if wordlower in fullnames:
                 fullnames[wordlower].append(fieldname)
             else:
@@ -35,6 +42,10 @@ autocompletevalues, valuenames = load_autocomplete(os.path.join(currdir, "values
 autocompletevaluesbw2, valuenamesbw2 = load_autocomplete(os.path.join(currdir, "valuesbw2.txt"))
 
 
+class QueryDepthTooDeepError(Exception):
+    pass
+
+
 class Field(List):
     grammar = Keyword("self"), optional(".", word, maybe_some(".", word))
 
@@ -43,6 +54,12 @@ class Field(List):
             return [obj]
         else:
             return self._evaluate_recursive(obj, self)
+
+    def __str__(self):
+        if len(self) == 0:
+            return "self"
+        else:
+            return "self."+".".join(self)
 
     def _evaluate_recursive(self, obj, remainingfields):
         values = []
@@ -65,6 +82,9 @@ class Field(List):
                 values.append(curr)
             else:
                 values.extend(self._evaluate_recursive(curr, remainingfields[1:]))
+
+        if len(values) > 1000:
+            raise QueryDepthTooDeepError("Search term causes too many fields to be expanded! {1}: {0} > 1000".format(len(values), str(self)))
 
         return values
 
@@ -365,6 +385,7 @@ class BracketedUnit(List):
                 values.extend(unit.get_values(obj))
 
         return values
+
 
 class QueryGrammar(AndOrUnit):
     grammar = [BracketedUnit, AndOrUnit], maybe_some(maybe_some(whitespace), [And, Or], maybe_some(whitespace), [BracketedUnit, AndOrUnit])

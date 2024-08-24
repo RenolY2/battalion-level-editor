@@ -2,6 +2,7 @@ import PyQt5.QtGui as QtGui
 import PyQt5.QtWidgets as QtWidgets
 from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
 from PyQt5.QtCore import Qt
+import PyQt5.QtCore as QtCore
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
 from widgets.editor_widgets import open_error_dialog
 from widgets.tree_view import LevelDataTreeView, ObjectGroup, NamedItem
 from widgets.menu.menubar import Menu
-from lib.searchquery import create_query, find_best_fit, autocompletefull
+from lib.searchquery import create_query, find_best_fit, autocompletefull, QueryDepthTooDeepError
 from lib.BattalionXMLLib import BattalionObject
 
 
@@ -64,8 +65,13 @@ class SearchTreeView(LevelDataTreeView):
 
     def set_objects(self, objects):
         self.reset()
+        for category in self.get_top_categories():
+            category.setText(1, "")
+            category.objectcount = 0
 
         extra_categories = {}
+
+        typecount = {}
 
         for object, values in objects:
             #object: BattalionObject
@@ -82,12 +88,40 @@ class SearchTreeView(LevelDataTreeView):
                     writtenvalues.append(val.name)
                 else:
                     writtenvalues.append(str(val))
-            item.setText(1, ", ".join(writtenvalues))
+            max = 15
+            if len(writtenvalues) > max:
+                item.setText(1, ", ".join(writtenvalues[:max]) + " and {0} more".format(len(writtenvalues)-15))
+            else:
+                item.setText(1, ", ".join(writtenvalues))
+
+            typecount[objecttype] = typecount[objecttype] + 1 if objecttype in typecount else 1
+
+        targetcounts = {}
 
         for categoryname in sorted(extra_categories.keys()):
             category = extra_categories[categoryname]
+
             target = self.choose_category(categoryname)
             target.addChild(category)
+
+            if categoryname in typecount:
+                if typecount[categoryname] == 1:
+                    category.setText(1, "{0} result".format(typecount[categoryname]))
+                elif typecount[categoryname] > 1:
+                    category.setText(1, "{0} results".format(typecount[categoryname]))
+                if target.text(0) not in targetcounts:
+                    targetcounts[target.text(0)] = typecount[categoryname]
+                else:
+                    targetcounts[target.text(0)] += typecount[categoryname]
+
+        for category in self.get_top_categories():
+            name = category.text(0)
+            if name in targetcounts:
+                if targetcounts[name] == 1:
+                    category.setText(1, "1 result")
+                else:
+                    category.setText(1, "{0} results".format(targetcounts[name]))
+                category.objectcount = targetcounts[name]
 
 
 def cursor_select(cursor, start, end):
@@ -367,20 +401,37 @@ class SearchWidget(QtWidgets.QMainWindow):
             open_error_dialog("Cannot save: Search query has syntax errors.", self)
             return
 
-        objects = []
-        for object in self.editor.level_file.objects.values():
-            if query.evaluate(object):
-                values = query.get_values(object)
-                objects.append((object, values))
-
-        for object in self.editor.preload_file.objects.values():
-            if query.evaluate(object):
-                values = query.get_values(object)
-                objects.append((object, values))
+        try:
+            objects = []
+            for object in self.editor.level_file.objects.values():
+                if query.evaluate(object):
+                    values = query.get_values(object)
+                    objects.append((object, values))
+            print("searched all level file objects")
+            for object in self.editor.preload_file.objects.values():
+                if query.evaluate(object):
+                    values = query.get_values(object)
+                    objects.append((object, values))
+            print("searched all preload objects")
+        except QueryDepthTooDeepError as err:
+            open_error_dialog(str(err), self)
+            return
 
         self.treeview.set_objects(objects)
-        self.treeview.expandAll()
+        print("set objects")
+        if len(objects) > 300:
+            model = self.treeview.model()
+            for i in range(model.rowCount(self.treeview.rootIndex())):
+                index = model.index(i, 0)
+                item = self.treeview.itemFromIndex(index)
+                if item.objectcount < 300:
+                    self.treeview.expandRecursively(index)
+                QtWidgets.QApplication.processEvents()
+        else:
+            self.treeview.expandAll()
+        print("expanded")
         self.treeview.resizeColumnToContents(0)
+        print("resized")
 
     def action_load_query(self):
         filepath, choosentype = QtWidgets.QFileDialog.getOpenFileName(

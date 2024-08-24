@@ -266,6 +266,10 @@ class LevelDataTreeView(QTreeWidget):
             for name in v:
                 self._categorydistribution[name] = getattr(self, k)
 
+    def get_top_categories(self):
+        return (self.other, self.units, self.components, self.mapobjects, self.scenery,
+                        self.assets, self.hud, self.scripts, self.effects, self.preload)
+
     def resizeheader(self):
         self.resizeColumnToContents(0)
 
