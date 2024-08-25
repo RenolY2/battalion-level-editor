@@ -83,7 +83,8 @@ class LevelEditor(QMainWindow):
         self.add_object_window = None
         self.object_to_be_added = None
 
-        self.history = EditorHistory(20)
+        self.history = EditorLevelPositionsHistory(100, self)
+        self.level_view.history = self.history
         self.edit_spawn_window = None
 
         self._window_title = ""
@@ -330,7 +331,7 @@ class LevelEditor(QMainWindow):
         self.level_view.height_update.connect(self.action_change_object_heights)
         self.level_view.create_waypoint.connect(self.action_add_object)
         self.level_view.create_waypoint_3d.connect(self.action_add_object_3d)
-        self.pik_control.button_ground_object.pressed.connect(self.action_ground_objects)
+        #self.pik_control.button_ground_object.pressed.connect(self.action_ground_objects)
         self.pik_control.button_remove_object.pressed.connect(self.action_delete_objects)
 
         delete_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(Qt.Key_Delete), self)
@@ -905,70 +906,39 @@ class LevelEditor(QMainWindow):
 
     @catch_exception
     def action_undo(self):
-        res = self.history.history_undo()
-        if res is None:
-            return
-        action, val = res
-
-        if action == "AddObject":
-            obj = val
-            self.pikmin_gen_file.generators.remove(obj)
-            if obj in self.editing_windows:
-                self.editing_windows[obj].destroy()
-                del self.editing_windows[obj]
-
-            if len(self.pikmin_gen_view.selected) == 1 and self.pikmin_gen_view.selected[0] is obj:
-                self.pik_control.reset_info()
-            elif obj in self.pik_control.objectlist:
-                self.pik_control.reset_info()
-            if obj in self.pikmin_gen_view.selected:
-                self.pikmin_gen_view.selected.remove(obj)
-                self.pikmin_gen_view.gizmo.hidden = True
-
-            #self.pikmin_gen_view.update()
-            self.pikmin_gen_view.do_redraw()
-
-        if action == "RemoveObjects":
-            for obj in val:
-                self.pikmin_gen_file.generators.append(obj)
-
-            #self.pikmin_gen_view.update()
-            self.pikmin_gen_view.do_redraw()
-        self.set_has_unsaved_changes(True)
+        if not self.dolphin.do_visualize():
+            state = self.history.history_undo()
+            if state is None:
+                print("reached end of undo history")
+            else:
+                for obj, mtx, overridemtx in state:
+                    currmtx = obj.getmatrix()
+                    if currmtx is not None:
+                        for i in range(16):
+                            currmtx.mtx[i] = mtx[i]
+                        obj.update_xml()
+                if len(state) > 0:
+                    self.level_view.do_redraw(force=True)
+                    self.set_has_unsaved_changes(True)
+                    self.update_3d()
 
     @catch_exception
     def action_redo(self):
-        res = self.history.history_redo()
-        if res is None:
-            return
-
-        action, val = res
-
-        if action == "AddObject":
-            obj = val
-            self.pikmin_gen_file.generators.append(obj)
-
-            #self.pikmin_gen_view.update()
-            self.pikmin_gen_view.do_redraw()
-
-        if action == "RemoveObjects":
-            for obj in val:
-                self.pikmin_gen_file.generators.remove(obj)
-                if obj in self.editing_windows:
-                    self.editing_windows[obj].destroy()
-                    del self.editing_windows[obj]
-
-                if len(self.pikmin_gen_view.selected) == 1 and self.pikmin_gen_view.selected[0] is obj:
-                    self.pik_control.reset_info()
-                elif obj in self.pik_control.objectlist:
-                    self.pik_control.reset_info()
-                if obj in self.pikmin_gen_view.selected:
-                    self.pikmin_gen_view.selected.remove(obj)
-                    self.pikmin_gen_view.gizmo.hidden = True
-
-            #self.pikmin_gen_view.update()
-            self.pikmin_gen_view.do_redraw()
-        self.set_has_unsaved_changes(True)
+        if not self.dolphin.do_visualize():
+            state = self.history.history_redo()
+            if state is None:
+                print("reached end of undo history")
+            else:
+                for obj, mtx, overridemtx in state:
+                    currmtx = obj.getmatrix()
+                    if currmtx is not None:
+                        for i in range(16):
+                            currmtx.mtx[i] = mtx[i]
+                        obj.update_xml()
+                if len(state) > 0:
+                    self.level_view.do_redraw(force=True)
+                    self.set_has_unsaved_changes(True)
+                    self.update_3d()
 
     def update_3d(self):
         self.level_view.gizmo.move_to_average(self.level_view.selected,
@@ -1046,63 +1016,84 @@ class LevelEditor(QMainWindow):
 class EditorHistory(object):
     def __init__(self, historysize):
         self.history = []
-        self.step = 0
+        self.top = 0
         self.historysize = historysize
 
     def reset(self):
         del self.history
         self.history = []
-        self.step = 0
+        self.top = 0
 
     def _add_history(self, entry):
-        if self.step == len(self.history):
+        if self.top == len(self.history):
             self.history.append(entry)
-            self.step += 1
+            self.top += 1
         else:
-            for i in range(len(self.history) - self.step):
+            for i in range(len(self.history) - self.top):
                 self.history.pop()
             self.history.append(entry)
-            self.step += 1
-            assert len(self.history) == self.step
+            self.top += 1
+            assert len(self.history) == self.top
 
         if len(self.history) > self.historysize:
             for i in range(len(self.history) - self.historysize):
                 self.history.pop(0)
-                self.step -= 1
+                self.top -= 1
 
-    def add_history_addobject(self, pikobject):
-        self._add_history(("AddObject", pikobject))
-
-    def add_history_removeobjects(self, objects):
-        self._add_history(("RemoveObjects", objects))
+    def add(self, entry):
+        self._add_history(entry)
 
     def history_undo(self):
-        if self.step == 0:
+        if self.top == 0:
             return None
 
-        self.step -= 1
-        return self.history[self.step]
+        self.top -= 1
+        return self.history[self.top]
 
     def history_redo(self):
-        if self.step == len(self.history):
+        if self.top == len(self.history):
             return None
 
-        item = self.history[self.step]
-        self.step += 1
+        item = self.history[self.top]
+        self.top += 1
         return item
 
-def find_file(rarc_folder, ending):
-    for filename in rarc_folder.files.keys():
-        if filename.endswith(ending):
-            return filename
-    raise RuntimeError("No Course File found!")
 
+class EditorLevelPositionsHistory(EditorHistory):
+    def __init__(self, historysize, editor):
+        super().__init__(historysize)
+        self.editor: LevelEditor = editor
 
-def get_file_safe(rarc_folder, ending):
-    for filename in rarc_folder.files.keys():
-        if filename.endswith(ending):
-            return rarc_folder.files[filename]
-    return None
+    def stash_record(self, objects):
+        record = []
+        for obj in objects:
+            bwmtx = obj.getmatrix()
+            if bwmtx is not None:
+                mtx = bwmtx.mtx.copy()
+                if obj.mtxoverride is not None:
+                    overridemtx = obj.mtxoverride.copy()
+                else:
+                    overridemtx = None
+
+                record.append((obj, mtx, overridemtx))
+
+        return record
+
+    def stash_selected(self):
+        return self.stash_record(self.editor.level_view.selected)
+
+    def record_stash(self, stash):
+        if len(stash) > 0 and not self.editor.dolphin.do_visualize():
+            self.add(stash)
+
+    def record(self, objects):
+        record = self.stash_record(objects)
+        if len(record) > 0 and not self.editor.dolphin.do_visualize():
+            self.add(record)
+
+    def record_selected(self):
+        objects = self.editor.level_view.selected
+        self.record(objects)
 
 
 import sys

@@ -88,6 +88,9 @@ class ClickDragAction(MouseAction):
     def just_released(self, editor, buttons, event):
         self.first_click = None
 
+    def moved(self, event):
+        return self.first_click.x != event.x() or self.first_click.y != event.y()
+
 
 class TopdownScroll(ClickDragAction):
     def move(self, editor, buttons, event):
@@ -151,11 +154,18 @@ class TopdownSelect(ClickDragAction):
 
 
 class Gizmo2DMoveX(ClickDragAction):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.start_state = None
+        self.moved = False
+
     def just_clicked(self, editor, buttons, event):
         super().just_clicked(editor, buttons, event)
         editor.selectionqueue.queue_selection(event.x(), event.y(), 1, 1,
                                               editor.shift_is_pressed, do_gizmo=True)
         editor.do_redraw(force=True)
+        self.start_state = editor.history.stash_selected()
+        self.moved = False
 
     def move(self, editor, buttons, event):
         if editor.gizmo.was_hit["gizmo_x"]:
@@ -164,8 +174,15 @@ class Gizmo2DMoveX(ClickDragAction):
             delta_x = event.x() - self.first_click.x
             self.first_click = Vector2(event.x(), event.y())
             editor.move_points.emit(delta_x*editor.zoom_factor, 0, 0)
+            self.moved = True
 
     def just_released(self, editor, buttons, event):
+        if self.moved:
+            startstate = self.start_state
+            editor.history.record_stash(startstate)
+            self.moved = False
+            self.start_state = None
+
         super().just_released(editor, buttons, event)
         editor.gizmo.hidden = False
         editor.gizmo.reset_axis()
@@ -184,6 +201,7 @@ class Gizmo2DMoveXZ(Gizmo2DMoveX):
             delta_z = event.y() - self.first_click.y
             self.first_click = Vector2(event.x(), event.y())
             editor.move_points.emit(delta_x*editor.zoom_factor, 0, -delta_z*editor.zoom_factor)
+            self.moved = True
 
 
 class Gizmo2DMoveZ(Gizmo2DMoveX):
@@ -194,6 +212,7 @@ class Gizmo2DMoveZ(Gizmo2DMoveX):
             delta_z = event.y() - self.first_click.y
             self.first_click = Vector2(event.x(), event.y())
             editor.move_points.emit(0, 0, -delta_z*editor.zoom_factor)
+            self.moved = True
 
 
 class Gizmo2DRotateY(Gizmo2DMoveX):
@@ -218,6 +237,7 @@ class Gizmo2DRotateY(Gizmo2DMoveX):
             editor.rotate_current.emit(Vector3(0, delta, 0))
 
             self.first_click = Vector2(event.x(), event.y())
+            self.moved = True
 
     def just_released(self, editor, buttons, event):
         super().just_released(editor, buttons, event)
@@ -385,6 +405,7 @@ class Gizmo3DMoveX(Gizmo2DMoveX):
             else:
                 fac = 1/3.0
                 editor.move_points.emit(*self.do_delta(delta_x * editor.gizmo_scale * fac))
+            self.moved = True
 
 
 class Gizmo3DMoveY(Gizmo3DMoveX):
@@ -463,6 +484,7 @@ class Gizmo3DRotateY(Gizmo2DRotateY):
                 if abs(delta) <= 0.3:
                     editor.rotate_current.emit(Vector3(*self.do_delta(delta)))
             self.angle_start = angle
+            self.moved = True
 
 
 class Gizmo3DRotateX(Gizmo3DRotateY):
