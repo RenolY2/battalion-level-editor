@@ -526,7 +526,7 @@ class LevelEditor(QMainWindow):
         # self.bw_map_screen.update()
         # path_parts = path.split(filepath)
         self.set_base_window_title(filepath)
-        self.pathsconfig["bol"] = filepath
+        self.pathsconfig["xml"] = filepath
         save_cfg(self.configuration)
         self.current_gen_path = filepath
 
@@ -1132,7 +1132,7 @@ if __name__ == "__main__":
         parser.add_argument("--waterbox", default=None,
                             help="Path to waterbox file to be loaded.")"""
 
-        parser.add_argument("filepath", default=None, help="Path to level to be loaded.")
+        parser.add_argument("filepath", default=None, help="Path to level to be loaded.", nargs="?")
 
         args = parser.parse_args()
 

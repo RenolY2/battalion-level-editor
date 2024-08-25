@@ -14,11 +14,7 @@ def make_default_config():
     cfg = configparser.ConfigParser()
 
     cfg["default paths"] = {
-        "collision": "",
-        "bol": "",
-        "dol": "",
-        "minimap_png": "",
-        "minimap_json": ""
+        "xml": ""
     }
 
     cfg["editor"] = {

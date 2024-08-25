@@ -79,7 +79,7 @@ class EditorFileMenu(QMenu):
         else:
             filepath, chosentype = QFileDialog.getOpenFileName(
                 self, "Open File",
-                self.editor.pathsconfig["bol"],
+                self.editor.pathsconfig["xml"],
                 "XML files (*.xml; *.xml.gz);;All files (*)",
                 self.last_chosen_type)
 
@@ -156,7 +156,7 @@ class EditorFileMenu(QMenu):
                     QApplication.processEvents()
                     QApplication.restoreOverrideCursor()
                     QApplication.processEvents()
-                    self.editor.pathsconfig["bol"] = filepath
+                    self.editor.pathsconfig["xml"] = filepath
                 except Exception as error:
                     print("Error appeared while loading:", error)
                     traceback.print_exc()
