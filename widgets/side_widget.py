@@ -189,6 +189,7 @@ class PikminSideWidget(QWidget):
                 def remove_window(id):
                     del self.edit_windows[id]
 
+                window.saving.connect(self.save_object_data)
                 window.closing.connect(partial(remove_window, obj.id))
                 window.set_content(obj)
                 window.show()
@@ -198,7 +199,7 @@ class PikminSideWidget(QWidget):
 
         if len(selected) >= 1:
             for i, v in enumerate(selected):
-                offset = (len(self.edit_windows)%15)*25
+                offset = (len(self.edit_windows) %15)*25
                 obj = selected[i]
                 if obj.id in self.edit_windows:
                     window = self.edit_windows[obj.id]
