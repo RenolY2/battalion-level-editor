@@ -241,7 +241,7 @@ class Graphics(object):
 
                 mtx.append(currmtx)
 
-                if obj.type == "cMapZone":
+                if obj.type in ("cMapZone", "cCoastZone", "cDamageZone", "cNogoHintZone"):
                     mtx = obj.getmatrix()
                     if obj in selected:
                         color = object_colors["SelectionColor"]
@@ -257,7 +257,6 @@ class Graphics(object):
                         self.scene.wireframecylinders.append((mtx, color, (radius, radius, radius, 1)))
                     if size.x > 0 and size.y > 0 and size.z > 0:
                         self.scene.wireframeboxes.append((mtx, color, (size.x, size.y, size.z, 1)))
-
 
                 if obj.type == "cWaypoint":
                     if obj.NextWP is not None:
