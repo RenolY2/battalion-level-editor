@@ -194,6 +194,16 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
         self.offsety = 0
         self.donotreset = False
 
+        font = QFont()
+        font.setFamily("Consolas")
+        font.setStyleHint(QFont.Monospace)
+        font.setFixedPitch(True)
+        font.setPointSize(10)
+
+        metrics = QFontMetrics(font)
+        self.textbox_xml.setTabStopWidth(4 * metrics.width(' '))
+        self.textbox_xml.setFont(font)
+
     def resetoffset(self):
         if not self.donotreset:
             self.offsetx = 0
