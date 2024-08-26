@@ -122,6 +122,8 @@ class SearchTreeView(LevelDataTreeView):
                 else:
                     category.setText(1, "{0} results".format(targetcounts[name]))
                 category.objectcount = targetcounts[name]
+            else:
+                category.setText(1, "0 results")
 
 
 def cursor_select(cursor, start, end):
