@@ -88,7 +88,7 @@ class LiveIndicator(QtWidgets.QLabel):
         metrics = QFontMetrics(font)
         self.setFont(font)
         self.setStyleSheet("""QLabel {color: #FF7F7F}""")
-        self.setText("🔴 LIVE EDIT ACTIVE 🔴")
+        self.setText(" ")
         #self.reset()
 
     def reset(self):
