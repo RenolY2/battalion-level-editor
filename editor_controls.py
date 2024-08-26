@@ -127,6 +127,7 @@ class TopdownSelect(ClickDragAction):
             #editor.selectionqueue.queue_selection(x, y, 1, 1,
             #                               editor.shift_is_pressed)
             editor.select_objects(x, y, shift=editor.shift_is_pressed)
+            editor.do_redraw()
             editor.do_redraw(force=True)
 
     def move(self, editor, buttons, event):
@@ -145,10 +146,11 @@ class TopdownSelect(ClickDragAction):
 
         #editor.selectionqueue.queue_selection(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
         #                               editor.shift_is_pressed)
-        editor.select_objects(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
-                              shift=editor.shift_is_pressed)
-        editor.do_redraw(force=True)
-
+        if endx-startx != 0 or endz-startz != 0:
+            editor.select_objects(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
+                                  shift=editor.shift_is_pressed)
+            editor.do_redraw(force=True)
+        editor.last_selectionbox = (editor.selectionbox_start, editor.selectionbox_end)
         editor.selectionbox_start = editor.selectionbox_end = None
         editor.do_redraw()
 
