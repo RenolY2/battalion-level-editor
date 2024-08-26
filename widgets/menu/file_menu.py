@@ -220,7 +220,7 @@ class EditorFileMenu(QMenu):
 
             print("Done!")
             progressbar.set(100)
-            #self.set_has_unsaved_changes(False)
+            self.editor.set_has_unsaved_changes(False)
         #else:
         #    self.button_save_level_as()
 
