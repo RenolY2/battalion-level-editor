@@ -127,8 +127,7 @@ class TopdownSelect(ClickDragAction):
             #editor.selectionqueue.queue_selection(x, y, 1, 1,
             #                               editor.shift_is_pressed)
             editor.select_objects(x, y, shift=editor.shift_is_pressed)
-            editor.do_redraw()
-            editor.do_redraw(force=True)
+            editor.do_redraw(forceselected=True)
 
     def move(self, editor, buttons, event):
         selectendx, selectendz = editor.mouse_coord_to_world_coord(event.x(), event.y())
@@ -149,7 +148,7 @@ class TopdownSelect(ClickDragAction):
         if endx-startx != 0 or endz-startz != 0:
             editor.select_objects(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
                                   shift=editor.shift_is_pressed)
-            editor.do_redraw(force=True)
+            editor.do_redraw(forceselected=True)
         editor.last_selectionbox = (editor.selectionbox_start, editor.selectionbox_end)
         editor.selectionbox_start = editor.selectionbox_end = None
         editor.do_redraw()
@@ -165,7 +164,7 @@ class Gizmo2DMoveX(ClickDragAction):
         super().just_clicked(editor, buttons, event)
         editor.selectionqueue.queue_selection(event.x(), event.y(), 1, 1,
                                               editor.shift_is_pressed, do_gizmo=True)
-        editor.do_redraw(force=True)
+        editor.do_redraw(forceselected=True)
         self.start_state = editor.history.stash_selected()
         self.moved = False
 
@@ -304,7 +303,7 @@ class Select3D(ClickDragAction):
         #    event.x(), event.y(), 1, 1,
         #    editor.shift_is_pressed)
         #print("WE HAVE SENT A REQUEST")
-        editor.do_redraw(force=True)
+        editor.do_redraw(forceselected=True)
 
 
         editor.camera_direction.normalize()
@@ -340,7 +339,7 @@ class Select3D(ClickDragAction):
         #                               editor.shift_is_pressed)
         editor.select_objects(int(startx), int(endz), int(endx - startx) + 1, int(endz - startz) + 1,
                                shift=editor.shift_is_pressed)
-        editor.do_redraw(force=True)
+        editor.do_redraw(forceselected=True)
 
         editor.selectionbox_projected_origin = None
         editor.selectionbox_projected_coords = None
