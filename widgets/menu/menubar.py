@@ -57,9 +57,12 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.dolphin_menu = Menu(self, "Dolphin (Experimental)")
         self.hook_game_action = self.dolphin_menu.addAction("Enable Live Edit",
                                                             self.hook_game)
+        self.hook_game_action.setToolTip("If enabled, edits positions/rotations of selected objects ingame.\nWarning: Some objects don't move ingame.")
         self.hook_game_action.setCheckable(True)
         self.hook_game_view_action = self.dolphin_menu.addAction("Enable Live View",
                                                             self.hook_game_visualize)
+        self.hook_game_view_action.setToolTip(
+            "If enabled, visualizes ingame positions in the game.\nObjects can be moved but the updated positions won't be saved in the xml. Some object don't move ingame.\nUse \"Apply Positions to Selected\" to apply live positions of selected objects to the xml data." )
         self.hook_game_view_action.setCheckable(True)
 
         self.apply_live_positions_action = self.dolphin_menu.addAction("Apply Live Positions to Selected",
@@ -78,16 +81,22 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         if self.editor.dolphin.do_visualize():
             for obj in self.editor.level_view.selected:
                 if obj.mtxoverride is not None and obj.getmatrix() is not None:
+                    if hasattr(obj, "mStickToFloor"):
+                        obj.mStickToFloor = False
+                    if hasattr(obj, "mLockToSurface"):
+                        obj.mLockToSurface = False
+
                     mtx = obj.getmatrix().mtx
                     for i in range(16):
                         mtx[i] = obj.mtxoverride[i]
+                    obj.update_xml()
 
     def reset_hook(self):
         self.hook_game_action.setChecked(False)
         self.hook_game_view_action.setChecked(False)
         self.apply_live_positions_action.setEnabled(False)
         self.editor.dolphin.initialize(shutdown=True)
-
+        self.editor.level_view.indicator.reset()
 
     def reset_hook_with_error_message(self):
         self.reset_hook()
@@ -105,11 +114,13 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                 self.hook_game_action.setChecked(True)
                 self.hook_game_view_action.setChecked(False)
                 self.apply_live_positions_action.setEnabled(False)
+                self.editor.level_view.indicator.set_live_edit()
             else:
                 open_error_dialog(failure, None)
                 self.hook_game_action.setChecked(False)
                 self.hook_game_view_action.setChecked(False)
                 self.apply_live_positions_action.setEnabled(False)
+                self.editor.level_view.indicator.reset()
 
             self.editor.level_view.do_redraw(force=True)
         else:
@@ -118,6 +129,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
             self.hook_game_action.setChecked(False)
             self.hook_game_view_action.setChecked(False)
             self.apply_live_positions_action.setEnabled(False)
+            self.editor.level_view.indicator.reset()
             for objid, obj in self.editor.level_file.objects_with_positions.items():
                 obj.set_mtx_override(None)
             self.editor.level_view.do_redraw(force=True)
@@ -131,11 +143,13 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                 self.hook_game_action.setChecked(False)
                 self.hook_game_view_action.setChecked(True)
                 self.apply_live_positions_action.setEnabled(True)
+                self.editor.level_view.indicator.set_live_view()
             else:
                 open_error_dialog(failure, None)
                 self.hook_game_action.setChecked(False)
                 self.hook_game_view_action.setChecked(False)
                 self.apply_live_positions_action.setEnabled(False)
+                self.editor.level_view.indicator.reset()
             self.editor.level_view.do_redraw(force=True)
         else:
             self.editor.dolphin.initialize(shutdown=True)
@@ -144,6 +158,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
             self.hook_game_action.setChecked(False)
             self.hook_game_view_action.setChecked(False)
             self.apply_live_positions_action.setEnabled(False)
+            self.editor.level_view.indicator.reset()
             for objid, obj in self.editor.level_file.objects_with_positions.items():
                 obj.set_mtx_override(None)
             self.editor.level_view.do_redraw(force=True)
