@@ -41,6 +41,7 @@ class PikminSideWidget(QWidget):
         #self.button_move_object = QPushButton(parent)
         self.button_edit_object = QPushButton("Edit Object", parent)
         self.button_clone_object = QPushButton("Clone Object", parent)
+        self.button_clone_object.setToolTip("Clones selected objects and their passengers, then selects them.")
 
         #self.button_add_object.setDisabled(True)
         #self.button_remove_object.setDisabled(True)
