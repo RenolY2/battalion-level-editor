@@ -21,7 +21,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.visibility_menu.filter_update.connect(self.editor.update_render)
 
         # ------ Collision Menu
-        self.collision_menu = Menu(self, "Geometry")
+        #self.collision_menu = Menu(self, "Geometry")
         """self.collision_load_action = QtWidgets.QAction("Load OBJ", self)
         self.collision_load_action.triggered.connect(self.editor.button_load_collision)
         self.collision_menu.addAction(self.collision_load_action)
@@ -71,7 +71,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
-        self.addAction(self.collision_menu.menuAction())
+        #self.addAction(self.collision_menu.menuAction())
         self.addAction(self.misc_menu.menuAction())
         self.addAction(self.dolphin_menu.menuAction())
 
