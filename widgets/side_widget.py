@@ -9,7 +9,7 @@ from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
 from PyQt5.QtCore import Qt
 from widgets.data_editor import choose_data_editor
 from widgets.editor_widgets import BWObjectEditWindow, AddBWObjectWindow
-
+from lib.BattalionXMLLib import BattalionObject
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
@@ -40,6 +40,7 @@ class PikminSideWidget(QWidget):
         #self.button_ground_object = QPushButton("Ground Object(s)", parent)
         #self.button_move_object = QPushButton(parent)
         self.button_edit_object = QPushButton("Edit Object", parent)
+        self.button_clone_object = QPushButton("Clone Object", parent)
 
         #self.button_add_object.setDisabled(True)
         #self.button_remove_object.setDisabled(True)
@@ -53,19 +54,13 @@ class PikminSideWidget(QWidget):
 
         self.button_edit_object.pressed.connect(self.action_open_edit_object)
         self.button_add_object.setCheckable(True)
-        #self.button_move_object.setCheckable(True)
+        self.button_clone_object.pressed.connect(self.clone_object)
 
-        #self.lineedit_coordinatex = QLineEdit(parent)
-        #self.lineedit_coordinatey = QLineEdit(parent)
-        #self.lineedit_coordinatez = QLineEdit(parent)
-        #self.verticalLayout.addStretch(10)
-        #self.lineedit_rotationx = QLineEdit(parent)
-        #self.lineedit_rotationy = QLineEdit(parent)
-        #self.lineedit_rotationz = QLineEdit(parent)
         self.verticalLayout.addWidget(self.button_add_object)
         self.verticalLayout.addWidget(self.button_remove_object)
         #self.verticalLayout.addWidget(self.button_ground_object)
         self.verticalLayout.addWidget(self.button_edit_object)
+        self.verticalLayout.addWidget(self.button_clone_object)
         self.verticalLayout.addStretch(20)
 
         self.name_label = QLabel(parent)
@@ -79,17 +74,6 @@ class PikminSideWidget(QWidget):
         self.verticalLayout.addWidget(self.name_label)
         #self.verticalLayout.addWidget(self.identifier_label)
 
-        """self.verticalLayout.addWidget(self.lineedit_coordinatex)
-        self.verticalLayout.addWidget(self.lineedit_coordinatey)
-        self.verticalLayout.addWidget(self.lineedit_coordinatez)
-
-        self.verticalLayout.addLayout(self._make_labeled_lineedit(self.lineedit_coordinatex, "X:   "))
-        self.verticalLayout.addLayout(self._make_labeled_lineedit(self.lineedit_coordinatey, "Y:   "))
-        self.verticalLayout.addLayout(self._make_labeled_lineedit(self.lineedit_coordinatez, "Z:   "))
-        self.verticalLayout.addStretch(10)
-        self.verticalLayout.addLayout(self._make_labeled_lineedit(self.lineedit_rotationx, "RotX:"))
-        self.verticalLayout.addLayout(self._make_labeled_lineedit(self.lineedit_rotationy, "RotY:"))
-        self.verticalLayout.addLayout(self._make_labeled_lineedit(self.lineedit_rotationz, "RotZ:"))"""
         #self.verticalLayout.addStretch(10)
         self.comment_label = QLabel(parent)
         self.comment_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -105,6 +89,52 @@ class PikminSideWidget(QWidget):
 
         self.reset_info()
         self.add_window = None
+
+    def _copy_object(self, obj, offsetx, offsetz):
+        content = obj.tostring()
+        level_file = self.parent.level_file
+        preload = self.parent.preload_file
+        obj = BattalionObject.create_from_text(content, level_file, preload)
+        obj.choose_unique_id(level_file, preload)
+        newid = obj.id
+
+
+        mtx = obj.getmatrix()
+        if mtx is not None:
+            mtx.mtx[12] += offsetx
+            mtx.mtx[14] += offsetz
+
+        if obj.is_preload():
+            preload.add_object_new(obj)
+        else:
+            level_file.add_object_new(obj)
+
+        return obj
+
+    def clone_object(self):
+        clonelist = [x for x in self.parent.level_view.selected]
+
+        # Do not clone selected grunts who are already passengers because passengers will get cloned anyway
+        for obj in self.parent.level_view.selected:
+            if hasattr(obj, "mPassenger"):
+                for passenger in obj.mPassenger:
+                    if passenger is not None and passenger in clonelist:
+                        clonelist.remove(passenger)
+        newclones = []
+        for obj in clonelist:
+            clone = self._copy_object(obj, 5, 5)
+            newclones.append(clone)
+            if hasattr(obj, "mPassenger"):
+                for i, v in enumerate(clone.mPassenger):
+                    if v is not None:
+                        clone.mPassenger[i] = self._copy_object(clone.mPassenger[i], 5, 5)
+                        newclones.append(clone.mPassenger[i])
+
+        self.parent.level_view.do_select(newclones)
+        self.parent.leveldatatreeview.set_objects(self.parent.level_file, self.parent.preload_file)
+        self.parent.update_3d()
+        self.parent.level_view.do_redraw(force=True)
+        self.set_objectlist(newclones)
 
     def select_obj(self, id):
         if id in self.parent.level_file.objects_with_positions:

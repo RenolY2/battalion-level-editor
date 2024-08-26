@@ -742,11 +742,11 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
                     else:
                         if self.last_selectionbox is not None:
-                            start, end = self.last_selectionbox
-                            minx = min(start[0], end[0])
-                            maxx = max(start[0], end[0])
-                            miny = min(start[1], end[1])
-                            maxy = max(start[1], end[1])
+                            startbox, endbox = self.last_selectionbox
+                            minx = min(startbox[0], endbox[0])
+                            maxx = max(startbox[0], endbox[0])
+                            miny = min(startbox[1], endbox[1])
+                            maxy = max(startbox[1], endbox[1])
 
                             for obj in reversed(self.level_file.objects_with_positions.values()):
                                 if self.dolphin.do_visualize():
@@ -992,6 +992,15 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         print("Frame time:", now, 1/now, "fps")
         print("Spent on terrain: {0} {1}%".format(terraintime, round(terraintime/now, 3)*100))
         print("Spent on objects: {0} {1}%".format(objecttime, round(objecttime/now, 3)*100))
+
+    def do_select(self, objs):
+        self.selected = []
+        self.selected_positions = []
+        for obj in objs:
+            mtx = obj.getmatrix()
+            if mtx is not None:
+                self.selected_positions.append(mtx)
+            self.selected.append(obj)
 
     def set_2d_selectionbox_start(self, x, y):
         self._selectbox_x = x
