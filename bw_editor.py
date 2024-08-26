@@ -227,7 +227,8 @@ class LevelEditor(QMainWindow):
                                               self.level_view.bwterrain,
                                               self.level_view.waterheight,
                                               self.dolphin.do_visualize())
-        self.level_view.do_redraw()
+        self.update_3d()
+        self.level_view.do_redraw(forceselected=True)
         self.level_view.select_update.emit()
 
     def setup_ui(self):
