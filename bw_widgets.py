@@ -511,10 +511,12 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         self.MOVE_LEFT = left
         self.MOVE_RIGHT = right
 
-    def do_redraw(self, force=False, forceselected=False, forcespecific=[]):
+    def do_redraw(self, force=False, forcelight=False, forceselected=False, forcespecific=[]):
         self._frame_invalid = True
-
-        if force:
+        if forcelight:
+            self._lastrendertime = 0
+            self.update()
+        elif force:
             self.graphics.set_dirty()
             self._lastrendertime = 0
             self.update()
@@ -722,6 +724,8 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                         x, z = self.mouse_coord_to_world_coord(click_x, original_click_y)
                         print(x,z)
                         for obj in reversed(self.level_file.objects_with_positions.values()):
+                            if not vismenu.object_visible(obj.type):
+                                continue
                             if self.dolphin.do_visualize():
                                 mtx = obj.mtxoverride
                             else:
@@ -749,6 +753,9 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                             maxy = max(startbox[1], endbox[1])
 
                             for obj in reversed(self.level_file.objects_with_positions.values()):
+                                if not vismenu.object_visible(obj.type):
+                                    continue
+
                                 if self.dolphin.do_visualize():
                                     mtx = obj.mtxoverride
                                 else:
