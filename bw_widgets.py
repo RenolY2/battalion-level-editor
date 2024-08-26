@@ -51,8 +51,6 @@ MODE_3D = 1
 colors = [(0.0,191/255.0,255/255.0), (30/255.0,144/255.0,255/255.0), (0.0,0.0,255/255.0), (0.0,0.0,139/255.0)]
 
 
-
-
 class SelectionQueue(list):
     def __init__(self):
         super().__init__()
@@ -76,6 +74,31 @@ class SelectionQueue(list):
 
         else:
             return None
+
+
+class LiveIndicator(QtWidgets.QLabel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        font = QFont()
+        font.setFamily("Consolas")
+        font.setStyleHint(QFont.Monospace)
+        font.setFixedPitch(True)
+        font.setPointSize(20)
+
+        metrics = QFontMetrics(font)
+        self.setFont(font)
+        self.setStyleSheet("""QLabel {color: #FF7F7F}""")
+        self.setText("🔴 LIVE EDIT ACTIVE 🔴")
+        #self.reset()
+
+    def reset(self):
+        self.setText(" ")
+
+    def set_live_edit(self):
+        self.setText("🔴 LIVE EDIT ACTIVE 🔴")
+
+    def set_live_view(self):
+        self.setText("🔴 LIVE VIEW ACTIVE 🔴")
 
 
 class BolMapViewer(QtWidgets.QOpenGLWidget):
@@ -236,6 +259,8 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         #ith open("lib/MP4.out", "rb") as f:
         #with open("D:/Wii games/BattWars/P-G8WP/files/Data/CompoundFiles/C1_OnPatrol.out", "rb") as f:
         #    self.bwterrain = BWTerrain(f)
+        self.indicator = LiveIndicator(self)
+
 
     def reloadModels(self, f, callback=None):
         self.makeCurrent()
