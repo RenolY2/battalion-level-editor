@@ -186,7 +186,7 @@ class Game(object):
 
                 addr = self.object_addresses[obj.id]
                 mtxstart = 0x30
-                if obj.type == "cMapZone":
+                if obj.type in ("cMapZone", "cCoastZone", "cDamageZone", "cNogoHintZone"):
                     mtxstart += 8
                 if obj.type in ("cTroop", "cGroundVehicle", "cAirVehicle", "cWaterVehicle",
                                 "cCamera", "cBuilding", "cObjectiveMarker"):
@@ -224,7 +224,7 @@ class Game(object):
                     objheight = obj.height
                 addr = self.object_addresses[obj.id]
                 mtxstart = 0x30
-                if obj.type == "cMapZone":
+                if obj.type in ("cMapZone", "cCoastZone", "cDamageZone", "cNogoHintZone"):
                     mtxstart += 8
 
                 # Validate matrix to make sure we're overwriting the right spot
