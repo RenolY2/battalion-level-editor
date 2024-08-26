@@ -167,11 +167,15 @@ class LevelEditor(QMainWindow):
                 self.setWindowTitle("Battalion Level Editor")
 
     def goto_object(self, obj):
-        bwmatrix = obj.getmatrix()
-        x, y, z = bwmatrix.mtx[12:15]
-        height = obj.calculate_height(self.level_view.bwterrain, self.level_view.waterheight)
-        if height is not None:
-            y = height
+        if self.dolphin.do_visualize():
+            mtx = obj.mtxoverride
+            x, y, z = mtx[12:15]
+        else:
+            bwmatrix = obj.getmatrix()
+            x, y, z = bwmatrix.mtx[12:15]
+            height = obj.calculate_height(self.level_view.bwterrain, self.level_view.waterheight)
+            if height is not None:
+                y = height
         print(x, y, z)
 
         if self.level_view.mode == MODE_TOPDOWN:
