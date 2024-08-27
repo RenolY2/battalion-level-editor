@@ -8,7 +8,7 @@ import PyQt6.QtCore as QtCore
 from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
 from PyQt6.QtCore import Qt
 from widgets.data_editor import choose_data_editor
-from widgets.editor_widgets import BWObjectEditWindow, AddBWObjectWindow
+from widgets.editor_widgets import BWObjectEditWindow, AddBWObjectWindow, open_error_dialog
 from lib.BattalionXMLLib import BattalionObject
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -233,7 +233,7 @@ class PikminSideWidget(QWidget):
             try:
                 obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
             except Exception as err:
-                print(err)
+                open_error_dialog(str(err), None)
             self.parent.level_view.do_redraw(force=True)
         self.parent.leveldatatreeview.updatenames()
 
