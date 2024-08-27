@@ -88,17 +88,21 @@ class LiveIndicator(QtWidgets.QLabel):
         metrics = QFontMetrics(font)
         self.setFont(font)
         self.setStyleSheet("""QLabel {color: #FF7F7F}""")
-        self.setText(" ")
+        self.set_live_edit()
+        self.setVisible(False)
         #self.reset()
 
     def reset(self):
         self.setText(" ")
+        self.setVisible(False)
 
     def set_live_edit(self):
         self.setText("🔴 LIVE EDIT ACTIVE 🔴")
+        self.setVisible(True)
 
     def set_live_view(self):
         self.setText("🔴 LIVE VIEW ACTIVE 🔴")
+        self.setVisible(True)
 
 
 class BolMapViewer(QtWidgets.QOpenGLWidget):
