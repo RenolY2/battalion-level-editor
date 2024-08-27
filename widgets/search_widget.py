@@ -15,6 +15,21 @@ from lib.searchquery import create_query, find_best_fit, autocompletefull, Query
 from lib.BattalionXMLLib import BattalionObject
 
 
+class LabeledRadioBox(QtWidgets.QWidget):
+    def __init__(self, text, parent):
+        super().__init__(parent)
+        self.l = QtWidgets.QHBoxLayout(self)
+        self.radio = QtWidgets.QRadioButton(self)
+        self.text = QtWidgets.QLabel(self)
+        self.text.setText(text)
+        self.l.addWidget(self.radio)
+        self.l.addWidget(self.text)
+        self.setMaximumWidth(100)
+
+    def checked(self):
+        return self.radio.isChecked()
+
+
 class AutocompleteDropDown(QtWidgets.QComboBox):
     tabactivated = pyqtSignal()
 
@@ -359,6 +374,8 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.searchbutton = QtWidgets.QPushButton("Find", self)
         self.searchbutton.pressed.connect(self.do_search)
 
+        self.textmodebutton = LabeledRadioBox("Text Search", self)
+
         self.select_all = QtWidgets.QPushButton("Select All")
         self.save_query = QtWidgets.QPushButton("Save Query")
         self.load_query = QtWidgets.QPushButton("Load Query")
@@ -370,7 +387,11 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.vlayout.addWidget(self.queryinput)
 
         self.hlayout = QtWidgets.QHBoxLayout(self)
-        self.hlayout.addWidget(self.searchbutton)
+        self.hlayout12 = QtWidgets.QHBoxLayout(self)
+
+        self.hlayout12.addWidget(self.searchbutton)
+        self.hlayout12.addWidget(self.textmodebutton)
+        self.hlayout.addLayout(self.hlayout12)
         self.vlayout.addLayout(self.hlayout)
 
         self.hlayout2 = QtWidgets.QHBoxLayout(self)
@@ -416,28 +437,55 @@ class SearchWidget(QtWidgets.QMainWindow):
             self.editor.tree_select_object(current[0])
 
     def do_search(self):
-        searchquery = self.queryinput.toPlainText().replace("\n", "")
-        try:
-            query = create_query(searchquery)
-        except Exception as err:
-            open_error_dialog("Cannot save: Search query has syntax errors.", self)
-            return
+        objects = []
+        if self.textmodebutton.checked():
+            searchtext = self.queryinput.toPlainText()
+            searchtextlower = searchtext.lower()
+            if not searchtext:
+                return
 
-        try:
-            objects = []
             for object in self.editor.level_file.objects.values():
-                if query.evaluate(object):
-                    values = query.get_values(object)
-                    objects.append((object, values))
+                orig = object.tostring()
+                resultlower = orig.lower()
+                if searchtextlower in resultlower:
+                    pos = resultlower.find(searchtextlower)
+                    origtext = orig[pos:pos+len(searchtext)]
+                    if len(origtext) > 100:
+                        origtext = origtext[:100]+"..."
+                    objects.append((object, [origtext]))
             print("searched all level file objects")
             for object in self.editor.preload_file.objects.values():
-                if query.evaluate(object):
-                    values = query.get_values(object)
-                    objects.append((object, values))
+                orig = object.tostring()
+                resultlower = orig.lower()
+                if searchtextlower in resultlower:
+                    pos = resultlower.find(searchtextlower)
+                    origtext = orig[pos:pos + len(searchtext)]
+                    if len(origtext) > 100:
+                        origtext = origtext[:100] + "..."
+                    objects.append((object, [origtext]))
             print("searched all preload objects")
-        except QueryDepthTooDeepError as err:
-            open_error_dialog(str(err), self)
-            return
+        else:
+            searchquery = self.queryinput.toPlainText().replace("\n", "")
+            try:
+                query = create_query(searchquery)
+            except Exception as err:
+                open_error_dialog("Cannot save: Search query has syntax errors.", self)
+                return
+
+            try:
+                for object in self.editor.level_file.objects.values():
+                    if query.evaluate(object):
+                        values = query.get_values(object)
+                        objects.append((object, values))
+                print("searched all level file objects")
+                for object in self.editor.preload_file.objects.values():
+                    if query.evaluate(object):
+                        values = query.get_values(object)
+                        objects.append((object, values))
+                print("searched all preload objects")
+            except QueryDepthTooDeepError as err:
+                open_error_dialog(str(err), self)
+                return
 
         self.treeview.set_objects(objects)
         print("set objects")

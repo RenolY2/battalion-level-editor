@@ -80,10 +80,11 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.save_xml = QtWidgets.QPushButton("Save", self.central_widget)
         self.save_xml.setShortcut("Ctrl+S")
         self.save_xml.pressed.connect(self.action_save_xml)
+        self.search = SearchBar(self)
+        self._layout.addWidget(self.search)
 
         self._layout.addWidget(self.textbox_xml)
         self._layout.addWidget(self.save_xml)
-
         self.central_widget.setLayout(self._layout)
         self.setWidget(self.central_widget)
         self.textbox_xml.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
@@ -95,9 +96,13 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.findaction = QAction("Find ID in Map", self)
         self.findaction.triggered.connect(self.find_object)
 
+        self.find_shortcut = QtGui.QShortcut("Ctrl+F", self)
+        self.find_shortcut.activated.connect(self.goto_find_box)
+
         self.shortcut.activated.connect(self.goto_id_action)
 
         self.gotoaction.triggered.connect(self.goto_id_action)
+        self.search.find.connect(self.find_text)
 
         font = QFont()
         font.setFamily("Consolas")
@@ -109,8 +114,28 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.textbox_xml.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
         self.textbox_xml.setFont(font)
         self.id = None
+        self.current_index = 0
 
         #self.verticalLayout.addWidget(self.textbox_xml)
+
+    def find_text(self, text):
+        if text:
+            textbox = self.textbox_xml.toPlainText().lower()
+            cursor = self.textbox_xml.textCursor()
+            result = textbox.find(text.lower(), cursor.position())
+            if result == -1:
+                result = textbox.find(text.lower())
+            print("found", result)
+            if result >= 0:
+                cursor.setPosition(result)
+
+                cursor.setPosition(result+len(text), QtGui.QTextCursor.MoveMode.KeepAnchor)
+                self.textbox_xml.setTextCursor(cursor)
+                self.textbox_xml.setFocus()
+                print("moved")
+
+    def goto_find_box(self):
+        self.search.textinput.setFocus()
 
     def find_object(self):
         cursor = self.textbox_xml.textCursor()
@@ -239,6 +264,25 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
         self.donotreset = False
         self.editor.leveldatatreeview.set_objects(self.editor.level_file, self.editor.preload_file)
         self.editor.level_view.do_redraw(force=True)
+
+
+class SearchBar(QtWidgets.QWidget):
+    find = pyqtSignal(str)
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.l = QtWidgets.QHBoxLayout(self)
+        self.setLayout(self.l)
+
+        self.textinput = QtWidgets.QLineEdit(self)
+        self.searchbutton = QtWidgets.QPushButton(self)
+        self.searchbutton.setText("Find")
+        self.l.addWidget(self.textinput)
+        self.l.addWidget(self.searchbutton)
+        self.searchbutton.pressed.connect(self.do_search)
+
+    def do_search(self):
+        self.find.emit(self.textinput.text())
 
 
 class AddPikObjectWindow(QMdiSubWindow):
