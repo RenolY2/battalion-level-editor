@@ -346,10 +346,10 @@ class LevelEditor(QMainWindow):
         delete_shortcut = QtGui.QShortcut(QtGui.QKeySequence(Qt.Key.Key_Delete), self)
         delete_shortcut.activated.connect(self.action_delete_objects)
 
-        undo_shortcut = QtGui.QShortcut(QtGui.QKeySequence(Qt.Key.Key_Control + Qt.Key.Key_Z), self)
+        undo_shortcut = QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Z"), self)
         undo_shortcut.activated.connect(self.action_undo)
 
-        redo_shortcut = QtGui.QShortcut(QtGui.QKeySequence(Qt.Key.Key_Control + Qt.Key.Key_Y), self)
+        redo_shortcut = QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Y"), self)
         redo_shortcut.activated.connect(self.action_redo)
 
         self.level_view.rotate_current.connect(self.action_rotate_object)
