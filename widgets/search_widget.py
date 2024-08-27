@@ -63,6 +63,7 @@ class SearchTreeView(LevelDataTreeView):
         self.setMaximumWidth(9999)
         self.setColumnCount(2)
         self.setHeaderLabels(["XML Object", "Searched Values"])
+        self.items = []
 
     def set_objects(self, objects):
         self.reset()
@@ -71,7 +72,7 @@ class SearchTreeView(LevelDataTreeView):
             category.objectcount = 0
 
         extra_categories = {}
-
+        self.items = []
         typecount = {}
 
         for object, values in objects:
@@ -94,7 +95,7 @@ class SearchTreeView(LevelDataTreeView):
                 item.setText(1, ", ".join(writtenvalues[:max]) + " and {0} more".format(len(writtenvalues)-15))
             else:
                 item.setText(1, ", ".join(writtenvalues))
-
+            self.items.append(item)
             typecount[objecttype] = typecount[objecttype] + 1 if objecttype in typecount else 1
 
         targetcounts = {}
@@ -358,9 +359,11 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.searchbutton = QtWidgets.QPushButton("Find", self)
         self.searchbutton.pressed.connect(self.do_search)
 
+        self.select_all = QtWidgets.QPushButton("Select All")
         self.save_query = QtWidgets.QPushButton("Save Query")
         self.load_query = QtWidgets.QPushButton("Load Query")
 
+        self.select_all.pressed.connect(self.select_all_action)
         self.save_query.pressed.connect(self.action_save_query)
         self.load_query.pressed.connect(self.action_load_query)
 
@@ -371,6 +374,7 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.vlayout.addLayout(self.hlayout)
 
         self.hlayout2 = QtWidgets.QHBoxLayout(self)
+        self.hlayout2.addWidget(self.select_all)
         self.hlayout2.addWidget(self.load_query)
         self.hlayout2.addWidget(self.save_query)
 
@@ -386,6 +390,22 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.shortcut.activated.connect(self.editor.pik_control.action_open_edit_object)
 
         self.query_path = "searchqueries/"
+
+    def select_all_action(self):
+        self.editor.level_view.selected = []
+        self.editor.level_view.selected_positions = []
+        self.editor.level_view.selected_rotations = []
+        self.treeview.selectAll()
+
+        for item in self.treeview.items:
+            self.editor.level_view.selected.append(item.bound_to)
+            mtx = item.bound_to.getmatrix()
+            if mtx is not None:
+                self.editor.level_view.selected_positions.append(mtx)
+
+        self.editor.update_3d()
+        self.editor.level_view.do_redraw(forceselected=True)
+        self.editor.level_view.select_update.emit()
 
     def open_help(self):
         pass
