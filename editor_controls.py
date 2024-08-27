@@ -128,6 +128,7 @@ class TopdownSelect(ClickDragAction):
             #                               editor.shift_is_pressed)
             editor.select_objects(x, y, shift=editor.shift_is_pressed)
             editor.do_redraw(forceselected=True)
+            editor.do_redraw(forceselected=True)
 
     def move(self, editor, buttons, event):
         selectendx, selectendz = editor.mouse_coord_to_world_coord(event.x(), event.y())
