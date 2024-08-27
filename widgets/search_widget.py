@@ -302,6 +302,9 @@ class HelpWindow(QtWidgets.QMdiSubWindow):
         self.helptext.setReadOnly(True)
         self.helptext.setText("""The "Find Objects" utility allows filtering the massive selection of objects in a Battalion Wars level based on your search query!
 
+If "Text Search" is enabled, it will perform a regular text search. Example: If you search for type="eInvisType", it will output all objects that have that particular text in their XML data.
+If "Text Search" is disabled, it will perform a more complex search that can traverse BW's data structures, see below for examples.
+
 Syntax example:
 self.id = 50032934
 This search term finds an object whose id is exactly 50032934.
@@ -323,6 +326,11 @@ This search finds objects with a passenger that has the id 50033037. With lists 
 
 Possible comparison operations: = (equal), != (unequal), > (bigger than), >= (bigger than or equal), < (less than), <= (less than or equal).
 Possible string content search operations: contains, excludes
+Additional fields of interest: 
+modelname (name of 3D model of the object regardless of type)
+references (example: self.references = 50032934 matches all objects that have any pointer pointing to object with id 50032934)
+enums (example: self.enums = DAMAGE_NO_DAMAGE matches all objects that have DAMAGE_NO_DAMAGE as any of their enums)
+
 
 Many fields can be searched for and it is possible to string together multiple fields with a dot that will follow the chain of references to retrieve a value.
 You can save and load search queries using the Save Query/Load Query buttons. The Find button executes the search query.
