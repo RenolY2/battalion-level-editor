@@ -730,7 +730,7 @@ class LevelEditor(QMainWindow):
                 pos = self.level_view.selected_positions
                 if i != j and pos[i] == pos[j]:
                     print("What the fuck")
-        if self.dolphin.running:
+        if self.dolphin.running and self.dolphin.do_visualize():
             for obj in self.level_view.selected:
                 if obj.mtxoverride is not None:
                     obj.mtxoverride[12] += deltax
