@@ -491,6 +491,10 @@ class BattalionObject(object):
         xmlnode = etree.fromstring(xmltext)
         obj = cls(leveldata, xmlnode)
         obj.resolve_pointers(leveldata, preload)
+        if "customName" in xmlnode.attrib:
+            obj._node.attrib["customName"] = xmlnode.attrib["customName"]
+        elif "customName" in obj._node.attrib:
+            del obj._node.attrib["customName"]
         return obj
 
     def update_object_from_text(self, xmltext, leveldata, preload):
@@ -498,6 +502,10 @@ class BattalionObject(object):
         self.check_correctness(xmlnode, leveldata, preload)
         self.update_object_from_xml(xmlnode)
         self.resolve_pointers(leveldata, preload, xmlnode)
+        if "customName" in xmlnode.attrib:
+            self._node.attrib["customName"] = xmlnode.attrib["customName"]
+        elif "customName" in self._node.attrib:
+            del self._node.attrib["customName"]
 
     @property
     def modelname(self):
@@ -510,6 +518,13 @@ class BattalionObject(object):
     #@property
     #def position(self):
     #    return None
+
+    @property
+    def customname(self):
+        if "customName" in self._node.attrib:
+            return self._node.attrib["customName"]
+        else:
+            return None
 
     @property
     def id(self):
@@ -559,7 +574,12 @@ class BattalionObject(object):
 
     def extra_detail_name(self):
         if self.type == "cMapZone":
-            return self.mZoneType
+            if self.customname is not None:
+                return self.customname+","+self.mZoneType
+            else:
+                return self.mZoneType
+        elif self.customname is not None:
+            return self.customname
         else:
             return ""
 
@@ -586,7 +606,6 @@ class BattalionObject(object):
                 return h
             else:
                 sticktofloor = True
-
 
         if hasattr(self, "mLockToSurface"):
             if not self.mLockToSurface:

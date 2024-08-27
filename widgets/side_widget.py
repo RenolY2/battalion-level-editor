@@ -175,7 +175,7 @@ class PikminSideWidget(QWidget):
             offset = (len(self.edit_windows) % 15) * 25
             if obj.id in self.edit_windows:
                 window = self.edit_windows[obj.id]
-                window.setWindowState(window.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+                window.setWindowState(window.windowState() & ~QtCore.Qt.WindowState.WindowMinimized | QtCore.Qt.WindowState.WindowActive)
                 window.activateWindow()
                 window.show()
             else:
@@ -203,7 +203,7 @@ class PikminSideWidget(QWidget):
                 obj = selected[i]
                 if obj.id in self.edit_windows:
                     window = self.edit_windows[obj.id]
-                    window.setWindowState(window.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+                    window.setWindowState(window.windowState() & ~QtCore.Qt.WindowState.WindowMinimized | QtCore.Qt.WindowState.WindowActive)
                     window.activateWindow()
                     window.show()
                 else:
@@ -272,7 +272,10 @@ class PikminSideWidget(QWidget):
             self.name_label.setText("Selected: {}\nUsed by: {}".format(obj.type,
                                     ", ".join(usedby)))
         else:
-            self.name_label.setText("Selected: {} ({})".format(obj.type, obj.id))
+            if obj.customname is not None:
+                self.name_label.setText("Selected: {} ({}, {})".format(obj.type, obj.customname, obj.id))
+            else:
+                self.name_label.setText("Selected: {} ({})".format(obj.type, obj.id))
         #self.identifier_label.setText(obj.get_identifier())
         if self.object_data_edit is not None:
             #self.verticalLayout.removeWidget(self.object_data_edit)
@@ -297,7 +300,14 @@ class PikminSideWidget(QWidget):
 
         for obj in objs:
             if len(objectnames) < 25:
-                objectnames.append(obj.name)
+                if obj.customname is not None:
+                    objectnames.append("{0} ({1}, {2})".format(obj.type, obj.customname,  obj.id))
+                else:
+                    objectnames.append("{0} ({1})".format(obj.type, obj.id))
+                """if obj.customname is not None:
+                    objectnames.append("{0} ({1}, {2})".format(obj.customname, obj.type, obj.id))
+                else:
+                    objectnames.append(obj.name)"""
             self.objectlist.append(obj)
 
         objectnames.sort()
