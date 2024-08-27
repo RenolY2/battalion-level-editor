@@ -746,7 +746,9 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
                 selected_positions = []
                 selected_rotations = []
                 offset = 0
-                if self.mode == MODE_TOPDOWN:
+                if self.is_topdown():
+                    objlist = list(self.level_file.objects_with_positions.values())
+                    self.graphics.render_select(objlist)
                     if clickwidth*clickheight == 1:
                         hit = []
                         # Check click <-> object intersection
