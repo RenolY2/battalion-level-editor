@@ -149,6 +149,10 @@ class PikminSideWidget(QWidget):
 
     def open_add_window(self):
         if self.add_window is not None:
+            self.add_window.setWindowState(
+                self.add_window.windowState() & ~QtCore.Qt.WindowState.WindowMinimized | QtCore.Qt.WindowState.WindowActive)
+            self.add_window.activateWindow()
+            self.add_window.show()
             self.add_window.setFocus()
         else:
             self.add_window = AddBWObjectWindow(self.parent)
@@ -221,7 +225,15 @@ class PikminSideWidget(QWidget):
                     window.set_content(obj)
                     window.show()
 
-    def save_object_data(self, id):
+    def activate_window(self, id):
+        if id in self.edit_windows:
+            window = self.edit_windows[id]
+            window.setWindowState(
+                window.windowState() & ~QtCore.Qt.WindowState.WindowMinimized | QtCore.Qt.WindowState.WindowActive)
+            window.activateWindow()
+            window.show()
+
+    def save_object_data(self, id, mass_save=False):
         content = self.edit_windows[id].get_content()
         obj = None
         if id in self.parent.level_file.objects:
@@ -229,13 +241,17 @@ class PikminSideWidget(QWidget):
         elif id in self.parent.preload_file.objects:
             obj = self.parent.preload_file.objects[id]
 
-        if obj is not None:
-            try:
+        if not mass_save:
+            if obj is not None:
+                try:
+                    obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
+                except Exception as err:
+                    open_error_dialog(str(err), None)
+                self.parent.level_view.do_redraw(force=True)
+            self.parent.leveldatatreeview.updatenames()
+        else:
+            if obj is not None:
                 obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
-            except Exception as err:
-                open_error_dialog(str(err), None)
-            self.parent.level_view.do_redraw(force=True)
-        self.parent.leveldatatreeview.updatenames()
 
     def _make_labeled_lineedit(self, lineedit, label):
         font = QFont()

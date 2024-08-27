@@ -200,6 +200,20 @@ class EditorFileMenu(QMenu):
 
             base = os.path.dirname(self.current_gen_path)
             progressbar.set(0)
+
+            for id, window in self.editor.pik_control.edit_windows.items():
+                try:
+                    self.editor.pik_control.save_object_data(id, mass_save=True)
+                except Exception as err:
+                    self.editor.pik_control.activate_window(id)
+                    open_error_dialog("Error while saving object {0}: \n{1}\nFix the error or close the object's edit window, then try saving again.".format(id, str(err)), None)
+                    self.editor.level_view.do_redraw(force=True)
+                    self.editor.leveldatatreeview.updatenames()
+                    return
+
+            self.editor.level_view.do_redraw(force=True)
+            self.editor.leveldatatreeview.updatenames()
+            progressbar.set(5)
             for object in self.level_data.objects.values():
                 object.update_xml()
 
