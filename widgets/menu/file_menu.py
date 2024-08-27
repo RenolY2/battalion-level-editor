@@ -2,6 +2,8 @@ import os
 import sys
 import traceback
 from functools import partial
+import PyQt5.QtGui as QtGui
+import PyQt5.QtCore as QtCore
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QApplication, QMdiSubWindow, QVBoxLayout,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
                              QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QShortcut, QStatusBar, QLineEdit)
@@ -64,6 +66,7 @@ class EditorFileMenu(QMenu):
         self.addAction(self.save_file_action)
         #self.addAction(self.save_file_as_action)
         #self.addAction(self.save_file_copy_as_action)
+        self.is_loading = False
 
     def updatestatus(self, progress):
         self.editor.statusbar.showMessage("Loading: {0}%".format(progress))
@@ -96,6 +99,7 @@ class EditorFileMenu(QMenu):
 
             with func_open(filepath, "rb") as f:
                 try:
+                    self.is_loading = True
                     levelpaths = BattalionFilePaths(f)
                     base = os.path.dirname(filepath)
                     print(base, levelpaths.objectpath)
@@ -150,14 +154,37 @@ class EditorFileMenu(QMenu):
 
                     # In testing the cursor didn't want to change back unless you moved the cursor
                     # off the window and back so we'll do this
-                    QApplication.changeOverrideCursor(Qt.ArrowCursor)
+                    self.is_loading = False
+                    QApplication.restoreOverrideCursor()
+                    QApplication.processEvents()
+                    QApplication.setOverrideCursor(Qt.ArrowCursor)
                     QApplication.processEvents()
                     QApplication.restoreOverrideCursor()
                     QApplication.processEvents()
-                    QApplication.restoreOverrideCursor()
-                    QApplication.processEvents()
+
                     self.editor.pathsconfig["xml"] = filepath
+                    self.editor.setCursor(QtGui.QCursor(Qt.ArrowCursor))
+                    cursor = QtGui.QCursor()
+                    cursor.setShape(Qt.ArrowCursor)
+                    pos = cursor.pos()
+                    widgets = []
+                    widget_at = QApplication.widgetAt(pos)
+
+                    while widget_at:
+                        widgets.append(widget_at)
+
+                        # Make widget invisible to further enquiries
+                        widget_at.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+                        widget_at = QApplication.widgetAt(pos)
+
+                    # Restore attribute
+                    for widget in widgets:
+                        widget.setCursor(cursor)
+                        widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
+
+                    QApplication.processEvents()
                 except Exception as error:
+                    self.is_loading = False
                     print("Error appeared while loading:", error)
                     traceback.print_exc()
                     open_error_dialog(str(error), self)

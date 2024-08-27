@@ -1063,6 +1063,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
     @catch_exception
     def mouseMoveEvent(self, event):
+        self.setCursor(Qt.ArrowCursor)
         self.usercontrol.handle_move(event)
 
     @catch_exception

@@ -59,7 +59,7 @@ class LevelEditor(QMainWindow):
         self.file_menu = EditorFileMenu(self)
 
         self.setup_ui()
-
+        self.setCursor(Qt.ArrowCursor)
         try:
             self.configuration = read_config()
             print("Config file loaded")
@@ -108,6 +108,11 @@ class LevelEditor(QMainWindow):
     def save_filter_settings(self):
         self.menubar.visibility_menu.save(self.configuration)
         save_cfg(self.configuration)
+
+    def eventFilter(self, a0: 'QObject', a1: 'QEvent') -> bool:
+        super().eventFilter(a0, a1)
+        if a1 == QtCore.QEvent.MouseMove:
+            pass
 
     @catch_exception
     def reset(self):
