@@ -13,7 +13,7 @@ include_files = ["resources/", "lib/mkddobjects.json", "lib/music_ids.json"]
 build_exe_options = {
 "packages": ["OpenGL", "numpy.core._methods", "numpy.lib.format"],
 "includes": ["widgets"], 
-"excludes": ["tkinter", "scipy", "PyQt5.QtWebEngine", "PyQt5.QtWebEngineCore"],
+"excludes": ["tkinter", "scipy", "PyQt6.QtWebEngine", "PyQt6.QtWebEngineCore"],
 "optimize": 0,
 "build_exe": "build/mkdd-track-editor-{}".format(version),
 "include_files": include_files}

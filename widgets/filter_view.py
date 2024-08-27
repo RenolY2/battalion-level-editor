@@ -1,7 +1,8 @@
 import traceback
 
-from PyQt5.QtWidgets import QAction, QMenu
-from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QMenu
+from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
 
 
 class ObjectViewSelectionToggle(object):

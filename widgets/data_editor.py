@@ -2,12 +2,12 @@ import os
 import json
 
 from collections import OrderedDict
-from PyQt5.QtWidgets import QSizePolicy, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QCheckBox, QLineEdit, QComboBox, QSizePolicy
-from PyQt5.QtGui import QIntValidator, QDoubleValidator, QValidator
+from PyQt6.QtWidgets import QSizePolicy, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QCheckBox, QLineEdit, QComboBox, QSizePolicy
+from PyQt6.QtGui import QIntValidator, QDoubleValidator, QValidator
 from math import inf
 from lib.vectors import Vector3
 from lib.model_rendering import Minimap
-from PyQt5.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal
 
 
 def load_parameter_names(objectname):

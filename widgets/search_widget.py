@@ -1,8 +1,8 @@
-import PyQt5.QtGui as QtGui
-import PyQt5.QtWidgets as QtWidgets
-from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
-from PyQt5.QtCore import Qt
-import PyQt5.QtCore as QtCore
+import PyQt6.QtGui as QtGui
+import PyQt6.QtWidgets as QtWidgets
+from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
+from PyQt6.QtCore import Qt
+import PyQt6.QtCore as QtCore
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -17,16 +17,17 @@ from lib.BattalionXMLLib import BattalionObject
 
 class AutocompleteDropDown(QtWidgets.QComboBox):
     tabactivated = pyqtSignal()
+
     def __init__(self, parent, items):
         super().__init__(parent)
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         for item in items:
             self.addItem(item)
 
         self.max = len(items)
 
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
-        if e.key() == Qt.Key_Tab:
+        if e.key() == Qt.Key.Key_Tab:
             self.tabactivated.emit()
         else:
             super().keyPressEvent(e)
@@ -151,8 +152,8 @@ def find_rightmost(collection, text, start, end):
 class AutocompleteTextEdit(QtWidgets.QTextEdit):
     def __init__(self, parent, editor):
         super().__init__(parent)
-        self.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.NoWrap)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
         self.editor: bw_editor.LevelEditor = editor
         self.autocomplete: AutocompleteDropDown = None
@@ -196,13 +197,13 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
     def keyPressEvent(self, e: QtGui.QKeyEvent):
         surpressenter = False
 
-        if self.autocomplete is not None and e.key() in (Qt.Key_Up, Qt.Key_Down, Qt.Key_Return, Qt.Key_Tab):
-            if e.key() == Qt.Key_Up:
+        if self.autocomplete is not None and e.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Return, Qt.Key.Key_Tab):
+            if e.key() == Qt.Key.Key_Up:
                 self.autocomplete.scroll_up()
-            elif e.key() == Qt.Key_Down:
+            elif e.key() == Qt.Key.Key_Down:
                 self.autocomplete.scroll_down()
 
-            if e.key() in (Qt.Key_Return, Qt.Key_Tab):
+            if e.key() in (Qt.Key.Key_Return, Qt.Key.Key_Tab):
                 field = self.get_last_field()
                 cursor = self.textCursor()
                 print(field)
@@ -214,7 +215,7 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
                 self.autocomplete.deleteLater()
                 del self.autocomplete
                 self.autocomplete: AutocompleteDropDown = None
-                if e.key() == Qt.Key_Return:
+                if e.key() == Qt.Key.Key_Return:
                     surpressenter = True
 
         elif self.autocomplete is not None:
@@ -223,10 +224,10 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
             del self.autocomplete
             self.autocomplete: AutocompleteDropDown = None
 
-        if e.key() not in (Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right): #(e.key() == Qt.Key_Tab):
-            if e.key() == Qt.Key_Return:
+        if e.key() not in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right): #(e.key() == Qt.Key_Tab):
+            if e.key() == Qt.Key.Key_Return:
                 pass
-            elif e.key() != Qt.Key_Tab:
+            elif e.key() != Qt.Key.Key_Tab:
                 super().keyPressEvent(e)
 
             text = self.toPlainText()
@@ -265,10 +266,10 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
 
         else:
 
-            if e.key() == Qt.Key_Return and surpressenter:
+            if e.key() == Qt.Key.Key_Return and surpressenter:
                 surpressenter = False
             else:
-                if self.autocomplete is not None and e.key() in (Qt.Key_Up, Qt.Key_Down):
+                if self.autocomplete is not None and e.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
                     pass
                 else:
                     super().keyPressEvent(e)
@@ -354,7 +355,6 @@ class SearchWidget(QtWidgets.QMainWindow):
 
         self.queryinput = AutocompleteTextEdit(self, self.editor)
 
-
         self.searchbutton = QtWidgets.QPushButton("Find", self)
         self.searchbutton.pressed.connect(self.do_search)
 
@@ -382,7 +382,7 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.treeview.itemDoubleClicked.connect(self.editor.do_goto_action)
         self.treeview.itemSelectionChanged.connect(self.tree_select)
 
-        self.shortcut = QtWidgets.QShortcut("Ctrl+E", self)
+        self.shortcut = QtGui.QShortcut("Ctrl+E", self)
         self.shortcut.activated.connect(self.editor.pik_control.action_open_edit_object)
 
         self.query_path = "searchqueries/"

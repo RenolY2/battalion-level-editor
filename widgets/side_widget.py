@@ -1,12 +1,12 @@
 from functools import partial
 
-from PyQt5.QtGui import QMouseEvent, QWheelEvent, QPainter, QColor, QFont, QFontMetrics, QPolygon, QImage, QPixmap, QKeySequence
-from PyQt5.QtWidgets import (QWidget, QListWidget, QListWidgetItem, QDialog, QMenu, QLineEdit,
-                            QMdiSubWindow, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QTextEdit, QAction, QShortcut)
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtCore as QtCore
-from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
-from PyQt5.QtCore import Qt
+from PyQt6.QtGui import QMouseEvent, QWheelEvent, QPainter, QColor, QFont, QFontMetrics, QPolygon, QImage, QPixmap, QKeySequence, QAction, QShortcut
+from PyQt6.QtWidgets import (QWidget, QListWidget, QListWidgetItem, QDialog, QMenu, QLineEdit,
+                            QMdiSubWindow, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QTextEdit)
+import PyQt6.QtWidgets as QtWidgets
+import PyQt6.QtCore as QtCore
+from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
+from PyQt6.QtCore import Qt
 from widgets.data_editor import choose_data_editor
 from widgets.editor_widgets import BWObjectEditWindow, AddBWObjectWindow
 from lib.BattalionXMLLib import BattalionObject
@@ -24,11 +24,11 @@ class PikminSideWidget(QWidget):
         self.setMaximumSize(QSize(700, 1500))
         self.setMinimumWidth(300)
         self.verticalLayout = QVBoxLayout(self)
-        self.verticalLayout.setAlignment(Qt.AlignTop)
+        self.verticalLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         font = QFont()
         font.setFamily("Consolas")
-        font.setStyleHint(QFont.Monospace)
+        font.setStyleHint(QFont.StyleHint.Monospace)
         font.setFixedPitch(True)
         font.setPointSize(9)
 
@@ -77,7 +77,7 @@ class PikminSideWidget(QWidget):
 
         #self.verticalLayout.addStretch(10)
         self.comment_label = QLabel(parent)
-        self.comment_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.comment_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.comment_label.setWordWrap(True)
         self.comment_label.setFont(font)
         self.verticalLayout.addWidget(self.comment_label)

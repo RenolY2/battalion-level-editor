@@ -3,7 +3,7 @@ import struct
 import os
 from math import radians, atan2, degrees, sin, cos, sqrt
 
-from PyQt5.QtGui import QPicture, QPainter, QImage, QColor, QPixmap
+from PyQt6.QtGui import QPicture, QPainter, QImage, QColor, QPixmap
 
 MODEL_ATTR = {
     "sAirVehicleBase": "model",

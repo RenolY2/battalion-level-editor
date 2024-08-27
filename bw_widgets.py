@@ -11,13 +11,14 @@ import json
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from PyQt5.QtGui import QMouseEvent, QWheelEvent, QPainter, QColor, QFont, QFontMetrics, QPolygon, QImage, QPixmap, QKeySequence
-from PyQt5.QtWidgets import (QWidget, QListWidget, QListWidgetItem, QDialog, QMenu, QLineEdit,
-                            QMdiSubWindow, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QTextEdit, QAction, QShortcut)
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtCore as QtCore
-from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
-from PyQt5.QtCore import Qt
+from PyQt6.QtGui import QMouseEvent, QWheelEvent, QPainter, QColor, QFont, QFontMetrics, QPolygon, QImage, QPixmap, QKeySequence,  QAction, QShortcut
+from PyQt6.QtWidgets import (QWidget, QListWidget, QListWidgetItem, QDialog, QMenu, QLineEdit,
+                            QMdiSubWindow, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QTextEdit)
+import PyQt6.QtWidgets as QtWidgets
+import PyQt6.QtOpenGLWidgets as QtOpenGLWidgets
+import PyQt6.QtCore as QtCore
+from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
+from PyQt6.QtCore import Qt
 
 
 from helper_functions import calc_zoom_in_factor, calc_zoom_out_factor
@@ -81,7 +82,7 @@ class LiveIndicator(QtWidgets.QLabel):
         super().__init__(*args, **kwargs)
         font = QFont()
         font.setFamily("Consolas")
-        font.setStyleHint(QFont.Monospace)
+        font.setStyleHint(QFont.StyleHint.Monospace)
         font.setFixedPitch(True)
         font.setPointSize(20)
 
@@ -105,7 +106,7 @@ class LiveIndicator(QtWidgets.QLabel):
         self.setVisible(True)
 
 
-class BolMapViewer(QtWidgets.QOpenGLWidget):
+class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
     mouse_clicked = pyqtSignal(QMouseEvent)
     entity_clicked = pyqtSignal(QMouseEvent, str)
     mouse_dragged = pyqtSignal(QMouseEvent)
@@ -126,7 +127,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
         self.bwmodelhandler = BWModelHandler()
         self._zoom_factor = 80
-        self.setFocusPolicy(Qt.ClickFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
         self.SIZEX = 1024#768#1024
         self.SIZEY = 1024#768#1024
@@ -397,7 +398,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
             self.mode = MODE_3D
 
             if self.mousemode == MOUSE_MODE_NONE:
-                self.setContextMenuPolicy(Qt.DefaultContextMenu)
+                self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
 
             # This is necessary so that the position of the 3d camera equals the middle of the topdown view
             self.offset_x *= -1
@@ -409,7 +410,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
         else:
             self.mode = MODE_TOPDOWN
             if self.mousemode == MOUSE_MODE_NONE:
-                self.setContextMenuPolicy(Qt.CustomContextMenu)
+                self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
             self.offset_x *= -1
             self.do_redraw()
@@ -1063,7 +1064,7 @@ class BolMapViewer(QtWidgets.QOpenGLWidget):
 
     @catch_exception
     def mouseMoveEvent(self, event):
-        self.setCursor(Qt.ArrowCursor)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
         self.usercontrol.handle_move(event)
 
     @catch_exception

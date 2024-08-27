@@ -2,18 +2,19 @@ import os
 import sys
 import traceback
 from functools import partial
-import PyQt5.QtGui as QtGui
-import PyQt5.QtCore as QtCore
-from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QApplication, QMdiSubWindow, QVBoxLayout,
+import PyQt6.QtGui as QtGui
+import PyQt6.QtCore as QtCore
+from PyQt6.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QApplication, QMdiSubWindow, QVBoxLayout,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
-                             QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QShortcut, QStatusBar, QLineEdit)
+                             QScrollArea, QGridLayout, QMenuBar, QMenu, QStatusBar, QLineEdit)
+from PyQt6.QtGui import QAction, QShortcut
 #from bw_editor import LevelEditor
 from widgets.editor_widgets import catch_exception_with_dialog, open_error_dialog
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 import traceback
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionFilePaths
 import gzip
-from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect, QObject
+from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect, QObject
 from io import BytesIO
 
 from typing import TYPE_CHECKING
@@ -45,7 +46,7 @@ class EditorFileMenu(QMenu):
         self.last_chosen_type = None
         self.level_paths = None
 
-        save_file_shortcut = QShortcut(Qt.CTRL + Qt.Key_S, self)
+        save_file_shortcut = QShortcut(Qt.Key.Key_Control + Qt.Key.Key_S, self)
         save_file_shortcut.activated.connect(self.button_save_level)
 
         self.file_load_action = QAction("Load", self)
@@ -104,7 +105,7 @@ class EditorFileMenu(QMenu):
                     base = os.path.dirname(filepath)
                     print(base, levelpaths.objectpath)
                     progressbar = LoadingProgress()
-                    QApplication.setOverrideCursor(Qt.WaitCursor)
+                    QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
                     progressbar.progressupdate.connect(self.updatestatus)
                     if levelpaths.objectpath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.objectpath), "rb") as g:
@@ -157,17 +158,17 @@ class EditorFileMenu(QMenu):
                     self.is_loading = False
                     QApplication.restoreOverrideCursor()
                     QApplication.processEvents()
-                    QApplication.setOverrideCursor(Qt.ArrowCursor)
+                    QApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
                     QApplication.processEvents()
                     QApplication.restoreOverrideCursor()
                     QApplication.processEvents()
 
                     self.editor.pathsconfig["xml"] = filepath
-                    self.editor.setCursor(QtGui.QCursor(Qt.ArrowCursor))
+                    self.editor.setCursor(QtGui.QCursor(Qt.CursorShape.ArrowCursor))
                     cursor = QtGui.QCursor()
-                    cursor.setShape(Qt.ArrowCursor)
+                    cursor.setShape(Qt.CursorShape.ArrowCursor)
                     pos = cursor.pos()
-                    widgets = []
+                    """widgets = []
                     widget_at = QApplication.widgetAt(pos)
 
                     while widget_at:
@@ -180,7 +181,7 @@ class EditorFileMenu(QMenu):
                     # Restore attribute
                     for widget in widgets:
                         widget.setCursor(cursor)
-                        widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
+                        widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)"""
 
                     QApplication.processEvents()
                 except Exception as error:

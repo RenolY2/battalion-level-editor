@@ -13,7 +13,7 @@ import numpy
 from OpenGL.GL import *
 import ctypes
 
-from PyQt5 import QtGui
+from PyQt6 import QtGui
 
 with open("lib/color_coding.json") as f:
     colors = json.load(f)
@@ -128,7 +128,7 @@ class Texture(object):
         self.free()
 
         qimage = QtGui.QImage(path, "png")
-        qimage = qimage.convertToFormat(QtGui.QImage.Format_ARGB32)
+        qimage = qimage.convertToFormat(QtGui.QImage.Format.Format_ARGB32)
         ID = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, ID)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1)

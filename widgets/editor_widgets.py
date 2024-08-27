@@ -5,14 +5,15 @@ from math import acos, pi
 import os
 import sys
 
-from PyQt5.QtGui import QMouseEvent, QWheelEvent, QPainter, QColor, QFont, QFontMetrics, QPolygon, QImage, QPixmap, QKeySequence
-from PyQt5.QtWidgets import (QWidget, QListWidget, QListWidgetItem, QDialog, QMenu, QLineEdit, QFileDialog, QScrollArea,
-                            QMdiSubWindow, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QTextEdit, QAction, QShortcut)
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtCore as QtCore
-from PyQt5.QtCore import QSize, pyqtSignal, QPoint, QRect
-from PyQt5.QtCore import Qt
-import PyQt5.QtGui as QtGui
+from PyQt6.QtGui import (QMouseEvent, QWheelEvent, QPainter, QColor, QFont, QFontMetrics, QPolygon, QImage, QPixmap, QKeySequence,
+                         QAction, QShortcut)
+from PyQt6.QtWidgets import (QWidget, QListWidget, QListWidgetItem, QDialog, QMenu, QLineEdit, QFileDialog, QScrollArea,
+                            QMdiSubWindow, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QTextEdit)
+import PyQt6.QtWidgets as QtWidgets
+import PyQt6.QtCore as QtCore
+from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
+from PyQt6.QtCore import Qt
+import PyQt6.QtGui as QtGui
 
 from widgets.data_editor import choose_data_editor
 from lib.BattalionXMLLib import BattalionObject
@@ -85,11 +86,11 @@ class BWObjectEditWindow(QMdiSubWindow):
 
         self.central_widget.setLayout(self._layout)
         self.setWidget(self.central_widget)
-        self.textbox_xml.setLineWrapMode(QTextEdit.NoWrap)
-        self.textbox_xml.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.textbox_xml.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        self.textbox_xml.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.textbox_xml.customContextMenuRequested.connect(self.my_context_menu)
         self.gotoaction = QAction("Edit XML for ID", self)
-        self.shortcut = QtWidgets.QShortcut("Ctrl+E", self)
+        self.shortcut = QtGui.QShortcut("Ctrl+E", self)
         self.shortcut.setAutoRepeat(False)
         self.findaction = QAction("Find ID in Map", self)
         self.findaction.triggered.connect(self.find_object)
@@ -100,12 +101,12 @@ class BWObjectEditWindow(QMdiSubWindow):
 
         font = QFont()
         font.setFamily("Consolas")
-        font.setStyleHint(QFont.Monospace)
+        font.setStyleHint(QFont.StyleHint.Monospace)
         font.setFixedPitch(True)
         font.setPointSize(10)
 
         metrics = QFontMetrics(font)
-        self.textbox_xml.setTabStopWidth(4 * metrics.width(' '))
+        self.textbox_xml.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
         self.textbox_xml.setFont(font)
         self.id = None
 
@@ -120,7 +121,7 @@ class BWObjectEditWindow(QMdiSubWindow):
     def changeEvent(self, changeEvent: QtCore.QEvent) -> None:
         super().changeEvent(changeEvent)
 
-        if changeEvent.type() == QtCore.QEvent.ActivationChange:
+        if changeEvent.type() == QtCore.QEvent.Type.ActivationChange:
             if self.isActiveWindow():
                 self.focusobj.emit(self.id)
 
@@ -196,12 +197,12 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
 
         font = QFont()
         font.setFamily("Consolas")
-        font.setStyleHint(QFont.Monospace)
+        font.setStyleHint(QFont.StyleHint.Monospace)
         font.setFixedPitch(True)
         font.setPointSize(10)
 
         metrics = QFontMetrics(font)
-        self.textbox_xml.setTabStopWidth(4 * metrics.width(' '))
+        self.textbox_xml.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
         self.textbox_xml.setFont(font)
 
     def resetoffset(self):

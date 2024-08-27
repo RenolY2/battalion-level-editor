@@ -1,4 +1,4 @@
-from PyQt5.Qt import QDialog, QWidget, QVBoxLayout, QListWidget
+from PyQt6.QtWidgets import QDialog, QWidget, QVBoxLayout, QListWidget
 
 
 class FileSelect(QDialog):

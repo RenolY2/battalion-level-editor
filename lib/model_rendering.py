@@ -6,7 +6,7 @@ from struct import unpack
 import os
 from OpenGL.GL import *
 
-from PyQt5 import QtGui
+from PyQt6 import QtGui
 
 with open("lib/color_coding.json") as f:
     colors = json.load(f)
@@ -196,7 +196,7 @@ class Material(object):
                 raise RuntimeError("unknown tex format: {0}".format(texturepath))
 
             qimage = QtGui.QImage(texturepath, fmt)
-            qimage = qimage.convertToFormat(QtGui.QImage.Format_ARGB32)
+            qimage = qimage.convertToFormat(QtGui.QImage.Format.Format_ARGB32)
 
             imgdata = bytes(qimage.bits().asarray(qimage.width() * qimage.height() * 4))
 
@@ -917,7 +917,7 @@ class Minimap(object):
             glDeleteTextures(1, int(self.ID))
 
         qimage = QtGui.QImage(path, "png")
-        qimage = qimage.convertToFormat(QtGui.QImage.Format_ARGB32)
+        qimage = qimage.convertToFormat(QtGui.QImage.Format.Format_ARGB32)
         ID = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, ID)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1)

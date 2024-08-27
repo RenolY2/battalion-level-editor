@@ -7,15 +7,15 @@ from copy import deepcopy
 from io import TextIOWrapper, BytesIO, StringIO
 from math import sin, cos, atan2
 import json
-import PyQt5.QtWidgets as QtWidgets
-import PyQt5.QtCore as QtCore
-from PyQt5.QtCore import Qt
+import PyQt6.QtWidgets as QtWidgets
+import PyQt6.QtCore as QtCore
+from PyQt6.QtCore import Qt
 
-from PyQt5.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter,
+from PyQt6.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
-                             QScrollArea, QGridLayout, QMenuBar, QMenu, QAction, QApplication, QStatusBar, QLineEdit)
-from PyQt5.QtGui import QMouseEvent, QImage
-import PyQt5.QtGui as QtGui
+                             QScrollArea, QGridLayout, QMenuBar, QMenu, QApplication, QStatusBar, QLineEdit)
+from PyQt6.QtGui import QMouseEvent, QImage, QAction
+import PyQt6.QtGui as QtGui
 
 import opengltext
 import py_obj
@@ -36,7 +36,7 @@ from lib.model_rendering import TexturedModel, CollisionModel, Minimap
 
 from lib.dolreader import DolFile, read_float, write_float, read_load_immediate_r0, write_load_immediate_r0, UnmappedAddress
 from widgets.file_select import FileSelect
-from PyQt5.QtWidgets import QTreeWidgetItem
+from PyQt6.QtWidgets import QTreeWidgetItem
 from lib.game_visualizer import Game
 
 from widgets.menu.file_menu import EditorFileMenu
@@ -59,7 +59,7 @@ class LevelEditor(QMainWindow):
         self.file_menu = EditorFileMenu(self)
 
         self.setup_ui()
-        self.setCursor(Qt.ArrowCursor)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
         try:
             self.configuration = read_config()
             print("Config file loaded")
@@ -264,22 +264,21 @@ class LevelEditor(QMainWindow):
         self.horizontalLayout.addWidget(self.leveldatatreeview)
         self.horizontalLayout.addWidget(self.level_view)
         self.leveldatatreeview.resize(200, self.leveldatatreeview.height())
-        spacerItem = QSpacerItem(10, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacerItem = QSpacerItem(10, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         #self.horizontalLayout.addItem(spacerItem)
 
         self.pik_control = PikminSideWidget(self)
         self.horizontalLayout.addWidget(self.pik_control)
-
-        QtWidgets.QShortcut(Qt.Key_G, self).activated.connect(self.action_ground_objects)
-        QtWidgets.QShortcut(Qt.CTRL + Qt.Key_A, self).activated.connect(self.shortcut_open_add_item_window)
-        QtWidgets.QShortcut(Qt.CTRL + Qt.Key_E, self).activated.connect(self.action_open_edit)
+        #QtGui.QShortcut(Qt.Key.Key_G, self).activated.connect(self.action_ground_objects)
+        self.add_shortcut = QtGui.QShortcut("Ctrl+A", self)
+        self.add_shortcut.activated.connect(self.shortcut_open_add_item_window)
+        self.edit_shortcut = QtGui.QShortcut("Ctrl+E", self)
+        self.edit_shortcut.activated.connect(self.action_open_edit)
         self.statusbar = QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
         self.setStatusBar(self.statusbar)
 
         self.connect_actions()
-
-
 
     def action_hook_into_dolphion(self):
         error = self.dolphin.initialize()
@@ -344,13 +343,13 @@ class LevelEditor(QMainWindow):
         #self.pik_control.button_ground_object.pressed.connect(self.action_ground_objects)
         self.pik_control.button_remove_object.pressed.connect(self.action_delete_objects)
 
-        delete_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(Qt.Key_Delete), self)
+        delete_shortcut = QtGui.QShortcut(QtGui.QKeySequence(Qt.Key.Key_Delete), self)
         delete_shortcut.activated.connect(self.action_delete_objects)
 
-        undo_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(Qt.CTRL + Qt.Key_Z), self)
+        undo_shortcut = QtGui.QShortcut(QtGui.QKeySequence(Qt.Key.Key_Control + Qt.Key.Key_Z), self)
         undo_shortcut.activated.connect(self.action_undo)
 
-        redo_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(Qt.CTRL + Qt.Key_Y), self)
+        redo_shortcut = QtGui.QShortcut(QtGui.QKeySequence(Qt.Key.Key_Control + Qt.Key.Key_Y), self)
         redo_shortcut.activated.connect(self.action_redo)
 
         self.level_view.rotate_current.connect(self.action_rotate_object)
@@ -788,57 +787,57 @@ class LevelEditor(QMainWindow):
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):
 
-        if event.key() == Qt.Key_Escape:
-            self.level_view.set_mouse_mode(mkdd_widgets.MOUSE_MODE_NONE)
+        if event.key() == Qt.Key.Key_Escape:
+            self.level_view.set_mouse_mode(bw_widgets.MOUSE_MODE_NONE)
             self.pik_control.button_add_object.setChecked(False)
             #self.pik_control.button_move_object.setChecked(False)
             if self.add_object_window is not None:
                 self.add_object_window.close()
 
-        if event.key() == Qt.Key_Shift:
+        if event.key() == Qt.Key.Key_Shift:
             self.level_view.shift_is_pressed = True
-        elif event.key() == Qt.Key_R:
+        elif event.key() == Qt.Key.Key_R:
             self.level_view.rotation_is_pressed = True
-        elif event.key() == Qt.Key_H:
+        elif event.key() == Qt.Key.Key_H:
             self.level_view.change_height_is_pressed = True
 
-        if event.key() == Qt.Key_W:
+        if event.key() == Qt.Key.Key_W:
             self.level_view.MOVE_FORWARD = 1
-        elif event.key() == Qt.Key_S:
+        elif event.key() == Qt.Key.Key_S:
             self.level_view.MOVE_BACKWARD = 1
-        elif event.key() == Qt.Key_A:
+        elif event.key() == Qt.Key.Key_A:
             self.level_view.MOVE_LEFT = 1
-        elif event.key() == Qt.Key_D:
+        elif event.key() == Qt.Key.Key_D:
             self.level_view.MOVE_RIGHT = 1
-        elif event.key() == Qt.Key_Q:
+        elif event.key() == Qt.Key.Key_Q:
             self.level_view.MOVE_UP = 1
-        elif event.key() == Qt.Key_E:
+        elif event.key() == Qt.Key.Key_E:
             self.level_view.MOVE_DOWN = 1
 
-        if event.key() == Qt.Key_Plus:
+        if event.key() == Qt.Key.Key_Plus:
             self.level_view.zoom_in()
-        elif event.key() == Qt.Key_Minus:
+        elif event.key() == Qt.Key.Key_Minus:
             self.level_view.zoom_out()
 
     def keyReleaseEvent(self, event: QtGui.QKeyEvent):
-        if event.key() == Qt.Key_Shift:
+        if event.key() == Qt.Key.Key_Shift:
             self.level_view.shift_is_pressed = False
-        elif event.key() == Qt.Key_R:
+        elif event.key() == Qt.Key.Key_R:
             self.level_view.rotation_is_pressed = False
-        elif event.key() == Qt.Key_H:
+        elif event.key() == Qt.Key.Key_H:
             self.level_view.change_height_is_pressed = False
 
-        if event.key() == Qt.Key_W:
+        if event.key() == Qt.Key.Key_W:
             self.level_view.MOVE_FORWARD = 0
-        elif event.key() == Qt.Key_S:
+        elif event.key() == Qt.Key.Key_S:
             self.level_view.MOVE_BACKWARD = 0
-        elif event.key() == Qt.Key_A:
+        elif event.key() == Qt.Key.Key_A:
             self.level_view.MOVE_LEFT = 0
-        elif event.key() == Qt.Key_D:
+        elif event.key() == Qt.Key.Key_D:
             self.level_view.MOVE_RIGHT = 0
-        elif event.key() == Qt.Key_Q:
+        elif event.key() == Qt.Key.Key_Q:
             self.level_view.MOVE_UP = 0
-        elif event.key() == Qt.Key_E:
+        elif event.key() == Qt.Key.Key_E:
             self.level_view.MOVE_DOWN = 0
 
     def action_rotate_object(self, deltarotation):
@@ -1128,9 +1127,9 @@ if __name__ == "__main__":
         #import sys
         import platform
         import argparse
-        from PyQt5.QtCore import QLocale
+        from PyQt6.QtCore import QLocale
 
-        QLocale.setDefault(QLocale(QLocale.English))
+        QLocale.setDefault(QLocale(QLocale.Language.English))
 
         sys.excepthook = except_hook
 
