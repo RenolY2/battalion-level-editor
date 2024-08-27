@@ -6,7 +6,7 @@ from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
 
 
 class ObjectViewSelectionToggle(object):
-    def __init__(self, name, menuparent, option3d_exists=False):
+    def __init__(self, name, menuparent, option3d_exists=False, addlater=False):
         self.name = name
         self.menuparent = menuparent
 
@@ -21,8 +21,8 @@ class ObjectViewSelectionToggle(object):
 
         self.action_view_toggle.triggered.connect(self.handle_view_toggle)
         #self.action_select_toggle.triggered.connect(self.handle_select_toggle)
-
-        menuparent.addAction(self.action_view_toggle)
+        if not addlater:
+            menuparent.addAction(self.action_view_toggle)
         if option3d_exists:
             menuparent.addAction(self.action_select_toggle)
 
@@ -108,7 +108,12 @@ class FilterViewMenu(QMenu):
         self.capturepoints = ObjectViewSelectionToggle("Capture Points", self, True)
         self.cameras = ObjectViewSelectionToggle("Cameras", self)
 
-        self.zones = ObjectViewSelectionToggle("Zones", self)
+        self.mapzones = ObjectViewSelectionToggle("Map Zones", self)
+        self.damagezones = ObjectViewSelectionToggle("Damage Zones", self)
+        self.coastzones = ObjectViewSelectionToggle("Coast Zones", self)
+        self.nogohintzones = ObjectViewSelectionToggle("No-Go Hint Zones", self)
+
+
         self.waypoints = ObjectViewSelectionToggle("Waypoints", self)
         self.ambientareapoints = ObjectViewSelectionToggle("Ambient Area Points", self)
         self.objectivemarkers = ObjectViewSelectionToggle("Objective Markers", self)
@@ -116,8 +121,8 @@ class FilterViewMenu(QMenu):
 
         for action in (self.groundtroops, self.groundvehicles, self.airvehicles, self.watervehicles,
                        self.buildings, self.pickups, self.destroyableobjects, self.scenerycluster,
-                       self.cameras, self.capturepoints, self.zones, self.waypoints, self.ambientareapoints,
-                       self.objectivemarkers, self.unitgroups):
+                       self.cameras, self.capturepoints, self.mapzones, self.damagezones, self.coastzones, self.nogohintzones,
+                       self.waypoints, self.ambientareapoints, self.objectivemarkers, self.unitgroups):
 
             action.action_view_toggle.triggered.connect(self.emit_update)
             action.action_select_toggle.triggered.connect(self.emit_update)
@@ -128,6 +133,12 @@ class FilterViewMenu(QMenu):
                        self.buildings, self.capturepoints, self.pickups, self.destroyableobjects, self.scenerycluster):
             action.add_3d()
 
+        self.addSeparator()
+        self.addAction(self.mapzones.action_view_toggle)
+        self.addAction(self.damagezones.action_view_toggle)
+        self.addAction(self.coastzones.action_view_toggle)
+        self.addAction(self.nogohintzones.action_view_toggle)
+
         self.toggles = {}
         self.toggles["cAirVehicle"] = self.airvehicles
         self.toggles["cGroundVehicle"] = self.groundvehicles
@@ -137,7 +148,10 @@ class FilterViewMenu(QMenu):
         self.toggles["cBuilding"] = self.toggles["cMorphingBuilding"] = self.buildings
         self.toggles["cCamera"] = self.cameras
         self.toggles["cCapturePoint"] = self.capturepoints
-        self.toggles["cCoastZone"] = self.toggles["cDamageZone"] = self.toggles["cMapZone"] = self.toggles["cNogoHintZone"] = self.zones
+        self.toggles["cCoastZone"] = self.coastzones
+        self.toggles["cDamageZone"] = self.damagezones
+        self.toggles["cMapZone"] = self.mapzones
+        self.toggles["cNogoHintZone"] = self.nogohintzones
         self.toggles["cDestroyableObject"] = self.destroyableobjects
         self.toggles["cObjectiveMarker"] = self.objectivemarkers
         self.toggles["cPickupReflected"] = self.pickups
