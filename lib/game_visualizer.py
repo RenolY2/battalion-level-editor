@@ -158,14 +158,20 @@ class Game(object):
             return
 
         fails = 0
+        successes = 0
         for id, addr in self.object_addresses.items():
             try:
                 newaddr = self.resolve_id(int(id))
                 if newaddr != addr:
                     fails += 1
+                else:
+                    successes += 1
             except Exception as err:
                 print(err)
                 fails = 10
+
+            if successes > 50:
+                break
 
             if fails >= min(5, len(self.object_addresses)):
                 self.running = False
@@ -181,7 +187,7 @@ class Game(object):
         if self.visualize:
             for objid, obj in renderer.level_file.objects_with_positions.items():
                 if not self.do_once and not visible(obj.type):
-                    continue 
+                    continue
                 if obj in renderer.selected:
                     continue
                 if obj.id not in self.object_addresses:
@@ -238,7 +244,6 @@ class Game(object):
 
                 tests.append(self.dolphin.read_float(addr + mtxstart + 0x3C) == 1.0)
                 if all(tests):
-
                     self.dolphin.write_float(addr + mtxstart, mtx[0])
                     self.dolphin.write_float(addr + mtxstart + 0x4, mtx[1])
                     self.dolphin.write_float(addr + mtxstart + 0x8, mtx[2])
