@@ -256,7 +256,7 @@ class Graphics(object):
                     if radius > 0:
                         self.scene.wireframecylinders.append((mtx, color, (radius, radius, radius, 1)))
                     if size.x > 0 and size.y > 0 and size.z > 0:
-                        self.scene.wireframeboxes.append((mtx, color, (size.x, size.y, size.z, 1)))
+                        self.scene.wireframeboxes.append((mtx, color, (size.x/2.0, size.y/2.0, size.z/2.0, 1)))
 
                 if obj.type == "cWaypoint":
                     if obj.NextWP is not None:
