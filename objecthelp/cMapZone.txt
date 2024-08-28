@@ -15,7 +15,7 @@ Possible values:
 - ZONETYPE_DEFAULT: Default zone type without special properties.
 - ZONETYPE_WORLDBOUNDARY: Zone type encompassing the full level.
 - ZONETYPE_MISSIONBOUNDARY: Zone type which defines the area the player is allowed to be in. In BW2 this is also baked into the .pf2 file.
-- ZONETYPE_NOGOAREA: Zone type which makes troops avoid this area. In BW2 this is also baked into the .pf2 file.
+- ZONETYPE_NOGOAREA: Zone type which makes troops avoid this area. In BW2 this is also baked into the .pf2 file. Some units have settings to ignore this area.
 - ZONETYPE_FORD: Unknown. Used often on river crossings. In BW2 this is also baked into the .pf2 file.
 
 <br/>
