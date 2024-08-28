@@ -1,4 +1,8 @@
 import os
+import struct
+import numpy
+import shutil
+from PIL import Image, ImageDraw, ImageOps
 import sys
 import traceback
 from functools import partial
@@ -12,7 +16,7 @@ from PyQt6.QtGui import QAction, QShortcut
 from widgets.editor_widgets import catch_exception_with_dialog, open_error_dialog
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 import traceback
-from lib.BattalionXMLLib import BattalionLevelFile, BattalionFilePaths
+from lib.BattalionXMLLib import BattalionLevelFile, BattalionFilePaths, BattalionObject
 import gzip
 from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect, QObject
 from io import BytesIO
@@ -23,18 +27,20 @@ if TYPE_CHECKING:
 
 
 class LoadingProgress(QObject):
-    progressupdate = pyqtSignal(int)
-    def __init__(self):
+    progressupdate = pyqtSignal(str, int)
+
+    def __init__(self, text):
         super().__init__()
         self.curr = 0
+        self.text = text
 
     def callback(self, scale, max, i):
-        self.progressupdate.emit(int(self.curr + (i/max)*scale))
+        self.progressupdate.emit(self.text, int(self.curr + (i/max)*scale))
         QApplication.processEvents()
 
     def set(self, progress):
         self.curr = progress
-        self.progressupdate.emit(int(self.curr))
+        self.progressupdate.emit(self.text, int(self.curr))
 
 
 class EditorFileMenu(QMenu):
@@ -69,8 +75,8 @@ class EditorFileMenu(QMenu):
         #self.addAction(self.save_file_copy_as_action)
         self.is_loading = False
 
-    def updatestatus(self, progress):
-        self.editor.statusbar.showMessage("Loading: {0}%".format(progress))
+    def updatestatus(self, text, progress):
+        self.editor.statusbar.showMessage("{1}: {0}%".format(progress, text))
 
     def loadingcallback(self, base, max, progress):
         print(progress)
@@ -104,7 +110,7 @@ class EditorFileMenu(QMenu):
                     levelpaths = BattalionFilePaths(f)
                     base = os.path.dirname(filepath)
                     print(base, levelpaths.objectpath)
-                    progressbar = LoadingProgress()
+                    progressbar = LoadingProgress("Loading")
                     QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
                     progressbar.progressupdate.connect(self.updatestatus)
                     if levelpaths.objectpath.endswith(".gz"):
@@ -195,10 +201,11 @@ class EditorFileMenu(QMenu):
     def button_save_level(self, *args, **kwargs):
         if self.level_paths is not None:
             levelpaths = self.level_paths
-            progressbar = LoadingProgress()
+            progressbar = LoadingProgress("Saving")
             progressbar.progressupdate.connect(self.updatestatus)
 
             base = os.path.dirname(self.current_gen_path)
+            fname = os.path.basename(self.current_gen_path)
             progressbar.set(0)
 
             for id, window in self.editor.pik_control.edit_windows.items():
@@ -211,11 +218,27 @@ class EditorFileMenu(QMenu):
                     self.editor.leveldatatreeview.updatenames()
                     return
 
+
+
             self.editor.level_view.do_redraw(force=True)
             self.editor.leveldatatreeview.updatenames()
+
             progressbar.set(5)
             for object in self.level_data.objects.values():
                 object.update_xml()
+            progressbar.set(10)
+
+            if self.editor.editorconfig.getboolean("regenerate_pf2", fallback=False):
+                try:
+                    pf2path = os.path.join(base, fname.replace("xml", "pf2"))
+                    pf2 = PF2(pf2path)
+                except FileNotFoundError:
+                    pass
+                else:
+                    pf2.update_mission_boundary(self.level_data)
+                    pf2.save(pf2path)
+            else:
+                print("Skipping PF2..")
 
             progressbar.set(20)
 
@@ -316,3 +339,94 @@ class EditorFileMenu(QMenu):
                 self.set_base_window_title(filepath)
 
             self.statusbar.showMessage("Saved to {0}".format(filepath))
+
+
+class PF2(object):
+    def __init__(self, path):
+        self.data = [[None for y in range(512)] for x in range(512)]
+
+        with open(path, "rb") as f:
+            for i in range(512*512):
+                x = (i) % 512
+                y = (i) // 512
+                if x < 256:
+                    x *= 2
+                else:
+                    x = x - 256
+                    x *= 2
+                    x += 1
+
+                tilevalue = f.read(6)
+                self.data[x][y] = [v for v in tilevalue]
+
+            self.rest = f.read()
+
+    def update_mission_boundary(self, level_file: BattalionLevelFile):
+        newimg = Image.new("RGB", (512, 512))
+
+        draw = ImageDraw.Draw(newimg)
+        for id, object in level_file.objects_with_positions.items():
+            if object.type == "cMapZone":
+                mtx = object.getmatrix().mtx
+                x,y,z = mtx[12:15]
+                img_x = (x+2048)/8.0
+                img_y = (z+2048)/8.0
+                offsetx = 2
+                mymtx = mtx.reshape((4, 4), order="F")
+                """mtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
+                    cos(deltay), 0.0, -sin(deltay), 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    sin(deltay), 0.0, cos(deltay), 0.0,
+                    0.0, 0.0, 0.0, 1.0
+                ]))"""
+
+                if object.mZoneType == "ZONETYPE_MISSIONBOUNDARY":
+                    if object.mRadius > 0:
+                        rad = object.mRadius/8.0
+                        draw.ellipse((img_x-rad+offsetx, img_y-rad, img_x+rad+offsetx, img_y+rad), fill="white")
+                    if object.mSize.x != 0 and object.mSize.y != 0 and object.mSize.z != 0:
+                        sizex, sizey, sizez = object.mSize.x/2.0, object.mSize.y/2.0, object.mSize.z/2.0
+
+                        corner1 = mymtx.dot(numpy.array([-sizex, 0, -sizez, 1]))
+                        corner2 = mymtx.dot(numpy.array([-sizex, 0, sizez, 1]))
+                        corner3 = mymtx.dot(numpy.array([sizex, 0, sizez, 1]))
+                        corner4 = mymtx.dot(numpy.array([sizex, 0, -sizez, 1]))
+                        points = []
+                        for p in [corner1, corner2, corner3, corner4]:
+                            points.append(((p[0]+2048)/8.0+offsetx, (p[2]+2048)/8.0))
+
+                        draw.polygon(points, "white", "white")
+
+        for i in range(512*512):
+            x = (i) % 512
+            y = (i) // 512
+            if x < 256:
+                x *= 2
+            else:
+                x = x - 256
+                x *= 2
+                x += 1
+
+            val = newimg.getpixel((x,y))
+            if val[0] < 128:
+                self.data[x][y][2] = 0
+            else:
+                self.data[x][y][2] = 0xF0
+
+        #ImageOps.flip(newimg).save("test.png")
+
+    def save(self, path):
+        with open(path, "wb") as f:
+            for i in range(512*512):
+                x = (i) % 512
+                y = (i) // 512
+                if x < 256:
+                    x *= 2
+                else:
+                    x = x - 256
+                    x *= 2
+                    x += 1
+                values = self.data[x][y]
+                f.write(struct.pack("BBBBBB", *values))
+            f.write(self.rest)
+        #shutil.copy(path, r"E:\Modding\Video Game Modding\battalion-tools\PF2\test.pf2")
