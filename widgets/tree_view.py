@@ -83,6 +83,9 @@ class NamedItem(QTreeWidgetItem):
         self.setText(0, self.bound_to.name)
         self.setText(1, self.bound_to.extra_detail_name())
 
+    def update_details_unused(self):
+        self.setText(1, self.bound_to.extra_detail_name()+"(Unused)")
+
 
 class EnemyRoutePoint(NamedItem):
     def update_name(self):
@@ -384,13 +387,17 @@ class LevelDataTreeView(QTreeWidget):
 
             parent = extra_categories[objecttype]
             name = object.name
+            unused = False
             if levelsettings is not None:
                 if object.type == "cDamageArmourBonus":
                     if levelsettings.mDamageArmourBonus.id != object.id:
-                        name = object.name+" Unused"
+                        unused = True
 
 
             item = NamedItem(parent, name, object)
+            if unused:
+                item.update_details_unused()
+
 
         for categoryname in sorted(extra_categories.keys()):
             category = extra_categories[categoryname]
@@ -398,6 +405,9 @@ class LevelDataTreeView(QTreeWidget):
             target.addChild(category)
 
     def updatenames(self):
+        levelsettings = None
+        damagesettings = []
+
         category: QTreeWidgetItem
         for category in (self.units, self.components, self.mapobjects, self.scenery, self.assets, self.hud,
                          self.scripts, self.effects, self.preload, self.other):
@@ -405,7 +415,16 @@ class LevelDataTreeView(QTreeWidget):
                 subcategory = category.child(i)
                 for j in range(subcategory.childCount()):
                     item = subcategory.child(j)
+                    if item.bound_to.type == "cLevelSettings":
+                        levelsettings = item.bound_to
+                    elif item.bound_to.type == "cDamageArmourBonus":
+                        damagesettings.append(item)
                     item.update_name()
+        
+        if levelsettings is not None:
+            for item in damagesettings:
+                if item.bound_to.id != levelsettings.mDamageArmourBonus.id:
+                    item.update_details_unused()
 
     def sort_objects(self):
         self.objects.sort()
