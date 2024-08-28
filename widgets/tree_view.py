@@ -1,9 +1,9 @@
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QAction, QMenu
+from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QMenu
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
 from collections import OrderedDict
-from PyQt5.QtGui import QClipboard, QGuiApplication
+from PyQt6.QtGui import QClipboard, QGuiApplication, QAction
 from itertools import chain
 
 class BolHeader(QTreeWidgetItem):
@@ -222,7 +222,7 @@ class LevelDataTreeView(QTreeWidget):
         self.lightparams = self._add_group("Light param entries")
         self.mgentries = self._add_group("MG entries")"""
 
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.run_context_menu)
         self.expanded.connect(self.resizeheader)
 
