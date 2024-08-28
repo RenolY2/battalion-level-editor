@@ -151,6 +151,7 @@ class EditorFileMenu(QMenu):
                     else:
                         with open(os.path.join(base, levelpaths.terrainpath), "rb") as g:
                             self.editor.level_view.reloadTerrain(g, partial(progressbar.callback, 30))
+
                     progressbar.set(100)
 
                     self.level_paths = levelpaths

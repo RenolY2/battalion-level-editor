@@ -266,6 +266,14 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         #    self.bwterrain = BWTerrain(f)
         self.indicator = LiveIndicator(self)
 
+        self._dont_render = False
+
+    def stop_render(self):
+        self._dont_render = True
+
+    def start_render(self):
+        self._dont_render = False
+        self.do_redraw()
 
     def reloadModels(self, f, callback=None):
         self.makeCurrent()
@@ -274,6 +282,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             self.bwmodelhandler = BWModelHandler.from_file(f, callback)
         else:
             del self.bwmodelhandler
+            self.bwmodelhandler = None
             self.bwmodelhandler = BWModelHandler.from_file(f, callback)
         self.doneCurrent()
 
@@ -426,10 +435,10 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
     def pause_render(self):
         self.paused_render = True
-        self.doneCurrent()
+        #self.doneCurrent()
 
     def continue_render(self):
-        self.makeCurrent()
+        #self.makeCurrent()
         self.pause_render = False
 
     @catch_exception
