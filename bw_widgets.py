@@ -278,6 +278,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.doneCurrent()
 
     def reloadTerrain(self, f, callback=None):
+        if self.bwmodelhandler is None:
+            return
+
         self.bwterrain = BWTerrainV2(f)
         self.makeCurrent()
 
@@ -331,6 +334,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.doneCurrent()
 
     def render_terrain_immediate(self):
+        if self.bwmodelhandler is None:
+            return
+
         glUseProgram(self.shader)
         glDisable(GL_ALPHA_TEST)
         for meshindex, displist in zip(self.bwterrain.meshes, self.terrainmap):
