@@ -1,0 +1,41 @@
+# About MapZones
+***
+
+MapZones define a zone using a box or circle shape. They are often used for mission boundaries or in scripting to check if a unit has entered some part of the map.
+<br/>
+
+
+## Fields
+
+***
+
+### mZoneType
+
+Possible values:
+- ZONETYPE_DEFAULT: Default zone type without special properties.
+- ZONETYPE_WORLDBOUNDARY: Zone type encompassing the full level.
+- ZONETYPE_MISSIONBOUNDARY: Zone type which defines the area the player is allowed to be in. In BW2 this is also baked into the .pf2 file.
+- ZONETYPE_NOGOAREA: Zone type which makes troops avoid this area. In BW2 this is also baked into the .pf2 file.
+- ZONETYPE_FORD: Unknown. Used often on river crossings. In BW2 this is also baked into the .pf2 file.
+
+<br/>
+
+### mRadius
+Defines the zone as a circular shape with this radius. The fourth value is always 1.0.
+
+<br/>
+
+### mSize
+Defines the zone as a box shape with these XYZ dimensions.
+
+<br/>
+
+### mFlags
+A flag value of 1 defines the zone as a 3D zone.
+(Unconfirmed) This means the vertical position and the height of the zone matters.
+A flag value of 0 means the vertical position and the height of the zone doesn't matter and it extends upwards infinitely.
+
+<br/>
+
+### SystemFlags
+No effect.

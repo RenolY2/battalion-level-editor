@@ -61,6 +61,24 @@ def open_error_dialog(errormsg, self):
     errorbox.setFixedSize(500, 200)
 
 
+class HelpWindow(QtWidgets.QMdiSubWindow):
+    closing = pyqtSignal()
+
+    def __init__(self, title, text, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.resize(800, 400)
+
+        self.helptext = QtWidgets.QTextEdit(self)
+        self.setWindowTitle(title)
+        self.helptext.setReadOnly(True)
+        self.helptext.setMarkdown(text)
+
+        self.setWidget(self.helptext)
+
+    def closeEvent(self, closeEvent: QtGui.QCloseEvent) -> None:
+        self.closing.emit()
+
+
 class BWObjectEditWindow(QMdiSubWindow):
     closing = pyqtSignal()
     opennewxml = pyqtSignal(str)
@@ -80,9 +98,16 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.save_xml = QtWidgets.QPushButton("Save", self.central_widget)
         self.save_xml.setShortcut("Ctrl+S")
         self.save_xml.pressed.connect(self.action_save_xml)
-        self.search = SearchBar(self)
-        self._layout.addWidget(self.search)
+        self.help_button = QtWidgets.QPushButton(self)
+        self.help_button.setText("Help")
 
+        self.hlayout = QtWidgets.QHBoxLayout(self)
+        self.hlayout.addWidget(self.help_button)
+        self.help_button.pressed.connect(self.open_help)
+
+        self.search = SearchBar(self)
+        self.hlayout.addWidget(self.search)
+        self._layout.addLayout(self.hlayout)
         self._layout.addWidget(self.textbox_xml)
         self._layout.addWidget(self.save_xml)
         self.central_widget.setLayout(self._layout)
@@ -114,9 +139,36 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.textbox_xml.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
         self.textbox_xml.setFont(font)
         self.id = None
+        self.type = None
         self.current_index = 0
 
+        self.helpwindow = None
+
         #self.verticalLayout.addWidget(self.textbox_xml)
+
+    def close_help(self):
+        self.helpwindow = None
+
+    def open_help(self):
+        if self.helpwindow is not None:
+            self.helpwindow.setWindowState(
+                self.helpwindow.windowState() & ~QtCore.Qt.WindowState.WindowMinimized | QtCore.Qt.WindowState.WindowActive)
+            self.helpwindow.activateWindow()
+            self.helpwindow.show()
+            self.helpwindow.setFocus()
+        else:
+            try:
+                with open("objecthelp/{0}.txt".format(self.type), "r") as f:
+                    text = f.read()
+            except FileNotFoundError:
+                open_error_dialog(( "No help found for object type {}!"
+                                    "\n\nHelp files can be added in the editor's objecthelp folder."
+                                    "\nThe text files need to be named after the object type."
+                                    "Example: cTroop.txt for the object type cTroop.").format(self.type), None)
+            else:
+                self.helpwindow = HelpWindow("Help for {}".format(self.type), text)
+                self.helpwindow.closing.connect(self.close_help)
+                self.helpwindow.show()
 
     def find_text(self, text):
         if text:
@@ -173,11 +225,14 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.opennewxml.emit(id)
 
     def closeEvent(self, event):
+        if self.helpwindow is not None:
+            del self.helpwindow
         self.closing.emit()
 
     def set_content(self, bwobject):
         self.textbox_xml.setText(bwobject.tostring())
         self.id = bwobject.id
+        self.type = bwobject.type
         self.setWindowTitle(bwobject.name)
 
     def get_content(self):
