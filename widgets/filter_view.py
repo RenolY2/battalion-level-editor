@@ -197,7 +197,8 @@ class FilterViewMenu(QMenu):
     def handle_show_all(self):
         for action in (self.groundtroops, self.groundvehicles, self.airvehicles, self.watervehicles,
                        self.buildings, self.pickups, self.destroyableobjects, self.scenerycluster,
-                       self.cameras, self.capturepoints, self.zones, self.waypoints, self.ambientareapoints,
+                       self.cameras, self.capturepoints, self.mapzones, self.damagezones, self.coastzones, self.nogohintzones,
+                       self.waypoints, self.ambientareapoints,
                        self.objectivemarkers, self.unitgroups):
             action.action_view_toggle.setChecked(True)
             action.action_select_toggle.setChecked(True)
@@ -206,7 +207,8 @@ class FilterViewMenu(QMenu):
     def handle_hide_all(self):
         for action in (self.groundtroops, self.groundvehicles, self.airvehicles, self.watervehicles,
                        self.buildings, self.pickups, self.destroyableobjects, self.scenerycluster,
-                       self.cameras, self.capturepoints, self.zones, self.waypoints, self.ambientareapoints,
+                       self.cameras, self.capturepoints, self.mapzones, self.damagezones, self.coastzones, self.nogohintzones,
+                       self.waypoints, self.ambientareapoints,
                        self.objectivemarkers, self.unitgroups):
             action.action_view_toggle.setChecked(False)
             action.action_select_toggle.setChecked(False)
