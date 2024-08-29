@@ -335,6 +335,7 @@ class SearchBar(QtWidgets.QWidget):
         self.l.addWidget(self.textinput)
         self.l.addWidget(self.searchbutton)
         self.searchbutton.pressed.connect(self.do_search)
+        self.textinput.editingFinished.connect(self.do_search)
 
     def do_search(self):
         self.find.emit(self.textinput.text())
