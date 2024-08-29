@@ -232,7 +232,7 @@ class LevelDataTreeView(QTreeWidget):
         categorydistributionreverse = {
             "mapobjects":
                 ["cWaypoint", "cCamera", "cCameraBase", "cObjectiveMarker", "cMapZone",
-                 "cObjective", "cObjectiveMarkerBase"],
+                 "cObjective", "cObjectiveMarkerBase", "cCoastZone", "cDamageZone", "cNogoHintZone"],
             "assets":
                 ["cSoundBase", "cSprite", "cTextureResource", "sSampleResource", "sSpriteBasetype",
                  "cNodeHierarchyResource", "cAnimationResource", "cGroundVehicleEngineSoundBase",
