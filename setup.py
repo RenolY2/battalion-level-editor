@@ -34,7 +34,7 @@ bundle_dirname = f'battalion-level-editor-{version}'
 bundle_dirpath = os.path.join(build_dirpath, bundle_dirname)
 
 build_exe_options = {
-    "packages": ["OpenGL", "numpy.core._methods", "numpy.lib.format", "PIL"],
+    "packages": ["OpenGL", "numpy", "numpy.lib.format", "PIL"],
     "includes": ["widgets"],
     "excludes": ["PyQt6.QtWebEngine", "PyQt6.QtWebEngineCore"],
     "optimize": 0,
@@ -57,24 +57,27 @@ setup(name="Battalion Level Editor",
 
 os.mkdir(os.path.join(bundle_dirpath, 'lib', 'temp'))
 os.remove(os.path.join(bundle_dirpath, 'frozen_application_license.txt'))
-
+"""
 # Qt will be trimmed to reduce the size of the bundle.
 relative_pyqt_dir = os.path.join('lib', 'PyQt6')
 pyqt_dir = os.path.join(bundle_dirpath, relative_pyqt_dir)
 unwelcome_files = [
-    'examples',
-    'glue',
-    'include',
-    'qml',
-    'resources',
-    'scripts',
-    'support',
-    'translations',
-    'typesystems',
+    'examples'
+
 ]
-for plugin in os.listdir(os.path.join(pyqt_dir, 'plugins')):
+"""   
+# 'include',
+#    'qml',
+#    'resources',
+#    'scripts',
+#    'support',
+#    'translations',
+#    'typesystems',
+"""
+
+for plugin in os.listdir(os.path.join(pyqt_dir, 'Qt6', 'plugins')):
     if plugin not in ('platforms', 'imageformats'):
-        unwelcome_files.append(os.path.join('plugins', plugin))
+        unwelcome_files.append(os.path.join('Qt6', 'plugins', plugin))
 for glob_pattern in (
         '*.exe',
         '*3D*',
@@ -133,7 +136,10 @@ for relative_path in sorted(tuple(set(unwelcome_files))):
         os.remove(path)
     else:
         shutil.rmtree(path)
+"""
 
+
+"""
 # Create the ZIP archive.
 current_dirpath = os.getcwd()
 os.chdir(build_dirpath)
@@ -141,4 +147,4 @@ try:
     print('Creating ZIP archive...')
     shutil.make_archive(bundle_dirname, 'zip', '.', bundle_dirname)
 finally:
-    os.chdir(current_dirpath)
+    os.chdir(current_dirpath)"""
