@@ -1,0 +1,5 @@
+pyPEG2
+numpy
+Pillow
+PyOpenGL
+PyQt6
