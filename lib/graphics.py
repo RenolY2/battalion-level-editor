@@ -409,7 +409,8 @@ class Graphics(object):
         self.scene.lines.render()
         self.scene.lines.unbind()
 
-        if visible("cMapZone"):
+        #if visible("cMapZone"):
+        if True:
             glLineWidth(2.0)
             if len(self.scene.wireframeboxes) > 0:
                 self.rw.models.wireframe_cube.bind()
