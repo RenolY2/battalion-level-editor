@@ -220,7 +220,6 @@ class EditorFileMenu(QMenu):
                     return
 
 
-
             self.editor.level_view.do_redraw(force=True)
             self.editor.leveldatatreeview.updatenames()
 
@@ -236,7 +235,7 @@ class EditorFileMenu(QMenu):
                 except FileNotFoundError:
                     pass
                 else:
-                    pf2.update_mission_boundary(self.level_data)
+                    pf2.update_boundary(self.level_data, os.path.join(base, fname.replace(".xml", "")))
                     pf2.save(pf2path)
             else:
                 print("Skipping PF2..")
@@ -362,29 +361,60 @@ class PF2(object):
 
             self.rest = f.read()
 
-    def update_mission_boundary(self, level_file: BattalionLevelFile):
-        newimg = Image.new("RGB", (512, 512))
+    def update_boundary(self, level_file: BattalionLevelFile, basepath):
+        try:
+            missionboundary = Image.open(basepath+"_boundary.png")
+            if missionboundary.height != 512 or missionboundary.width != 512:
+                raise RuntimeError("Incorrect width")
+            missionboundary = ImageOps.flip(missionboundary)
+        except:
+            print(basepath + "_boundary.png", "not found. Starting with a blank boundary map.")
+            missionboundary = Image.new("RGB", (512, 512))
+        drawboundary = ImageDraw.Draw(missionboundary)
 
-        draw = ImageDraw.Draw(newimg)
+        try:
+            ford = Image.open(basepath+"_ford.png")
+            if ford.height != 512 or ford.width != 512:
+                raise RuntimeError("Incorrect width")
+            ford = ImageOps.flip(ford)
+        except:
+            print(basepath+"_ford.png", "not found. Starting with a blank ford map.")
+            ford = Image.new("RGB", (512, 512))
+        drawford = ImageDraw.Draw(ford)
+
+        try:
+            nogo = Image.open(basepath+"_nogo.png")
+            if nogo.height != 512 or nogo.width != 512:
+                raise RuntimeError("Incorrect width")
+        except:
+            print(basepath + "_nogo.png", "not found. Starting with a blank No-Go map.")
+            nogo = Image.new("RGB", (512, 512))
+        drawnogo = ImageDraw.Draw(nogo)
+
         for id, object in level_file.objects_with_positions.items():
-            if object.type == "cMapZone":
+            if object.type == "cMapZone" or object.type == "cDamageZone":
                 mtx = object.getmatrix().mtx
                 x,y,z = mtx[12:15]
                 img_x = (x+2048)/8.0
                 img_y = (z+2048)/8.0
                 offsetx = 2
                 mymtx = mtx.reshape((4, 4), order="F")
-                """mtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
-                    cos(deltay), 0.0, -sin(deltay), 0.0,
-                    0.0, 1.0, 0.0, 0.0,
-                    sin(deltay), 0.0, cos(deltay), 0.0,
-                    0.0, 0.0, 0.0, 1.0
-                ]))"""
 
-                if object.mZoneType == "ZONETYPE_MISSIONBOUNDARY":
+                if object.type == "cDamageZone":
+                    drawtarget = drawnogo
+                elif object.mZoneType == "ZONETYPE_MISSIONBOUNDARY":
+                    drawtarget = drawboundary
+                elif object.mZoneType == "ZONETYPE_FORD":
+                    drawtarget = drawford
+                elif object.mZoneType == "ZONETYPE_NOGOAREA":
+                    drawtarget = drawnogo
+                else:
+                    drawtarget = None
+
+                if drawtarget is not None:
                     if object.mRadius > 0:
                         rad = object.mRadius/8.0
-                        draw.ellipse((img_x-rad+offsetx, img_y-rad, img_x+rad+offsetx, img_y+rad), fill="white")
+                        drawtarget.ellipse((img_x-rad+offsetx, img_y-rad, img_x+rad+offsetx, img_y+rad), fill="white")
                     if object.mSize.x != 0 and object.mSize.y != 0 and object.mSize.z != 0:
                         sizex, sizey, sizez = object.mSize.x/2.0, object.mSize.y/2.0, object.mSize.z/2.0
 
@@ -396,7 +426,7 @@ class PF2(object):
                         for p in [corner1, corner2, corner3, corner4]:
                             points.append(((p[0]+2048)/8.0+offsetx, (p[2]+2048)/8.0))
 
-                        draw.polygon(points, "white", "white")
+                        drawtarget.polygon(points, "white", "white")
 
         for i in range(512*512):
             x = (i) % 512
@@ -408,7 +438,22 @@ class PF2(object):
                 x *= 2
                 x += 1
 
-            val = newimg.getpixel((x,y))
+            # NOGO
+            val = nogo.getpixel((x, y))
+            if val[0] < 128:
+                self.data[x][y][0] = 0
+            else:
+                self.data[x][y][0] = 0xF0
+
+            # FORD
+            val = ford.getpixel((x, y))
+            if val[0] < 128:
+                self.data[x][y][1] = 0
+            else:
+                self.data[x][y][1] = 0xF0
+
+            # MISSION BOUNDARY
+            val = missionboundary.getpixel((x,y))
             if val[0] < 128:
                 self.data[x][y][2] = 0
             else:
@@ -430,4 +475,5 @@ class PF2(object):
                 values = self.data[x][y]
                 f.write(struct.pack("BBBBBB", *values))
             f.write(self.rest)
+            print("Updated PF2 written to", path)
         #shutil.copy(path, r"E:\Modding\Video Game Modding\battalion-tools\PF2\test.pf2")
