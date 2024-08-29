@@ -231,6 +231,9 @@ class LevelEditor(QMainWindow):
         self.level_view.selected_rotations = []
         if hasattr(item, "bound_to"):
             self.level_view.selected = [item.bound_to]
+            mtx = item.bound_to.getmatrix()
+            if mtx is not None:
+                self.level_view.selected_positions.append(mtx)
 
         self.level_view.gizmo.move_to_average(self.level_view.selected,
                                               self.level_view.bwterrain,

@@ -141,6 +141,8 @@ class PikminSideWidget(QWidget):
         if id in self.parent.level_file.objects_with_positions:
             obj = self.parent.level_file.objects_with_positions[id]
             self.parent.level_view.selected = [obj]
+            self.parent.level_view.selected_positions = [obj.getmatrix()]
+            self.parent.update_3d()
             self.parent.level_view.select_update.emit()
             self.parent.level_view.do_redraw(force=True)
 
