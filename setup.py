@@ -34,7 +34,7 @@ bundle_dirname = f'battalion-level-editor-{version}'
 bundle_dirpath = os.path.join(build_dirpath, bundle_dirname)
 
 build_exe_options = {
-    "packages": ["OpenGL", "numpy", "numpy.lib.format", "PIL"],
+    "packages": ["PyQt6", "OpenGL", "numpy", "numpy.lib.format", "PIL"],
     "includes": ["widgets"],
     "excludes": ["PyQt6.QtWebEngine", "PyQt6.QtWebEngineCore"],
     "optimize": 0,
