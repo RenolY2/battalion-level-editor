@@ -19,7 +19,7 @@ def make_default_config():
 
     cfg["editor"] = {
         "InvertZoom": "False",
-        "wasdscrolling_speed": "1250",
+        "wasdscrolling_speed": "125",
         "wasdscrolling_speedupfactor": "5",
         "3d_background": "255 255 255"
     }
