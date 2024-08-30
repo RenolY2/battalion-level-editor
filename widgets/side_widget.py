@@ -43,6 +43,9 @@ class PikminSideWidget(QWidget):
         self.button_clone_object = QPushButton("Clone Object", parent)
         self.button_clone_object.setToolTip("Clones selected objects and their passengers, then selects them.")
 
+        self.button_set_spawnmatrix = QPushButton("Set SpawnMatrix")
+        self.button_set_spawnmatrix.setToolTip("Sets the spawn matrix of selected objects to the main position matrix. Spawn matrices are primarily used for XML-based respawning.")
+        self.button_set_spawnmatrix.pressed.connect(self.set_spawn_matrix)
         #self.button_add_object.setDisabled(True)
         #self.button_remove_object.setDisabled(True)
         self.button_add_object.setToolTip("Hotkey: Ctrl+A")
@@ -62,6 +65,8 @@ class PikminSideWidget(QWidget):
         #self.verticalLayout.addWidget(self.button_ground_object)
         self.verticalLayout.addWidget(self.button_edit_object)
         self.verticalLayout.addWidget(self.button_clone_object)
+        self.verticalLayout.addWidget(QtWidgets.QSplitter(self))
+        self.verticalLayout.addWidget(self.button_set_spawnmatrix)
         self.verticalLayout.addStretch(20)
 
         self.name_label = QLabel(parent)
@@ -90,6 +95,13 @@ class PikminSideWidget(QWidget):
 
         self.reset_info()
         self.add_window = None
+
+    def set_spawn_matrix(self):
+        for obj in self.parent.level_view.selected:
+            if hasattr(obj, "spawnMatrix") and hasattr(obj, "Mat"):
+                for i in range(16):
+                    obj.spawnMatrix.mtx[i] = obj.Mat.mtx[i]
+        self.parent.level_view.do_redraw()
 
     def _copy_object(self, obj, offsetx, offsetz):
         content = obj.tostring()
