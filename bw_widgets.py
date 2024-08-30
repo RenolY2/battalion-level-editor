@@ -771,7 +771,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                         x, z = self.mouse_coord_to_world_coord(click_x, original_click_y)
                         print(x,z)
                         for obj in reversed(self.level_file.objects_with_positions.values()):
-                            if not vismenu.object_visible(obj.type):
+                            if not vismenu.object_visible(obj.type, obj):
                                 continue
                             if self.dolphin.do_visualize():
                                 mtx = obj.mtxoverride
@@ -800,7 +800,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                             maxy = max(startbox[1], endbox[1])
 
                             for obj in reversed(self.level_file.objects_with_positions.values()):
-                                if not vismenu.object_visible(obj.type):
+                                if not vismenu.object_visible(obj.type, obj):
                                     continue
 
                                 if self.dolphin.do_visualize():

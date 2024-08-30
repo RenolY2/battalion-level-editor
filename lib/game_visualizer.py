@@ -186,7 +186,7 @@ class Game(object):
         visible = renderer.visibility_menu.object_visible
         if self.visualize:
             for objid, obj in renderer.level_file.objects_with_positions.items():
-                if not self.do_once and not visible(obj.type):
+                if not self.do_once and not visible(obj.type, obj):
                     continue
                 if obj in renderer.selected:
                     continue

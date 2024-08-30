@@ -108,10 +108,16 @@ class FilterViewMenu(QMenu):
         self.capturepoints = ObjectViewSelectionToggle("Capture Points", self, True)
         self.cameras = ObjectViewSelectionToggle("Cameras", self)
 
-        self.mapzones = ObjectViewSelectionToggle("Map Zones", self)
-        self.damagezones = ObjectViewSelectionToggle("Damage Zones", self)
-        self.coastzones = ObjectViewSelectionToggle("Coast Zones", self)
-        self.nogohintzones = ObjectViewSelectionToggle("No-Go Hint Zones", self)
+        #self.mapzones = ObjectViewSelectionToggle("Map Zones", self)
+        #self.damagezones = ObjectViewSelectionToggle("Damage Zones", self)
+        #self.coastzones = ObjectViewSelectionToggle("Coast Zones", self)
+        #self.nogohintzones = ObjectViewSelectionToggle("No-Go Hint Zones", self)
+
+        self.zone_defaultzones = ObjectViewSelectionToggle("Default Zones", self)
+        self.zone_worldboundary = ObjectViewSelectionToggle("World Boundary", self)
+        self.zone_mission = ObjectViewSelectionToggle("Mission Boundary", self)
+        self.zone_nogo = ObjectViewSelectionToggle("No-Go Areas", self)
+        self.zone_ford = ObjectViewSelectionToggle("Fords", self)
 
 
         self.waypoints = ObjectViewSelectionToggle("Waypoints", self)
@@ -121,8 +127,9 @@ class FilterViewMenu(QMenu):
 
         for action in (self.groundtroops, self.groundvehicles, self.airvehicles, self.watervehicles,
                        self.buildings, self.pickups, self.destroyableobjects, self.scenerycluster,
-                       self.cameras, self.capturepoints, self.mapzones, self.damagezones, self.coastzones, self.nogohintzones,
-                       self.waypoints, self.ambientareapoints, self.objectivemarkers, self.unitgroups):
+                       self.cameras, self.capturepoints, #self.mapzones, self.damagezones, self.coastzones, self.nogohintzones,
+                       self.waypoints, self.ambientareapoints, self.objectivemarkers, self.unitgroups,
+                       self.zone_defaultzones, self.zone_worldboundary, self.zone_mission, self.zone_nogo,self.zone_ford):
 
             action.action_view_toggle.triggered.connect(self.emit_update)
             action.action_select_toggle.triggered.connect(self.emit_update)
@@ -134,10 +141,12 @@ class FilterViewMenu(QMenu):
             action.add_3d()
 
         self.addSeparator()
-        self.addAction(self.mapzones.action_view_toggle)
-        self.addAction(self.damagezones.action_view_toggle)
-        self.addAction(self.coastzones.action_view_toggle)
-        self.addAction(self.nogohintzones.action_view_toggle)
+        for action in (self.zone_defaultzones, self.zone_worldboundary, self.zone_mission, self.zone_nogo,self.zone_ford):
+            self.addAction(action.action_view_toggle)
+        #self.addAction(self.mapzones.action_view_toggle)
+        #self.addAction(self.damagezones.action_view_toggle)
+        #self.addAction(self.coastzones.action_view_toggle)
+        #self.addAction(self.nogohintzones.action_view_toggle)
 
         self.toggles = {}
         self.toggles["cAirVehicle"] = self.airvehicles
@@ -148,16 +157,23 @@ class FilterViewMenu(QMenu):
         self.toggles["cBuilding"] = self.toggles["cMorphingBuilding"] = self.buildings
         self.toggles["cCamera"] = self.cameras
         self.toggles["cCapturePoint"] = self.capturepoints
-        self.toggles["cCoastZone"] = self.coastzones
-        self.toggles["cDamageZone"] = self.damagezones
-        self.toggles["cMapZone"] = self.mapzones
-        self.toggles["cNogoHintZone"] = self.nogohintzones
+        #self.toggles["cCoastZone"] = self.coastzones
+        #self.toggles["cDamageZone"] = self.damagezones
+        #self.toggles["cMapZone"] = self.mapzones
+        #self.toggles["cNogoHintZone"] = self.nogohintzones
         self.toggles["cDestroyableObject"] = self.destroyableobjects
         self.toggles["cObjectiveMarker"] = self.objectivemarkers
         self.toggles["cPickupReflected"] = self.pickups
         self.toggles["cReflectedUnitGroup"] = self.unitgroups
         self.toggles["cSceneryCluster"] = self.scenerycluster
         self.toggles["cWaypoint"] = self.waypoints
+
+        self.toggles["ZONETYPE_DEFAULT"] = self.zone_defaultzones
+        self.toggles["ZONETYPE_WORLDBOUNDARY"] = self.zone_worldboundary
+        self.toggles["ZONETYPE_MISSIONBOUNDARY"] = self.zone_mission
+        self.toggles["ZONETYPE_NOGOAREA"] = self.zone_nogo
+        self.toggles["ZONETYPE_FORD"] = self.zone_ford
+
 
     def restore(self, cfg):
         for type, toggle in self.toggles.items():
@@ -185,9 +201,15 @@ class FilterViewMenu(QMenu):
         else:
             return True
 
-    def object_visible(self, objtype):
+    def object_visible(self, objtype, obj):
         if self.visibility_override:
             return True
+
+        if obj is not None and objtype in ("cMapZone", "cCoastZone", "cDamageZone", "cNogoHintZone"):
+            if obj.mZoneType in self.toggles:
+                return self.toggles[obj.mZoneType].is_visible()
+            else:
+                return True
 
         if objtype in self.toggles:
             return self.toggles[objtype].is_visible()
@@ -197,9 +219,10 @@ class FilterViewMenu(QMenu):
     def handle_show_all(self):
         for action in (self.groundtroops, self.groundvehicles, self.airvehicles, self.watervehicles,
                        self.buildings, self.pickups, self.destroyableobjects, self.scenerycluster,
-                       self.cameras, self.capturepoints, self.mapzones, self.damagezones, self.coastzones, self.nogohintzones,
+                       self.cameras, self.capturepoints, #.mapzones, self.damagezones, self.coastzones, self.nogohintzones,
                        self.waypoints, self.ambientareapoints,
-                       self.objectivemarkers, self.unitgroups):
+                       self.objectivemarkers, self.unitgroups,
+                       self.zone_defaultzones, self.zone_worldboundary, self.zone_mission, self.zone_nogo,self.zone_ford):
             action.action_view_toggle.setChecked(True)
             action.action_select_toggle.setChecked(True)
         self.filter_update.emit()
@@ -207,9 +230,10 @@ class FilterViewMenu(QMenu):
     def handle_hide_all(self):
         for action in (self.groundtroops, self.groundvehicles, self.airvehicles, self.watervehicles,
                        self.buildings, self.pickups, self.destroyableobjects, self.scenerycluster,
-                       self.cameras, self.capturepoints, self.mapzones, self.damagezones, self.coastzones, self.nogohintzones,
+                       self.cameras, self.capturepoints, #self.mapzones, self.damagezones, self.coastzones, self.nogohintzones,
                        self.waypoints, self.ambientareapoints,
-                       self.objectivemarkers, self.unitgroups):
+                       self.objectivemarkers, self.unitgroups,
+                       self.zone_defaultzones, self.zone_worldboundary, self.zone_mission, self.zone_nogo,self.zone_ford):
             action.action_view_toggle.setChecked(False)
             action.action_select_toggle.setChecked(False)
         self.filter_update.emit()

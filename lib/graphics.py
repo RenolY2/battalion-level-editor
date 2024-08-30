@@ -167,7 +167,7 @@ class Graphics(object):
             raise RuntimeError("More than 64k objects, cannot select.")
 
         for i, obj in enumerate(objlist):
-            if vismenu.object_visible(obj.type):
+            if vismenu.object_visible(obj.type, obj):
                 colorid = (0x10000100 + (i << 12))
                 if obj.type not in extradataarrays:
                     extradataarrays["generic"].append(colorid)
@@ -220,7 +220,7 @@ class Graphics(object):
             empty = True
             waypoints = []
             for obj in rw.level_file.objects_with_positions.values():
-                if not visible(obj.type):
+                if not visible(obj.type, obj):
                     continue
                 empty = False
 
@@ -336,7 +336,7 @@ class Graphics(object):
 
         drawn = 0
         for objtype, model in self.scene.model.items():
-            if not visible(objtype):
+            if not visible(objtype, obj=None):
                 continue
 
             mtx, extradata = self.scene.objects[objtype]
