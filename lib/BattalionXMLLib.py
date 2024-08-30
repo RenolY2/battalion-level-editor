@@ -452,6 +452,11 @@ class BattalionObject(object):
             self._iconoffset = BWICONS["Volumeicon"]
         elif self.type == "cAmbientAreaPointSoundBox":
             self._iconoffset = BWICONS["Volumeicon"]
+        elif self.type in ("cMapZone", "cDamageZone", "cCoastZone", "cNogoHintZone"):
+            if self.mFlags == 1:
+                self._iconoffset = BWICONS["zone3d"]
+            else:
+                self._iconoffset = BWICONS["zone"]
         elif self.type == "cMorphingBuilding":
             for allegiance in (self.mBaseWF, self.mBaseXY, self.mBaseTT, self.mBaseSE,
                                self.mBaseUW, self.mBaseNeutral, self.mBaseAG):
