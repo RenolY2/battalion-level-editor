@@ -258,15 +258,15 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
         self.textbox_xml = QTextEdit(self.basewidget)
 
 
-        self.add_object_on_map = QtWidgets.QPushButton("Add Object On Map", self)
+        #self.add_object_on_map = QtWidgets.QPushButton("Add Object On Map", self)
         self.add_object = QtWidgets.QPushButton("Add Object", self)
         self.add_object.pressed.connect(self.action_add_object)
-        self.add_object_on_map.setEnabled(False)
+        #self.add_object_on_map.setEnabled(False)
 
         self.vlayout.addWidget(self.textbox_xml)
 
         self.hlayout = QtWidgets.QHBoxLayout(self)
-        self.hlayout.addWidget(self.add_object_on_map)
+        #self.hlayout.addWidget(self.add_object_on_map)
         self.hlayout.addWidget(self.add_object)
         self.vlayout.addLayout(self.hlayout)
 
