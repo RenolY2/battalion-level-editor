@@ -174,5 +174,7 @@
     "icon_inactive": [12, 10],
     "icon_death": [13, 10],
     "Volumeicon": [14, 10],
+    "zone": [15, 10],
+    "zone3d": [0, 11],
     "MissingIcon": [15, 15]
 }
