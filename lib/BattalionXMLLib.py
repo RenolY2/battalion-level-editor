@@ -458,11 +458,25 @@ class BattalionObject(object):
             else:
                 self._iconoffset = BWICONS["zone"]
         elif self.type == "cMorphingBuilding":
-            for allegiance in (self.mBaseWF, self.mBaseXY, self.mBaseTT, self.mBaseSE,
-                               self.mBaseUW, self.mBaseNeutral, self.mBaseAG):
-                if allegiance is not None:
-                    self._modelname = allegiance.mpModel.mName
-                    break
+            allegiancebuilding = {
+                "eWesternFrontier": self.mBaseWF,
+                "eXylvanian": self.mBaseXY,
+                "eTundranTerritories": self.mBaseTT,
+                "eSolarEmpire": self.mBaseSE,
+                "eUnderWorld": self.mBaseUW,
+                "eNeutral": self.mBaseNeutral,
+                "eAngloIsles": self.mBaseAG,
+            }
+            if self.mAllegiance in allegiancebuilding:
+                result = allegiancebuilding[self.mAllegiance]
+            if result == None:
+                for allegiance in (self.mBaseWF, self.mBaseXY, self.mBaseTT, self.mBaseSE,
+                                   self.mBaseUW, self.mBaseNeutral, self.mBaseAG):
+                    if allegiance is not None:
+                        self._modelname = allegiance.mpModel.mName
+                        break
+            else:
+                self._modelname = result.mpModel.mName
 
     def update_xml(self):
         for attr_node in self._node:
