@@ -1095,6 +1095,8 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
     @catch_exception
     def mouseReleaseEvent(self, event):
         self.usercontrol.handle_release(event)
+        self.selectionbox_start = self.selectionbox_end = None
+        self.selectionbox_projected_coords = None
 
     def wheelEvent(self, event):
         wheel_delta = event.angleDelta().y()
