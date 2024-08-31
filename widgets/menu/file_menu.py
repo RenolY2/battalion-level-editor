@@ -227,6 +227,10 @@ class EditorFileMenu(QMenu):
             progressbar.set(5)
             for object in self.level_data.objects.values():
                 object.update_xml()
+            self.editor.level_view.selected_positions = []
+            for obj in self.editor.level_view.selected:
+                if obj.getmatrix() is not None:
+                    self.editor.level_view.selected_positions.append(obj.getmatrix())
             progressbar.set(10)
 
             if self.editor.editorconfig.getboolean("regenerate_pf2", fallback=False):
@@ -259,11 +263,11 @@ class EditorFileMenu(QMenu):
             if levelpaths.objectpath.endswith(".gz"):
                 with gzip.open(os.path.join(base, levelpaths.objectpath), "wb") as g:
                     g.write(tmp.getvalue())
-                if self.level_paths.objectfilepadding is not None:
+                """if self.level_paths.objectfilepadding is not None:
                     with open(os.path.join(base, levelpaths.objectpath), "r+b") as g:
                         g.seek(0, 2)
                         if g.tell() < self.level_paths.objectfilepadding:
-                            g.write(b"\x00"*(self.level_paths.objectfilepadding - g.tell()))
+                            g.write(b"\x00"*(self.level_paths.objectfilepadding - g.tell()))"""
             else:
                 with open(os.path.join(base, levelpaths.objectpath), "wb") as g:
                     g.write(tmp.getvalue())
@@ -276,11 +280,11 @@ class EditorFileMenu(QMenu):
             if levelpaths.preloadpath.endswith(".gz"):
                 with gzip.open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
                     g.write(tmp2.getvalue())
-                if self.level_paths.preloadpadding is not None:
+                """if self.level_paths.preloadpadding is not None:
                     with open(os.path.join(base, levelpaths.preloadpath), "ab") as g:
                         g.seek(0, 2)
                         if g.tell() < self.level_paths.preloadpadding:
-                            g.write(b"\x00"*(self.level_paths.preloadpadding - g.tell()))
+                            g.write(b"\x00"*(self.level_paths.preloadpadding - g.tell()))"""
             else:
                 with open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
                     g.write(tmp2.getvalue())
