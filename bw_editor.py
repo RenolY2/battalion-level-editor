@@ -116,6 +116,18 @@ class LevelEditor(QMainWindow):
         if a1 == QtCore.QEvent.MouseMove:
             pass
 
+
+
+    def changeEvent(self, changeEvent: QtCore.QEvent) -> None:
+        super().changeEvent(changeEvent)
+
+        if changeEvent.type() == QtCore.QEvent.Type.ActivationChange:
+            print(self, self.isActiveWindow())
+            if not self.isActiveWindow():
+                self.level_view.selectionbox_projected_coords = None
+                self.level_view.selectionbox_start = self.level_view.selectionbox_end = None
+                self.update_3d()
+
     @catch_exception
     def reset(self):
         self.menubar.reset_hook()

@@ -623,6 +623,11 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.MOVE_RIGHT = 0
         self.SPEEDUP = 0
 
+    def focusOutEvent(self, a0) -> None:
+        self.selectionbox_projected_coords = None
+        self.selectionbox_start = self.selectionbox_end = None
+        self.do_redraw()
+
     def set_collision(self, verts, faces, alternative_mesh):
         self.collision = Collision(verts, faces)
 
@@ -1072,6 +1077,11 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
     def get_2d_selectionbox(self):
         return self._selectbox_x, self._selectbox_y, self._selectbox_end_x, self._selectbox_end_y
+
+    def leaveEvent(self, a0) -> None:
+        self.selectionbox_start = self.selectionbox_end = None
+        self.selectionbox_projected_coords = None
+        self.do_redraw()
 
     @catch_exception
     def mousePressEvent(self, event):
