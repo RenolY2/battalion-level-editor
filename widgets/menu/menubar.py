@@ -104,7 +104,9 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         open_error_dialog("Level or game change detected! Dolphin hook has been shut down.", None)
 
     def hook_game(self):
-
+        self.editor.level_view.selected = []
+        self.editor.level_view.selected_positions = []
+        self.editor.update_3d()
         if not self.editor.dolphin.running or self.editor.dolphin.visualize:
             self.editor.dolphin.running = False
             for objid, obj in self.editor.level_file.objects_with_positions.items():
@@ -138,6 +140,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.editor.update_3d()
 
     def hook_game_visualize(self):
+        self.editor.level_view.selected = []
+        self.editor.level_view.selected_positions = []
         self.editor.update_3d()
         if not self.editor.dolphin.running or not self.editor.dolphin.visualize:
             failure = self.editor.dolphin.initialize(self.editor.level_file,
