@@ -8,6 +8,9 @@ Y = 13
 Z = 14
 
 
+
+
+
 class BWMatrix(object):
     def __init__(self, *values):
         self.mtx = array(values, dtype=float32) #Matrix4x4(*values)
@@ -34,6 +37,19 @@ class BWMatrix(object):
         mtx = mymtx.dot(mtx)
         flatten = mtx.flatten("F")
         self.mtx[0:15] = flatten[0:15]
+
+    @staticmethod
+    def static_rotate_y(mtx, deltay):
+        mymtx = mtx.reshape((4, 4), order="F")
+        rotmtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
+            cos(deltay), 0.0, -sin(deltay), 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            sin(deltay), 0.0, cos(deltay), 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]))
+        newmtx = mymtx.dot(rotmtx)
+        flatten = newmtx.flatten("F")
+        mtx[0:15] = flatten[0:15]
 
     @property
     def x(self):

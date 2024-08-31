@@ -21,6 +21,7 @@ import PyQt6.QtGui as QtGui
 
 import opengltext
 import py_obj
+from lib.bw_types import BWMatrix
 from lib.vectors import Vector3
 from widgets.menu.menubar import EditorMenuBar
 from widgets.editor_widgets import catch_exception
@@ -860,23 +861,28 @@ class LevelEditor(QMainWindow):
 
     def action_rotate_object(self, deltarotation):
         #obj.set_rotation((None, round(angle, 6), None))
-        for mtx in self.level_view.selected_positions:
-            if deltarotation.y != 0:
-                mtx.rotate_y(deltarotation.y)
-        """for rot in self.level_view.selected_rotations:
-            if deltarotation.x != 0:
-                rot.rotate_around_y(deltarotation.x)
-            elif deltarotation.y != 0:
-                rot.rotate_around_z(deltarotation.y)
-            elif deltarotation.z != 0:
-                rot.rotate_around_x(deltarotation.z)"""
+        if self.dolphin.do_visualize():
+            for obj in self.level_view.selected:
+                if obj.mtxoverride is not None and deltarotation.y != 0:
+                    BWMatrix.static_rotate_y(obj.mtxoverride, deltarotation.y)
+        else:
+            for mtx in self.level_view.selected_positions:
+                if deltarotation.y != 0:
+                    mtx.rotate_y(deltarotation.y)
 
         #if self.rotation_mode.isChecked():
         if True:
             middle = self.level_view.gizmo.position
 
-            for mtx in self.level_view.selected_positions:
-                position = Vector3(mtx.x, mtx.y, mtx.z)
+
+            for obj in self.level_view.selected:
+                if obj.getmatrix() is None:
+                    continue
+                if self.dolphin.do_visualize() and obj.mtxoverride is not None:
+                    mtx = obj.mtxoverride
+                else:
+                    mtx = obj.getmatrix().mtx
+                position = Vector3(mtx[12], mtx[13], mtx[14])
                 diff = position - middle
                 diff.y = 0.0
 
@@ -887,8 +893,8 @@ class LevelEditor(QMainWindow):
                     angle += deltarotation.y
                     position.x = middle.x + length * sin(angle)
                     position.z = middle.z + length * cos(angle)
-                    mtx.mtx[12] = position.x
-                    mtx.mtx[14] = position.z
+                    mtx[12] = position.x
+                    mtx[14] = position.z
 
         #self.pikmin_gen_view.update()
         self.level_view.do_redraw(forceselected=True)
@@ -1024,7 +1030,7 @@ class LevelEditor(QMainWindow):
         action = QAction("Copy Coordinates", self)
         action.triggered.connect(self.action_copy_coords_to_clipboard)
         context_menu.addAction(action)
-        context_menu.exec(self.mapToGlobal(position))
+        context_menu.exec(self.level_view.mapToGlobal(position))
         context_menu.destroy()
 
     def action_copy_coords_to_clipboard(self):
