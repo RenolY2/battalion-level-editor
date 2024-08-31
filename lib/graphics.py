@@ -229,7 +229,7 @@ class Graphics(object):
                 else:
                     mtx, extradata = default_matrices, default_extradata
 
-                if rw.dolphin.running and obj.mtxoverride is not None:
+                if rw.dolphin.do_visualize() and obj.mtxoverride is not None:
                     currmtx = obj.mtxoverride.copy()
                 else:
                     currmtx = obj.getmatrix().mtx.copy()
@@ -242,7 +242,10 @@ class Graphics(object):
                 mtx.append(currmtx)
 
                 if obj.type in ("cMapZone", "cCoastZone", "cDamageZone", "cNogoHintZone"):
-                    mtx = obj.getmatrix()
+                    if rw.dolphin.do_visualize() and obj.mtxoverride is not None:
+                        mtx = obj.mtxoverride
+                    else:
+                        mtx = obj.getmatrix().mtx
                     if obj in selected:
                         color = object_colors["SelectionColor"]
                     else:
@@ -419,7 +422,7 @@ class Graphics(object):
                 coloruniform = rw.models.wireframe_cube.program.getuniformlocation("color")
 
                 for mtx, color, size in self.scene.wireframeboxes:
-                    glUniformMatrix4fv(mtxuniform, 1, False, mtx.mtx)
+                    glUniformMatrix4fv(mtxuniform, 1, False, mtx)
                     glUniform4f(sizeuniform, size[0], size[1], size[2], size[3])
                     glUniform4f(coloruniform, color[0], color[1], color[2], color[3])
                     rw.models.wireframe_cube.render()
@@ -431,7 +434,7 @@ class Graphics(object):
                 coloruniform = rw.models.wireframe_cylinder.program.getuniformlocation("color")
 
                 for mtx, color, size in self.scene.wireframecylinders:
-                    glUniformMatrix4fv(mtxuniform, 1, False, mtx.mtx)
+                    glUniformMatrix4fv(mtxuniform, 1, False, mtx)
                     glUniform4f(sizeuniform, size[0], size[1], size[2], size[3])
                     glUniform4f(coloruniform, color[0], color[1], color[2], color[3])
                     rw.models.wireframe_cylinder.render()
