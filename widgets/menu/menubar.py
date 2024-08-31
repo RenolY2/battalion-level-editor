@@ -98,6 +98,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.apply_live_positions_action.setEnabled(False)
         self.editor.dolphin.initialize(shutdown=True)
         self.editor.level_view.indicator.reset()
+        self.editor.level_view.do_redraw(force=True)
 
     def reset_hook_with_error_message(self):
         self.reset_hook()
