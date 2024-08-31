@@ -764,6 +764,7 @@ class LevelEditor(QMainWindow):
                 mtx.add_position(deltax, deltay, deltaz)
 
 
+
         #if len(self.pikmin_gen_view.selected) == 1:
         #    obj = self.pikmin_gen_view.selected[0]
         #    self.pik_control.set_info(obj, obj.position, obj.rotation)

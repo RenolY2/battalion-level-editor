@@ -145,6 +145,23 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.helpwindow = None
 
         #self.verticalLayout.addWidget(self.textbox_xml)
+        self.unsaved_changes = False
+        self.textbox_xml.textChanged.connect(self.set_unsaved)
+        self.title = ""
+
+        self._scrollbarstate = None
+
+    def backup_scrollbar_state(self):
+        self._scrollbarstate = self.textbox_xml.verticalScrollBar().value(), self.textbox_xml.horizontalScrollBar().value()
+
+    def restore_scrollbar_state(self):
+        vertical, horizontal = self._scrollbarstate
+        self.textbox_xml.verticalScrollBar().setValue(vertical)
+        self.textbox_xml.horizontalScrollBar().setValue(horizontal)
+
+    def set_unsaved(self):
+        self.unsaved_changes = True
+        self.update_windowtitle()
 
     def close_help(self):
         self.helpwindow = None
@@ -233,10 +250,24 @@ class BWObjectEditWindow(QMdiSubWindow):
         self.textbox_xml.setText(bwobject.tostring())
         self.id = bwobject.id
         self.type = bwobject.type
-        self.setWindowTitle(bwobject.name)
+        self.title = bwobject.name
+        self.unsaved_changes = False
+        self.update_windowtitle()
+
+    def update_windowtitle(self):
+        if self.unsaved_changes:
+            self.setWindowTitle(self.title +" [Unsaved Changes]")
+        else:
+            self.setWindowTitle(self.title)
+
+    def reset_unsaved(self):
+        self.unsaved_changes = False
+        self.update_windowtitle()
 
     def get_content(self):
         return self.textbox_xml.toPlainText()
+
+
 
 
 class AddBWObjectWindow(QtWidgets.QMainWindow):

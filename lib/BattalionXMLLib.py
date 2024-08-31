@@ -5,7 +5,7 @@ from collections.abc import MutableSequence, Iterable
 try:
     import xml.etree.cElementTree as etree
 except: # cElementTree not available
-    import xml.etree.ElementTree as etre
+    import xml.etree.ElementTree as etree
 
 from lib.searchquery import fieldnames
 from numpy import array, float32
@@ -492,7 +492,7 @@ class BattalionObject(object):
                         node.text = convert_to(attr_node.attrib["type"], val)
 
     @classmethod
-    def create_from_text(cls, xmltext, leveldata, preload):
+    def create_from_text(cls, xmltext, leveldata, preload, dontresolve=False):
         xmlnode = etree.fromstring(xmltext)
         obj = cls(leveldata, xmlnode)
         obj.resolve_pointers(leveldata, preload)

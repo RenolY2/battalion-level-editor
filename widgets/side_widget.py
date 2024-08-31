@@ -10,6 +10,7 @@ from PyQt6.QtCore import Qt
 from widgets.data_editor import choose_data_editor
 from widgets.editor_widgets import BWObjectEditWindow, AddBWObjectWindow, open_error_dialog
 from lib.BattalionXMLLib import BattalionObject
+import typing
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
@@ -91,7 +92,7 @@ class PikminSideWidget(QWidget):
         self.objectlist = []
 
         self.object_data_edit = None
-        self.edit_windows = {}
+        self.edit_windows: typing.Dict[str, BWObjectEditWindow] = {}
 
         self.reset_info()
         self.add_window = None
@@ -154,9 +155,13 @@ class PikminSideWidget(QWidget):
             obj = self.parent.level_file.objects_with_positions[id]
             self.parent.level_view.selected = [obj]
             self.parent.level_view.selected_positions = [obj.getmatrix()]
+
             self.parent.update_3d()
             self.parent.level_view.select_update.emit()
             self.parent.level_view.do_redraw(force=True)
+
+            if id in self.edit_windows and obj.getmatrix() is not None and not self.edit_windows[id].unsaved_changes:
+                self.update_editwindow_position(id)
 
     def handle_close(self, field):
         setattr(self, field, None)
@@ -247,6 +252,29 @@ class PikminSideWidget(QWidget):
             window.activateWindow()
             window.show()
 
+    def update_editwindow_position(self, id):
+        obj = None
+        if id in self.parent.level_file.objects:
+            obj = self.parent.level_file.objects[id]
+
+        if obj is None:
+            return
+
+        content = self.edit_windows[id].get_content()
+        currobj = BattalionObject.create_from_text(content, self.parent.level_file, self.parent.preload_file)
+
+        if currobj.getmatrix() is not None:
+            assert currobj.getmatrix() is not None and obj.getmatrix() is not None
+
+            for i in range(16):
+                currobj.getmatrix().mtx[i] = obj.getmatrix().mtx[i]
+            currobj.update_xml()
+            unsaved = self.edit_windows[id].unsaved_changes
+            self.edit_windows[id].backup_scrollbar_state()
+            self.edit_windows[id].set_content(currobj)
+            self.edit_windows[id].restore_scrollbar_state()
+            self.edit_windows[id].unsaved_changes = unsaved
+
     def save_object_data(self, id, mass_save=False):
         content = self.edit_windows[id].get_content()
         obj = None
@@ -261,11 +289,23 @@ class PikminSideWidget(QWidget):
                     obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
                 except Exception as err:
                     open_error_dialog(str(err), None)
+                else:
+                    self.edit_windows[id].reset_unsaved()
+
                 self.parent.level_view.do_redraw(force=True)
             self.parent.leveldatatreeview.updatenames()
+            for obj in self.parent.level_view.selected:
+                if obj.getmatrix() is not None:
+                    self.parent.level_view.selected_positions.append(obj.getmatrix())
+            self.parent.update_3d()
         else:
             if obj is not None:
                 obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
+
+                self.edit_windows[id].reset_unsaved()
+                self.parent.level_view.selected_positions = []
+
+
 
     def _make_labeled_lineedit(self, lineedit, label):
         font = QFont()

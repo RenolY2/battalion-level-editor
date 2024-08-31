@@ -211,6 +211,7 @@ class EditorFileMenu(QMenu):
 
             for id, window in self.editor.pik_control.edit_windows.items():
                 try:
+                    self.editor.pik_control.update_editwindow_position(id)
                     self.editor.pik_control.save_object_data(id, mass_save=True)
                 except Exception as err:
                     self.editor.pik_control.activate_window(id)
