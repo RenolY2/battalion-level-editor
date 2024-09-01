@@ -537,11 +537,12 @@ class UserControl(object):
         self.clickdragactions3d = {"Left": [], "Right": [], "Middle": []}
 
         self.add_action(TopdownScroll("2DScroll", "Middle"))
-        self.add_action(TopdownSelect("2DSelect", "Left"))
+
         self.add_action(Gizmo2DMoveX("Gizmo2DMoveX", "Left"))
         self.add_action(Gizmo2DMoveZ("Gizmo2DMoveZ", "Left"))
         self.add_action(Gizmo2DMoveXZ("Gizmo2DMoveXZ", "Left"))
         self.add_action(Gizmo2DRotateY("Gizmo2DRotateY", "Left"))
+        self.add_action(TopdownSelect("2DSelect", "Left"))
         self.add_action(AddObjectTopDown("AddObject2D", "Left"))
 
         self.add_action3d(RotateCamera3D("RotateCamera", "Right"))
