@@ -90,7 +90,7 @@ class EditorFileMenu(QMenu):
             filepath, chosentype = QFileDialog.getOpenFileName(
                 self, "Open File",
                 self.editor.pathsconfig["xml"],
-                "XML files (*.xml; *.xml.gz);;All files (*)",
+                "XML files (*.xml);;All files (*)",
                 self.last_chosen_type)
 
         if filepath:
@@ -108,6 +108,8 @@ class EditorFileMenu(QMenu):
                 try:
                     self.is_loading = True
                     levelpaths = BattalionFilePaths(f)
+                    if levelpaths.objectpath is None:
+                        raise RuntimeError("Wrong XML loaded!\nMake sure you are loading the level's main XML file without Level or Preload in the name.")
                     base = os.path.dirname(filepath)
                     print(base, levelpaths.objectpath)
                     progressbar = LoadingProgress("Loading")
