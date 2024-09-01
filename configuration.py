@@ -21,7 +21,9 @@ def make_default_config():
         "InvertZoom": "False",
         "wasdscrolling_speed": "125",
         "wasdscrolling_speedupfactor": "5",
-        "3d_background": "255 255 255"
+        "3d_background": "255 255 255",
+        "regenerate_pf2": "True",
+        "regenerate_waypoints": "False"
     }
 
     with open("editor_config.ini", "w") as f:
