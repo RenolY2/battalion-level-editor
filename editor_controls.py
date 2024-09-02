@@ -156,6 +156,7 @@ class Gizmo2DMoveX(ClickDragAction):
         super().__init__(*args, **kwargs)
         self.start_state = None
         self.moved = False
+        self.was_hidden = False
 
     def just_clicked(self, editor, buttons, event):
         super().just_clicked(editor, buttons, event)
