@@ -244,7 +244,7 @@ class LevelEditor(QMainWindow):
         self.level_view.selected = []
         self.level_view.selected_positions = []
         self.level_view.selected_rotations = []
-        if hasattr(item, "bound_to"):
+        if hasattr(item, "bound_to") and item.bound_to is not None:
             self.level_view.selected = [item.bound_to]
             mtx = item.bound_to.getmatrix()
             if mtx is not None:
