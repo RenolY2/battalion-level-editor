@@ -20,7 +20,6 @@ def load_autocomplete(fpath):
 
             wordlower = fieldname.lower()
             if "_" in wordlower:  # Ignore numbers at start to not interfere with writing decimal values
-                print(wordlower.split("_", 1))
                 l, r = wordlower.split("_", 1)
                 if l.isdigit():
                     assert len(r) > 0
