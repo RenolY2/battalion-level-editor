@@ -21,7 +21,7 @@ AXIS_Z = 2
 X_COLOR = (1.0, 0.1, 0.1, 1.0)
 Y_COLOR = (0.0, 1.0, 0.0, 1.0)
 Z_COLOR = (0.0, 0.0, 1.0, 1.0)
-MIDDLE = (0.5, 0.5, 0.5, 1.0)
+MIDDLE = (0.3, 0.4, 0.3, 1.0)
 
 
 class Gizmo(Model):
