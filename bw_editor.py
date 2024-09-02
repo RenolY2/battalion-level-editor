@@ -1,7 +1,7 @@
 import cProfile
 import pstats
 import traceback
-__version__ = '1.0rc4'
+__version__ = '1.0.1'
 
 import os
 from timeit import default_timer
@@ -123,7 +123,7 @@ class LevelEditor(QMainWindow):
         super().changeEvent(changeEvent)
 
         if changeEvent.type() == QtCore.QEvent.Type.ActivationChange:
-            print(self, self.isActiveWindow())
+            print("activation status change", self, self.isActiveWindow())
             if not self.isActiveWindow():
                 self.level_view.selectionbox_projected_coords = None
                 self.level_view.selectionbox_start = self.level_view.selectionbox_end = None
