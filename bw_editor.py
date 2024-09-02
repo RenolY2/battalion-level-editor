@@ -1144,6 +1144,21 @@ def splitnowhitespace(line):
     return line
 
 
+class Logger(object):
+    def __init__(self, stdout, logfile):
+        self.terminal = stdout
+        self.log = logfile
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
+
+
+
 if __name__ == "__main__":
     #with cProfile.Profile() as pr:
     if True:
@@ -1173,14 +1188,15 @@ if __name__ == "__main__":
 
         if platform.system() == "Windows":
             import ctypes
-            myappid = 'P2GeneratorsEditor'  # arbitrary string
+            myappid = 'BWEditor'  # arbitrary string
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-
-        #with open("log.txt", "w") as f:
-        if True:
-            #sys.stdout = f
-            #sys.stderr = f
+        with open("editor_log.txt", "w") as f:
+            logger = Logger(sys.stdout, f)
+            loggererr = Logger(sys.stderr, f)
+            sys.stdout = logger
+            sys.stderr = loggererr
             print("Python version: ", sys.version)
+            print("BW Editor Version: ", __version__)
             editor_gui = LevelEditor()
             editor_gui.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
             # Debugging

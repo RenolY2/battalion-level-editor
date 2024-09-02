@@ -1,5 +1,6 @@
 import traceback
 import os
+import sys
 import random
 from itertools import chain
 from time import sleep
@@ -456,6 +457,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.logic(timedelta, diff)
 
         if diff > 1 / 60.0:
+            sys.stderr.flush()
             if self._frame_invalid:
                 if not self.paused_render:
                     self.update()
