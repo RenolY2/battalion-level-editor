@@ -156,6 +156,9 @@ class Game(object):
             self.timer = 0
         else:
             return
+        if not self.dolphin.is_shared_memory_open():
+            self.shutdowncallback()
+            return
 
         fails = 0
         successes = 0

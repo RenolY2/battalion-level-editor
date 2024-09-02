@@ -102,7 +102,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
     def reset_hook_with_error_message(self):
         self.reset_hook()
-        open_error_dialog("Level or game change detected! Dolphin hook has been shut down.", None)
+        open_error_dialog("Level was changed or the game has been closed. Dolphin hook has been shut down.", None)
 
     def hook_game(self):
         self.editor.level_view.selected = []

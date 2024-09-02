@@ -153,7 +153,15 @@ class Dolphin(object):
             return False 
         
         return True
-    
+
+    def is_shared_memory_open(self):
+        try:
+            self.memory = None
+            self.memory = shared_memory.SharedMemory('dolphin-emu.' + str(self.pid))
+            return True
+        except FileNotFoundError:
+            return False
+
     def init_shared_memory(self):
         try:
             self.memory = shared_memory.SharedMemory('dolphin-emu.'+str(self.pid))
