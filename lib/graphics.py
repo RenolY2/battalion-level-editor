@@ -174,11 +174,12 @@ class Graphics(object):
                 else:
                     extradataarrays[obj.type].append(colorid)
         for key, model in self.scene.model.items():
-            extradataarray = extradataarrays[key]
-            extradata = numpy.array(extradataarray, dtype=numpy.uint32)
-            model.bind_colorid(extradata)
-            model.instancedrender()
-            model.unbind()
+            if key == "generic" or vismenu.object_visible(key, None):
+                extradataarray = extradataarrays[key]
+                extradata = numpy.array(extradataarray, dtype=numpy.uint32)
+                model.bind_colorid(extradata)
+                model.instancedrender()
+                model.unbind()
 
         print("We queued up", len(objlist))
 
