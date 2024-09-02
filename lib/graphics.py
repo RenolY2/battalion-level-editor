@@ -395,7 +395,6 @@ class Graphics(object):
 
         zoomscale = lerp(0.28, 0.64, 1.0, 2.8, self.rw.zoom_factor)
         #zoomuniform =
-        print(self.rw.zoom_factor, zoomscale)
         facuniform = rw.models.billboard.program.getuniformlocation("scalefactor")
         glUniform1f(facuniform, zoomscale)
         rw.models.billboard.instancedrender()

@@ -742,7 +742,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             click_y = height - click_y
             hit = 0xFF
 
-            #print("received request", do_gizmo)
+            print("received selection request", do_gizmo)
 
             if clickwidth == 1 and clickheight == 1:
                 self.gizmo.render_collision_check(gizmo_scale, is3d=self.mode == MODE_3D)
@@ -774,7 +774,6 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                         hit = []
                         # Check click <-> object intersection
                         x, z = self.mouse_coord_to_world_coord(click_x, original_click_y)
-                        print(x,z)
                         for obj in reversed(self.level_file.objects_with_positions.values()):
                             if not vismenu.object_visible(obj.type, obj):
                                 continue
@@ -1048,9 +1047,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         glEnable(GL_DEPTH_TEST)
         glFinish()
         now = default_timer() - start
-        print("Frame time:", now, 1/now, "fps")
-        print("Spent on terrain: {0} {1}%".format(terraintime, round(terraintime/now, 3)*100))
-        print("Spent on objects: {0} {1}%".format(objecttime, round(objecttime/now, 3)*100))
+        #print("Frame time:", now, 1/now, "fps")
+        #print("Spent on terrain: {0} {1}%".format(terraintime, round(terraintime/now, 3)*100))
+        #print("Spent on objects: {0} {1}%".format(objecttime, round(objecttime/now, 3)*100))
 
     def do_select(self, objs):
         self.selected = []

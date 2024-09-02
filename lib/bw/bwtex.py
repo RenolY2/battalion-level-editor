@@ -217,7 +217,6 @@ class BW2Texture(Texture):
     
     def write(self, f):
         start = f.tell()
-        print(self.name, len(self.name))
         assert len(self.name) <= 0x20-1
         f.write(self.name.encode("ascii"))
         f.write(b"\x00"*(0x20 - f.tell()))
@@ -316,8 +315,6 @@ class BW2Texture(Texture):
         size = read_uint32_le(f)
         #print(name, tex.format)
         if tex.fmt in ("P4", "P8"):
-            print(tex.fmt, section)
-            print(tex.name)
             assert section == PALLETE
             palette = BytesIO(f.read(size))
             num_colors = len(palette.getbuffer())//2  # Max 16 for P4 and max 256 for P8
@@ -330,12 +327,10 @@ class BW2Texture(Texture):
             assert section == MIP
         
         #tex.mipmaps.append(f.read(size))
-        print(section, hex(size))
-        print(hex(f.tell()))
+
         imagedata = BytesIO(f.read(size)+b"\x00"*256*256)
         
         #assert size == len(imagedata.getbuffer())
-        print(FORMAT[tex.fmt], hex(size), tex.size_x, tex.size_y)
         mip = decode_image(
                         imagedata, palette, FORMAT[tex.fmt], PaletteFormat.RGB5A3, num_colors, 
                         tex.size_x, tex.size_y
@@ -473,7 +468,6 @@ class BW1Texture(Texture):
     
     def write(self, f):
         start = f.tell()
-        print(self.name, len(self.name))
         assert len(self.name) <= 0x10
         f.write(self.name.encode("ascii"))
         f.write(b"\x00"*(0x10 - len(self.name)))
@@ -570,8 +564,6 @@ class BW1Texture(Texture):
             assert section == MIP
  
         #tex.mipmaps.append(f.read(size))
-        print(section, hex(size))
-        print(hex(f.tell()))
         imagedata = BytesIO(f.read(size)+b"\x00"*256*256)
         
         #assert size == len(imagedata.getbuffer())

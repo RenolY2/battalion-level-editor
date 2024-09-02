@@ -333,7 +333,6 @@ class BW2Model(Model):
                     obj.write("vt {0} {1}\n".format(u, 1-v))
 
                 for i, mat in enumerate(node.materials):
-                    print(node.name)
                     matname = str(node.name.strip(b"\00"), encoding="latin-1")+"_mat{0}".format(i)
 
                     mtl.write("newmtl {0}\n".format(matname))

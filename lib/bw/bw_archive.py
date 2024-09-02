@@ -388,14 +388,10 @@ class BWArchive(BWArchiveBase):
         if self.ftb.entries[0].name != b"DXTG":
             result = "BW1"
         else:
-            print(self.textures[0])
-            print(bytes(self.textures[0].data))
-
             if b"RPIM" in bytes(self.textures[0].data):
                 result = "AQ"
             else:
                 result = "BW2"
-        print("HELLOOOO", result)
         return result
 
 

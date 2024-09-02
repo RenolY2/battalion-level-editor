@@ -945,7 +945,6 @@ class WireframeModel(object):
                 line = line.strip()
                 args = line.split(" ")
                 cmd = args[0] if len(args) > 0 else ""
-                print(args)
                 if cmd == "v":
                     vertices.append((float(args[1]), float(args[2]), float(args[3])))
                 elif cmd == "l":

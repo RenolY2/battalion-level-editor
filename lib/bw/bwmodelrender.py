@@ -22,7 +22,7 @@ class BWModelHandler(object):
 
         for i, modeldata in enumerate(bwarc.models):
             name = str(modeldata.res_name, encoding="ascii")
-            print(name, modeldata)
+            print(name)
             if bwarc.is_bw2():
                 model = BW2Model()
             else:

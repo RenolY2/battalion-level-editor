@@ -39,7 +39,6 @@ def catch_exception_with_dialog(func):
             return func(*args, **kwargs)
         except Exception as e:
             traceback.print_exc()
-            print("hey")
             open_error_dialog(str(e), None)
     return handle
 
