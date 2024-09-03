@@ -540,9 +540,9 @@ class PF2(object):
             val = missionboundary.getpixel((x,y))
             self.data[x][y][2] = val[0]
 
-        ImageOps.flip(nogo).save("nogotest.png")
-        ImageOps.flip(missionboundary).save("missionboundarytest.png")
-        ImageOps.flip(ford).save("fordtest.png")
+        #ImageOps.flip(nogo).save("nogotest.png")
+        #ImageOps.flip(missionboundary).save("missionboundarytest.png")
+        #ImageOps.flip(ford).save("fordtest.png")
 
 
     def save(self, path):
