@@ -24,6 +24,7 @@ from io import BytesIO
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
+    from lib.bw_terrain import BWTerrainV2
 
 
 class LoadingProgress(QObject):
@@ -243,7 +244,10 @@ class EditorFileMenu(QMenu):
                 except FileNotFoundError:
                     pass
                 else:
-                    pf2.update_boundary(self.level_data, os.path.join(base, fname.replace(".xml", "")),
+                    pf2.update_boundary(self.level_data,
+                                        os.path.join(base, fname.replace(".xml", "")),
+                                        self.editor.level_view.bwterrain,
+                                        self.editor.level_view.waterheight,
                                         regenerate_waypoints)
                     pf2.save(pf2path)
             else:
@@ -370,7 +374,7 @@ class PF2(object):
 
             self.rest = f.read()
 
-    def update_boundary(self, level_file: BattalionLevelFile, basepath, regenerate_waypoints=False):
+    def update_boundary(self, level_file: BattalionLevelFile, basepath, terrain: 'BWTerrainV2', waterheight, regenerate_waypoints=False):
         try:
             missionboundary = Image.open(basepath+"_boundary.png")
             if missionboundary.height != 512 or missionboundary.width != 512:
@@ -406,6 +410,10 @@ class PF2(object):
         if regenerate_waypoints:
             replace_data = True
 
+        temptarget = Image.new("RGB", (512, 512))
+        temptarget.paste((0, 0, 0), (0,0,512,512))
+        tempdrawtarget = ImageDraw.Draw(temptarget)
+
         offsetx = 2
         val = 0x1
         for id, object in level_file.objects_with_positions.items():
@@ -425,20 +433,43 @@ class PF2(object):
 
                 mymtx = mtx.reshape((4, 4), order="F")
 
+                temp_drawing = False
+                intended_target = None
+
                 if object.type == "cDamageZone":
-                    drawtarget = drawnogo
+                    if object.mFlags & 1:
+                        temptarget.paste((0, 0, 0), (0, 0, 512, 512))
+                        drawtarget = tempdrawtarget
+                        intended_target = drawnogo
+                        temp_drawing = True
+                    else:
+                        drawtarget = drawnogo
                 elif object.mZoneType == "ZONETYPE_MISSIONBOUNDARY":
                     drawtarget = drawboundary
                 elif object.mZoneType == "ZONETYPE_FORD":
                     drawtarget = drawford
                 elif object.mZoneType == "ZONETYPE_NOGOAREA":
-                    drawtarget = drawnogo
+                    if object.mFlags & 1:
+                        temptarget.paste((0, 0, 0), (0, 0, 512, 512))
+                        drawtarget = tempdrawtarget
+                        intended_target = drawnogo
+                        temp_drawing = True
+                    else:
+                        drawtarget = drawnogo
                 else:
                     drawtarget = None
 
                 if drawtarget is not None:
                     if object.mRadius > 0:
-                        rad = object.mRadius/8.0
+                        rad = object.mRadius / 8.0
+
+                        if temp_drawing:
+                            aabb_min_x = max(0, int(img_x-rad+offsetx))
+                            aabb_min_y = max(0, int(img_y - rad))
+                            aabb_max_x = min(511, int(img_x + rad + offsetx))
+                            aabb_max_y = min(511, int(img_y + rad))
+
+
                         drawtarget.ellipse((img_x-rad+offsetx, img_y-rad, img_x+rad+offsetx, img_y+rad), outline=(0xF0, 0xF0, 0xF0), fill=(0xF0, 0xF0, 0xF0))
                     if object.mSize.x != 0 and object.mSize.y != 0 and object.mSize.z != 0:
                         sizex, sizey, sizez = object.mSize.x/2.0, object.mSize.y/2.0, object.mSize.z/2.0
@@ -447,11 +478,42 @@ class PF2(object):
                         corner2 = mymtx.dot(numpy.array([-sizex, 0, sizez, 1]))
                         corner3 = mymtx.dot(numpy.array([sizex, 0, sizez, 1]))
                         corner4 = mymtx.dot(numpy.array([sizex, 0, -sizez, 1]))
+
+
+
                         points = []
                         for p in [corner1, corner2, corner3, corner4]:
                             points.append(((p[0]+2048)/8.0+offsetx, (p[2]+2048)/8.0))
 
+                        if temp_drawing:
+                            aabb_min_x = max(0, min(int(p[0]) for p in points))
+                            aabb_min_y = max(0, min(int(p[1]) for p in points))
+                            aabb_max_x = min(511, max(int(p[0]) for p in points))
+                            aabb_max_y = min(511, max(int(p[1]) for p in points))
+
                         drawtarget.polygon(points, (0xF0, 0xF0, 0xF0), (0xF0, 0xF0, 0xF0))
+
+                if temp_drawing:
+                    box_height = object.mSize.y
+                    for imgx in range(aabb_min_x, aabb_max_x+1):
+                        for imgy in range(aabb_min_y, aabb_max_y+1):
+                            color = temptarget.getpixel((imgx, imgy))
+                            if color[0] > 128:
+                                terrheight = terrain.pointdata[imgx*2][imgy*2]
+                                if terrheight is None:
+                                    intended_target.point([imgx, imgy], fill=color)
+                                else:
+                                    terr2height = terrain.pointdata[imgx*2+1][imgy*2]
+                                    terr3height = terrain.pointdata[imgx * 2+1][imgy * 2+1]
+                                    terr4height = terrain.pointdata[imgx * 2][imgy * 2 + 1]
+                                    count = 1
+                                    for h in (terr2height, terr3height, terr4height):
+                                        if h is not None:
+                                            count += 1
+                                            terrheight += h
+                                    terrheight = terrheight/count
+                                    if y-box_height/2.0 <= terrheight <= y+box_height/2.0:
+                                        intended_target.point([imgx, imgy], fill=color)
 
         for i in range(512*512):
             x = (i) % 512
@@ -478,9 +540,9 @@ class PF2(object):
             val = missionboundary.getpixel((x,y))
             self.data[x][y][2] = val[0]
 
-        #ImageOps.flip(nogo).save("nogotest.png")
-        #ImageOps.flip(missionboundary).save("missionboundarytest.png")
-        #ImageOps.flip(ford).save("fordtest.png")
+        ImageOps.flip(nogo).save("nogotest.png")
+        ImageOps.flip(missionboundary).save("missionboundarytest.png")
+        ImageOps.flip(ford).save("fordtest.png")
 
 
     def save(self, path):
