@@ -431,11 +431,11 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
             self.freelists.append(("Quad Tree Lists", 0x80600614))  # Quadtree lists
             self.freelists.append(("Joints", 0x805afe68))  # Joints
             self.freelists.append(("Joint Anims", 0x805afe6c))  # Joint Anims
-            self.freelists.append(("Ban Joints", 0x805afe70))  # Num ban joints
+            self.freelists.append(("Ban Joints", 0x805afe70))  # Num ban joints: Amount of cTroops multiplied by 46
             self.freelists.append(("Object Instances", 0x806004c8))  # Num object instances
             self.freelists.append(("Object Anim Instances", 0x806004d8))  # Num object anim instances
             self.freelists.append(("Polynodes", 0x80600600))  # Num polynodes
-            self.freelists.append(("Node Hierarchies", 0x806005f0))  # Num node hierarchies
+            self.freelists.append(("Node Hierarchies", 0x806005f0))  # Num node hierarchies: Max amount of node hierarchy resources
 
     def get_mem1_remaining(self):
         if self.mem1addresses is not None:
@@ -474,11 +474,24 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                 info.append("{}: \nAddress: {}\nTotal size: {}\n Free or inactive:{}\n Max used/Max count: {}/{}\n".format(
                     name, hex(freelist_addr), hex(totalsize), freeinactive, maxused, count,
                 ))
+
+            cursor = self.helptext.textCursor()
+            hasselection = cursor.hasSelection()
+            if hasselection:
+                position = cursor.position()
+                anchor = cursor.anchor()
             curr = self.helptext.verticalScrollBar().value()
             self.helptext.setText("\n".join(info))
+
+            if hasselection:
+                cursor = self.helptext.textCursor()
+                cursor.setPosition(anchor, mode=QtGui.QTextCursor.MoveMode.MoveAnchor)
+                cursor.setPosition(position, mode=QtGui.QTextCursor.MoveMode.KeepAnchor)
+                self.helptext.setTextCursor(cursor)
             self.helptext.verticalScrollBar().setValue(curr)
+
         else:
-            self.helptext.setText("Cannot show debug info because editor is not connected to game. Close window and open again when Live Edit/View is running.")
+            self.helptext.setText("Cannot show debug info because editor is not connected to game. Close window and open again when game is running.")
 
     def closeEvent(self, closeEvent: QtGui.QCloseEvent) -> None:
         self.closing.emit()
