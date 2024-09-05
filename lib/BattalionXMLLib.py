@@ -596,15 +596,26 @@ class BattalionObject(object):
             return "{0}({1})".format(self.type, self.id)
 
     def extra_detail_name(self):
+        extradetail = ""
         if self.type == "cMapZone":
-            if self.customname is not None:
-                return self.customname+","+self.mZoneType
-            else:
-                return self.mZoneType
-        elif self.customname is not None:
-            return self.customname
+            extradetail = self.mZoneType
+        elif self.type == "cCamera":
+            flags = []
+            for i, v in ((1, "First"),
+                      (2, "Cutscene"),
+                      (4, "P1 Screen"),
+                      (8, "P2 Screen"),
+                      (16, "Player"),
+                      (32, "P3 Screen"),
+                      (64, "P4 Screen"),
+                      (128, "Force LOD")):
+                if self.mInstanceFlags & i:
+                    flags.append(v)
+            extradetail = ",".join(flags)
+        if self.customname is not None:
+            return self.customname+","+extradetail
         else:
-            return ""
+            return extradetail
 
     def calculate_height(self, bwterrain, waterheight):
         currbwmtx = self.getmatrix()
