@@ -139,6 +139,8 @@ class LevelEditor(QMainWindow):
         self.object_to_be_added = None
         self.level_view.reset(keep_collision=True)
 
+
+        self.pik_control.close_all_windows()
         self.current_coordinates = None
         for key, val in self.editing_windows.items():
             val.destroy()

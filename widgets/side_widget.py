@@ -97,6 +97,12 @@ class PikminSideWidget(QWidget):
         self.reset_info()
         self.add_window = None
 
+    def close_all_windows(self):
+        for id, window in self.edit_windows.items():
+            window.close()
+
+        self.edit_windows = {}
+
     def set_spawn_matrix(self):
         for obj in self.parent.level_view.selected:
             if hasattr(obj, "spawnMatrix") and hasattr(obj, "Mat"):
