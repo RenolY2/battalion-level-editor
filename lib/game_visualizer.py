@@ -1,3 +1,7 @@
+from PyQt6 import QtWidgets, QtGui
+from PyQt6.QtCore import pyqtSignal, QTimer
+
+
 from OpenGL.GL import *
 from math import pi, atan2, degrees, sin, cos
 
@@ -24,6 +28,8 @@ def angle_diff(angle1, angle2):
     if angle1 > angle2:
         angle2 = (angle2 + 2*pi)#%(2*pi)
     return angle2-angle1
+
+
 
 
 class Game(object):
@@ -330,6 +336,153 @@ class Game(object):
 class LevelFileDummy(object):
     def __init__(self):
         self.objects = {}
+
+
+class MiniHook(Game):
+    def __init__(self):
+        super().__init__()
+
+    def initialize(self, level_file=None, shutdown=False, matchoverride=False, shutdowncallback=None):
+        self.dolphin.reset()
+        self.object_addresses = {}
+        self.running = False
+        self.shutdowncallback = shutdowncallback
+
+        self.do_once = True
+        self.region = None
+        self.current_address = None
+
+        if shutdown:
+            return ""
+        # BW1 PAL: 803b6f08
+        # BW2 805c3ca8
+
+
+        if self.dolphin.find_dolphin():
+            if self.dolphin.init_shared_memory():
+                gameid = bytes(self.dolphin.read_ram(0, 4))
+                print(gameid)
+                if gameid == b"G8WE":  # US BW1
+                    self.region = gameid
+                elif gameid == b"G8WP":  # PAL BW1
+                    self.region = gameid
+                elif gameid == b"G8WJ":  # JP BW1
+                    self.region = gameid
+                elif gameid == b"RBWE":  # US BW2
+                    self.region = gameid
+                elif gameid == b"RBWP": # PAL BW2
+                    self.region = gameid
+                elif gameid == b"RBWJ":  # JP BW2
+                    self.region = gameid
+
+                if self.region is None:
+                    return "Not supported: Found Game ID '{0}'.".format(str(gameid, encoding="ascii"))
+                else:
+                    print("Success!")
+                    self.running = True
+                    return ""
+
+            else:
+                self.dolphin.reset()
+                return "Dolphin found but game isn't running."
+            
+        else:
+            self.dolphin.reset()
+            return "Dolphin not found."
+       
+
+class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
+    closing = pyqtSignal()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.resize(800, 400)
+        self.game = MiniHook()
+        self.game.initialize()
+        self.helptext = QtWidgets.QTextEdit(self)
+        self.setWindowTitle("Debug Info")
+        self.helptext.setReadOnly(True)
+
+        self.setWidget(self.helptext)
+        self.updatetimer = QTimer()
+        self.updatetimer.setInterval(100)
+        self.updatetimer.timeout.connect(self.update_info)
+        self.updatetimer.start()
+
+        font = QtGui.QFont()
+        font.setFamily("Consolas")
+        font.setStyleHint(QtGui.QFont.StyleHint.Monospace)
+        font.setFixedPitch(True)
+        font.setPointSize(20)
+
+        metrics = QtGui.QFontMetrics(font)
+        self.helptext.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
+        self.helptext.setFont(font)
+
+        self.freelists = []
+
+        self.mem1addresses = None
+        self.mem2addresses = None
+
+        if self.game.region == b"RBWE":
+            self.mem1addresses = (0x805acf6c, 0x805acf68, 0x805acf74, 0x805acf30, 0x80600330)
+            self.mem2addresses = (0x805acfc0, 0x805acfbc, 0x805acfc8, 0x805acf84, 0x80600330)
+            self.freelists.append(("Quad Tree Nodes", 0x80600610))  # QuadTree Nodes
+            self.freelists.append(("Quad Tree Lists", 0x80600614))  # Quadtree lists
+            self.freelists.append(("Joints", 0x805afe68))  # Joints
+            self.freelists.append(("Joint Anims", 0x805afe6c))  # Joint Anims
+            self.freelists.append(("Ban Joints", 0x805afe70))  # Num ban joints
+            self.freelists.append(("Object Instances", 0x806004c8))  # Num object instances
+            self.freelists.append(("Object Anim Instances", 0x806004d8))  # Num object anim instances
+            self.freelists.append(("Polynodes", 0x80600600))  # Num polynodes
+            self.freelists.append(("Node Hierarchies", 0x806005f0))  # Num node hierarchies
+
+    def get_mem1_remaining(self):
+        if self.mem1addresses is not None:
+            top = self.game.deref(self.mem1addresses[0])
+            if self.game.deref(self.mem1addresses[1]) & 0x1:
+                top = self.game.deref(self.mem1addresses[2])
+            bottom = self.game.deref(self.mem1addresses[3]+self.game.deref(self.mem1addresses[4])*0xC)
+            return top-bottom
+
+    def get_mem2_remaining(self):
+        if self.mem2addresses is not None:
+            top = self.game.deref(self.mem2addresses[0])
+            if self.game.deref(self.mem2addresses[1]) & 0x1:
+                top = self.game.deref(self.mem2addresses[2])
+            bottom = self.game.deref(self.mem2addresses[3] + self.game.deref(self.mem2addresses[4]) * 0xC)
+            return top - bottom
+
+    def update_info(self):
+        info = []
+        if self.game.running:
+            if self.game.region != b"RBWE":
+                info.append("Only the US version of Battalion Wars 2 is currently supported. If it is running, please close this debug window and reopen it again.")
+            deref = self.game.deref
+
+            info.append("Mem1 free: {0} bytes".format(self.get_mem1_remaining()))
+            info.append("Mem2 free: {0} bytes".format(self.get_mem2_remaining()))
+            info.append("\nFree list Info:")
+
+            for name, addr in self.freelists:
+                freelistinfo_ptr = deref(addr)
+                freelist_addr = deref(freelistinfo_ptr+0)
+                totalsize = deref(freelistinfo_ptr+0x18)
+                count = deref(freelistinfo_ptr+0x14)
+                freeinactive = deref(freelistinfo_ptr+0x28)
+                maxused = deref(freelistinfo_ptr+0x2C)
+                info.append("{}: \nAddress: {}\nTotal size: {}\n Free or inactive:{}\n Max used/Max count: {}/{}\n".format(
+                    name, hex(freelist_addr), hex(totalsize), freeinactive, maxused, count,
+                ))
+            curr = self.helptext.verticalScrollBar().value()
+            self.helptext.setText("\n".join(info))
+            self.helptext.verticalScrollBar().setValue(curr)
+        else:
+            self.helptext.setText("Cannot show debug info because editor is not connected to game. Close window and open again when Live Edit/View is running.")
+
+    def closeEvent(self, closeEvent: QtGui.QCloseEvent) -> None:
+        self.closing.emit()
+
 
 if __name__ == "__main__":
 

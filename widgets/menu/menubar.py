@@ -7,6 +7,7 @@ from widgets.filter_view import FilterViewMenu
 from widgets.search_widget import SearchWidget
 from widgets.editor_widgets import open_error_dialog
 from typing import TYPE_CHECKING
+from lib.game_visualizer import DebugInfoWIndow
 if TYPE_CHECKING:
     import bw_editor
 
@@ -17,6 +18,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.editor: bw_editor.LevelEditor = editor
 
         self.search_window = None
+        self.debug_window = None
 
         self.visibility_menu = FilterViewMenu(self)
         self.visibility_menu.filter_update.connect(self.editor.update_render)
@@ -56,6 +58,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         #self.choose_bco_area = QtWidgets.QAction("Highlight Collision Area (BCO)")
 
         self.dolphin_menu = Menu(self, "Dolphin (Experimental)")
+        self.show_debug_info_action = self.dolphin_menu.add_action("Show Freelist Info",
+                                                                   self.open_debug_window)
         self.hook_game_action = self.dolphin_menu.add_action("Enable Live Edit",
                                                             self.hook_game)
         self.hook_game_action.setToolTip("If enabled, edits positions/rotations of selected objects ingame.\nWarning: Some objects don't move ingame.")
@@ -77,6 +81,15 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.addAction(self.dolphin_menu.menuAction())
 
         self.last_obj_select_pos = 0
+
+    def close_debug_window(self):
+        self.debug_window = None
+
+    def open_debug_window(self):
+        if self.debug_window is None:
+            self.debug_window = DebugInfoWIndow()
+            self.debug_window.closing.connect(self.close_debug_window)
+            self.debug_window.show()
 
     def apply_live_positions(self):
         if self.editor.dolphin.do_visualize():
