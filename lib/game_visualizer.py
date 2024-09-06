@@ -423,6 +423,9 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         font.setFixedPitch(True)
         font.setPointSize(20)
 
+        self.copyshortcut = QtGui.QShortcut("Ctrl+C", self)
+        self.copyshortcut.activated.connect(self.copytable)
+
         metrics = QtGui.QFontMetrics(font)
         #self.helptext.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
         #self.helptext.setFont(font)
@@ -474,6 +477,32 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
             self.freelists.append(("Blend Transition Stretch", 0x8060047c))
 
         self.info.setRowCount(len(self.freelists) + len(self.heaps) + 10)
+
+    def copytable(self):
+        selectedrangelist: QtWidgets.QTableWidgetSelectionRange = self.info.selectedRanges()
+        if len(selectedrangelist) > 0:
+            selectedrange = selectedrangelist[0]
+        else:
+            selectedrange = QtWidgets.QTableWidgetSelectionRange()
+        if selectedrange.columnCount() > 0 and selectedrange.rowCount() > 0:
+            lx = selectedrange.leftColumn()
+            ty = selectedrange.topRow()
+            rx = selectedrange.rightColumn()
+            by = selectedrange.bottomRow()
+
+            rows = []
+            for j in range(ty, by+1):
+                row = []
+                for i in range(lx, rx+1):
+                    item = self.info.item(j, i)
+                    if item is None:
+                        row.append("")
+                    else:
+                        row.append(item.text())
+                rows.append(",".join(row))
+
+            clipboard = QtGui.QGuiApplication.clipboard()
+            clipboard.setText("\n".join(rows))
 
     def get_mem1_remaining(self):
         if self.mem1addresses is not None:
