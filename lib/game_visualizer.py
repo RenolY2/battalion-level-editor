@@ -391,6 +391,12 @@ class MiniHook(Game):
             return "Dolphin not found."
        
 
+class Item(QtWidgets.QTableWidgetItem):
+    def __init__(self, value):
+        super().__init__()
+        self.setText(value)
+
+
 class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
     closing = pyqtSignal()
 
@@ -399,11 +405,13 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         self.resize(800, 400)
         self.game = MiniHook()
         self.game.initialize()
-        self.helptext = QtWidgets.QTextEdit(self)
+        self.info = QtWidgets.QTableWidget(self)
+        #self.helptext = QtWidgets.QTextEdit(self)
         self.setWindowTitle("Debug Info")
-        self.helptext.setReadOnly(True)
+        #self.helptext.setReadOnly(True)
+        self.info.setColumnCount(5)
 
-        self.setWidget(self.helptext)
+        self.setWidget(self.info)
         self.updatetimer = QTimer()
         self.updatetimer.setInterval(100)
         self.updatetimer.timeout.connect(self.update_info)
@@ -416,8 +424,8 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         font.setPointSize(20)
 
         metrics = QtGui.QFontMetrics(font)
-        self.helptext.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
-        self.helptext.setFont(font)
+        #self.helptext.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
+        #self.helptext.setFont(font)
 
         self.heaps = []
         self.freelists = []
@@ -465,6 +473,8 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
             self.freelists.append(("Blend Transitions", 0x80600470))
             self.freelists.append(("Blend Transition Stretch", 0x8060047c))
 
+        self.info.setRowCount(len(self.freelists) + len(self.heaps) + 10)
+
     def get_mem1_remaining(self):
         if self.mem1addresses is not None:
             top = self.game.deref(self.mem1addresses[0])
@@ -481,6 +491,11 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
             bottom = self.game.deref(self.mem2addresses[3] + self.game.deref(self.mem2addresses[4]) * 0xC)
             return top - bottom
 
+    def set_row_values(self, row, *values):
+        for i, v in enumerate(values):
+            item = Item(str(values[i]))
+            self.info.setItem(row, i, item)
+
     def update_info(self):
         info = []
         if self.game.running:
@@ -488,20 +503,26 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                 info.append("Only the US version of Battalion Wars 2 is currently supported. If it is running, please close this debug window and reopen it again.")
             deref = self.game.deref
 
-            info.append("Mem1 free: {0} bytes".format(self.get_mem1_remaining()))
-            info.append("Mem2 free: {0} bytes".format(self.get_mem2_remaining()))
             info.append("\nHeap Info:")
+            self.set_row_values(1, "Mem1 free", self.get_mem1_remaining())
+            self.set_row_values(2, "Mem2 free", self.get_mem2_remaining())
+
+            self.set_row_values(3, "Heap", "Address", "Total (Bytes)", "Used (Bytes)", "Free (Bytes)")
+            i = 0
             for name, addr, advanced in self.heaps:
                 size = deref(addr + 0x64)
                 used = deref(addr + 0x48)
                 free = deref(addr + 0x4C)
-                info.append(
+                """info.append(
                     "{0}: \n Address: {1}\n Total: {3} bytes\n Used: {2} bytes\n Free: {4} bytes\n".format(
                         name, hex(addr), used, size, free
-                    ))
-
-
-            info.append("\nFree list Info:")
+                    ))"""
+                self.set_row_values(4+i, name, hex(addr), size, used, free)
+                i += 1
+            offset = 4+i+1
+            # "Size (Bytes)",
+            self.set_row_values(offset, "Free list", "Address", "Total", "Max Used", "Free")
+            i = offset + 1
             for name, addr in self.freelists:
                 freelistinfo_ptr = deref(addr)
                 if freelistinfo_ptr == 0:
@@ -511,11 +532,14 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                 count = deref(freelistinfo_ptr+0x14)
                 freeinactive = deref(freelistinfo_ptr+0x28)
                 maxused = deref(freelistinfo_ptr+0x2C)
-                info.append("{}: \n Address: {}\n Total size: {}\n Free or inactive:{}\n Max used/Max count: {}/{}\n".format(
-                    name, hex(freelist_addr), totalsize, freeinactive, maxused, count,
-                ))
+                #info.append("{}: \n Address: {}\n Total size: {}\n Free or inactive:{}\n Max used/Max count: {}/{}\n".format(
+                #    name, hex(freelist_addr), totalsize, freeinactive, maxused, count,
+                #))#
+                # totalsize,
+                self.set_row_values(i, name, hex(freelist_addr), count, maxused, freeinactive)
+                i += 1
 
-            cursor = self.helptext.textCursor()
+            """cursor = self.helptext.textCursor()
             hasselection = cursor.hasSelection()
             if hasselection:
                 position = cursor.position()
@@ -528,7 +552,7 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                 cursor.setPosition(anchor, mode=QtGui.QTextCursor.MoveMode.MoveAnchor)
                 cursor.setPosition(position, mode=QtGui.QTextCursor.MoveMode.KeepAnchor)
                 self.helptext.setTextCursor(cursor)
-            self.helptext.verticalScrollBar().setValue(curr)
+            self.helptext.verticalScrollBar().setValue(curr)"""
 
         else:
             self.helptext.setText("Cannot show debug info because editor is not connected to game. Close window and open again when game is running.")
