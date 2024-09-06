@@ -419,6 +419,7 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         self.helptext.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
         self.helptext.setFont(font)
 
+        self.heaps = []
         self.freelists = []
 
         self.mem1addresses = None
@@ -427,15 +428,42 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         if self.game.region == b"RBWE":
             self.mem1addresses = (0x805acf6c, 0x805acf68, 0x805acf74, 0x805acf30, 0x80600330)
             self.mem2addresses = (0x805acfc0, 0x805acfbc, 0x805acfc8, 0x805acf84, 0x80600330)
+
+            self.heaps.append(("System Malloc Heap", 0x804fbf70, True))
+            self.heaps.append(("Network Heap", 0x805c28c4, True))
+            self.heaps.append(("Lua Memory", 0x80513814, False))
+            self.heaps.append(("Action Heap", 0x8051a6dc, False))
+            self.heaps.append(("Unit Group Item Heap", 0x8051d2ac, True))
+            self.heaps.append(("Texture Render Target Heap", 0x805bc334, False))
+
             self.freelists.append(("Quad Tree Nodes", 0x80600610))  # QuadTree Nodes
             self.freelists.append(("Quad Tree Lists", 0x80600614))  # Quadtree lists
-            self.freelists.append(("Joints", 0x805afe68))  # Joints
+
+            # Joints: Affected by lots of objects (probably that can break into multiple pieces).  Grunts are also a few joints?
+            self.freelists.append(("Joints", 0x805afe68))
+            # Joint anims: affected by e.g. vehicles, multiple anims per vehicle (multiple joints in a vehicle can be animated?)
             self.freelists.append(("Joint Anims", 0x805afe6c))  # Joint Anims
-            self.freelists.append(("Ban Joints", 0x805afe70))  # Num ban joints: Amount of cTroops multiplied by 46
-            self.freelists.append(("Object Instances", 0x806004c8))  # Num object instances
-            self.freelists.append(("Object Anim Instances", 0x806004d8))  # Num object anim instances
-            self.freelists.append(("Polynodes", 0x80600600))  # Num polynodes
-            self.freelists.append(("Node Hierarchies", 0x806005f0))  # Num node hierarchies: Max amount of node hierarchy resources
+
+            # Num ban joints: Amount of cTroops multiplied by 46
+            self.freelists.append(("Ban Joints", 0x805afe70))
+            # Num object instances: can be level objects or stuff like bullets, explosions. One grunt can be multiple objects (grunt, hat, weapon?)
+            self.freelists.append(("Object Instances", 0x806004c8))
+            # Num object anim instances: All units seem to go into here (+ maybe a few extra special objects?)
+            self.freelists.append(("Object Anim Instances", 0x806004d8))
+
+            # Num polynodes: Guess: Amount of nodes containing 3d data
+            self.freelists.append(("Polynodes", 0x80600600))
+
+            # Num node hierarchies: Max amount of node hierarchy resources
+            self.freelists.append(("Node Hierarchies", 0x806005f0))
+
+
+            self.freelists.append(("Blend Animation", 0x8060044c))
+            self.freelists.append(("Animation Stretch Blends", 0x8060049c))
+            self.freelists.append(("Blend Nodes Stretch Continuous", 0x80600458))
+            self.freelists.append(("Blend Nodes Continuous", 0x80600464))
+            self.freelists.append(("Blend Transitions", 0x80600470))
+            self.freelists.append(("Blend Transition Stretch", 0x8060047c))
 
     def get_mem1_remaining(self):
         if self.mem1addresses is not None:
@@ -462,17 +490,29 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
 
             info.append("Mem1 free: {0} bytes".format(self.get_mem1_remaining()))
             info.append("Mem2 free: {0} bytes".format(self.get_mem2_remaining()))
-            info.append("\nFree list Info:")
+            info.append("\nHeap Info:")
+            for name, addr, advanced in self.heaps:
+                size = deref(addr + 0x64)
+                used = deref(addr + 0x48)
+                free = deref(addr + 0x4C)
+                info.append(
+                    "{0}: \n Address: {1}\n Total: {3} bytes\n Used: {2} bytes\n Free: {4} bytes\n".format(
+                        name, hex(addr), used, size, free
+                    ))
 
+
+            info.append("\nFree list Info:")
             for name, addr in self.freelists:
                 freelistinfo_ptr = deref(addr)
+                if freelistinfo_ptr == 0:
+                    continue
                 freelist_addr = deref(freelistinfo_ptr+0)
                 totalsize = deref(freelistinfo_ptr+0x18)
                 count = deref(freelistinfo_ptr+0x14)
                 freeinactive = deref(freelistinfo_ptr+0x28)
                 maxused = deref(freelistinfo_ptr+0x2C)
-                info.append("{}: \nAddress: {}\nTotal size: {}\n Free or inactive:{}\n Max used/Max count: {}/{}\n".format(
-                    name, hex(freelist_addr), hex(totalsize), freeinactive, maxused, count,
+                info.append("{}: \n Address: {}\n Total size: {}\n Free or inactive:{}\n Max used/Max count: {}/{}\n".format(
+                    name, hex(freelist_addr), totalsize, freeinactive, maxused, count,
                 ))
 
             cursor = self.helptext.textCursor()
