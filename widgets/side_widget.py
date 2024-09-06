@@ -109,6 +109,7 @@ class PikminSideWidget(QWidget):
                 for i in range(16):
                     obj.spawnMatrix.mtx[i] = obj.Mat.mtx[i]
         self.parent.level_view.do_redraw()
+        self.parent.set_has_unsaved_changes(True)
 
     def _copy_object(self, obj, offsetx, offsetz):
         content = obj.tostring()
@@ -155,6 +156,7 @@ class PikminSideWidget(QWidget):
         self.parent.update_3d()
         self.parent.level_view.do_redraw(force=True)
         self.set_objectlist(newclones)
+        self.parent.set_has_unsaved_changes(True)
 
     def select_obj(self, id):
         if id in self.parent.level_file.objects_with_positions:
@@ -304,13 +306,13 @@ class PikminSideWidget(QWidget):
                 if obj.getmatrix() is not None:
                     self.parent.level_view.selected_positions.append(obj.getmatrix())
             self.parent.update_3d()
+            self.parent.set_has_unsaved_changes(True)
         else:
             if obj is not None:
                 obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
 
                 self.edit_windows[id].reset_unsaved()
                 self.parent.level_view.selected_positions = []
-
 
 
     def _make_labeled_lineedit(self, lineedit, label):
