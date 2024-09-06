@@ -397,6 +397,34 @@ class Item(QtWidgets.QTableWidgetItem):
         self.setText(value)
 
 
+class Gradient(object):
+    def __init__(self):
+        self.grad = []
+
+    def add(self, val, color_r, color_g, color_b):
+        self.grad.append((val, color_r, color_g, color_b))
+
+    def get_value(self, val):
+        prev = None
+
+        for v, r, g, b in self.grad:
+            if prev is None:
+                if val <= v:
+                    return r, g, b
+            elif v == val:
+                return r, g, b
+            elif v < val:
+                pass
+            else:
+                prev_v = prev[0]
+                diff = v-prev_v
+                val_rel = val-prev_v
+                fac = val_rel/diff
+                return fac*r + (1-fac)*prev[1], fac*g + (1-fac)*prev[2], fac*b + (1-fac)*prev[3]
+            prev = (v, r, g, b)
+        return r,g,b
+
+
 class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
     closing = pyqtSignal()
 
@@ -423,6 +451,11 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         font.setFixedPitch(True)
         font.setPointSize(20)
 
+        self.gradient = Gradient()
+        self.gradient.add(0.0, 255, 255, 255)
+        self.gradient.add(0.9, 255, 255, 255)
+        self.gradient.add(0.95, 255, 255, 0)
+        self.gradient.add(1.0, 255, 0, 0)
         self.copyshortcut = QtGui.QShortcut("Ctrl+C", self)
         self.copyshortcut.activated.connect(self.copytable)
 
@@ -525,11 +558,21 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
             item = Item(str(values[i]))
             self.info.setItem(row, i, item)
 
+    def set_color(self, row, column, color):
+        item = self.info.item(row, column)
+        if item is not None:
+            brush = QtGui.QBrush(QtGui.QColor(int(color[0]), int(color[1]), int(color[2])))
+            item.setBackground(brush)
+
     def update_info(self):
         info = []
         if self.game.running:
             if self.game.region != b"RBWE":
-                info.append("Only the US version of Battalion Wars 2 is currently supported. If it is running, please close this debug window and reopen it again.")
+                self.set_row_values(0,
+                                    "Only the US version of Battalion Wars 2 is currently supported. If it is running, please close this debug window and reopen it again.")
+                self.info.resizeRowsToContents()
+                return
+
             deref = self.game.deref
 
             info.append("\nHeap Info:")
@@ -547,6 +590,9 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                         name, hex(addr), used, size, free
                     ))"""
                 self.set_row_values(4+i, name, hex(addr), size, used, free)
+                if size != 0:
+                    fac = used/size
+                    self.set_color(4+i, 4, self.gradient.get_value(fac))
                 i += 1
             offset = 4+i+1
             # "Size (Bytes)",
@@ -566,6 +612,11 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                 #))#
                 # totalsize,
                 self.set_row_values(i, name, hex(freelist_addr), count, maxused, freeinactive)
+                if size != 0:
+                    fac = maxused/count
+                    fac2 = (count-freeinactive) / count
+                    self.set_color(i, 3, self.gradient.get_value(fac))
+                    self.set_color(i, 4, self.gradient.get_value(fac2))
                 i += 1
 
             """cursor = self.helptext.textCursor()
@@ -584,7 +635,8 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
             self.helptext.verticalScrollBar().setValue(curr)"""
 
         else:
-            self.helptext.setText("Cannot show debug info because editor is not connected to game. Close window and open again when game is running.")
+            self.set_row_values(0, "Cannot show debug info because editor is not connected to game. Close window and open again when game is running.")
+            self.info.resizeRowsToContents()
 
     def closeEvent(self, closeEvent: QtGui.QCloseEvent) -> None:
         self.closing.emit()
