@@ -58,9 +58,8 @@ class LevelEditor(QMainWindow):
     def __init__(self):
         super().__init__()
         self.level_file = None
-
+        self.installEventFilter(self)
         self.file_menu = EditorFileMenu(self)
-
         self.setup_ui()
         self.setCursor(Qt.CursorShape.ArrowCursor)
         try:
@@ -112,12 +111,25 @@ class LevelEditor(QMainWindow):
         self.menubar.visibility_menu.save(self.configuration)
         save_cfg(self.configuration)
 
-    def eventFilter(self, a0: 'QObject', a1: 'QEvent') -> bool:
-        super().eventFilter(a0, a1)
-        if a1 == QtCore.QEvent.MouseMove:
-            pass
+    def eventFilter(self, object, event) -> bool:
+        result = super().eventFilter(object, event)
+        if (event.type() == QtCore.QEvent.Type.KeyRelease):
+            if event.key() == Qt.Key.Key_Shift:
+                self.level_view.shift_is_pressed = False
 
-
+            if event.key() == Qt.Key.Key_W:
+                self.level_view.MOVE_FORWARD = 0
+            elif event.key() == Qt.Key.Key_S:
+                self.level_view.MOVE_BACKWARD = 0
+            elif event.key() == Qt.Key.Key_A:
+                self.level_view.MOVE_LEFT = 0
+            elif event.key() == Qt.Key.Key_D:
+                self.level_view.MOVE_RIGHT = 0
+            elif event.key() == Qt.Key.Key_Q:
+                self.level_view.MOVE_UP = 0
+            elif event.key() == Qt.Key.Key_E:
+                self.level_view.MOVE_DOWN = 0
+        return result
 
     def changeEvent(self, changeEvent: QtCore.QEvent) -> None:
         super().changeEvent(changeEvent)
@@ -127,6 +139,15 @@ class LevelEditor(QMainWindow):
             if not self.isActiveWindow():
                 self.level_view.selectionbox_projected_coords = None
                 self.level_view.selectionbox_start = self.level_view.selectionbox_end = None
+                self.level_view.shift_is_pressed = False
+                self.level_view.MOVE_UP = 0
+                self.level_view.MOVE_DOWN = 0
+                self.level_view.MOVE_LEFT = 0
+                self.level_view.MOVE_RIGHT = 0
+                self.level_view.SPEEDUP = 0
+                self.level_view.MOVE_FORWARD = 0
+                self.level_view.MOVE_BACKWARD = 0
+
                 self.update_3d()
 
     @catch_exception
@@ -860,6 +881,16 @@ class LevelEditor(QMainWindow):
             self.level_view.MOVE_UP = 0
         elif event.key() == Qt.Key.Key_E:
             self.level_view.MOVE_DOWN = 0
+
+    def focusOutEvent(self, a0) -> None:
+        super().focusOutEvent(a0)
+        self.level_view.shift_is_pressed = False
+        self.level_view.MOVE_FORWARD = 0
+        self.level_view.MOVE_BACKWARD = 0
+        self.level_view.MOVE_LEFT = 0
+        self.level_view.MOVE_RIGHT = 0
+        self.level_view.MOVE_UP = 0
+        self.level_view.MOVE_DOWN = 0
 
     def action_rotate_object(self, deltarotation):
         #obj.set_rotation((None, round(angle, 6), None))

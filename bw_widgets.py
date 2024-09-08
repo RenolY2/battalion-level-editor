@@ -449,6 +449,16 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         diff = now-self._lastrendertime
         timedelta = now-self._lasttime
 
+        if not self.hasFocus():
+            self.MOVE_UP = 0
+            self.MOVE_DOWN = 0
+            self.MOVE_LEFT = 0
+            self.MOVE_RIGHT = 0
+            self.MOVE_FORWARD = 0
+            self.MOVE_BACKWARD = 0
+            self.SPEEDUP = 0
+            self.shift_is_pressed = False
+
         if self.mode == MODE_TOPDOWN:
             self.handle_arrowkey_scroll(timedelta)
         else:
@@ -628,6 +638,13 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
     def focusOutEvent(self, a0) -> None:
         self.selectionbox_projected_coords = None
         self.selectionbox_start = self.selectionbox_end = None
+        self.MOVE_UP = 0
+        self.MOVE_DOWN = 0
+        self.MOVE_LEFT = 0
+        self.MOVE_RIGHT = 0
+        self.MOVE_BACKWARD = 0
+        self.MOVE_FORWARD = 0
+        self.SPEEDUP = 0
         self.do_redraw()
 
     def set_collision(self, verts, faces, alternative_mesh):
