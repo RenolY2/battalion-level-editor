@@ -1117,11 +1117,12 @@ class EditorHistory(object):
         return self.history[self.top]
 
     def history_redo(self):
-        if self.top == len(self.history):
+        if self.top >= len(self.history)-1:
             return None
 
-        item = self.history[self.top]
         self.top += 1
+        item = self.history[self.top]
+
         return item
 
 
@@ -1160,6 +1161,19 @@ class EditorLevelPositionsHistory(EditorHistory):
     def record_selected(self):
         objects = self.editor.level_view.selected
         self.record(objects)
+
+    def history_undo(self):
+        if self.top == 0:
+            return None
+        elif self.top == len(self.history):
+            top = self.history[-1]
+            stash = self.stash_record(record[0] for record in top)
+            self.record_stash(stash)
+            if len(stash) > 0 and not self.editor.dolphin.do_visualize():
+                self.top -= 1
+
+        self.top -= 1
+        return self.history[self.top]
 
 
 import sys
