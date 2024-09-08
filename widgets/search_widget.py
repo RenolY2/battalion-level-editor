@@ -365,6 +365,7 @@ class SearchWidget(QtWidgets.QMainWindow):
     def __init__(self, editor):
         super().__init__()
         self.editor: bw_editor.LevelEditor = editor
+        self.setWindowTitle("Object Search")
         self.resize(900, 500)
         self.setMinimumSize(QSize(300, 300))
         self.basewidget = QtWidgets.QWidget(self)
