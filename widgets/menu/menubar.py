@@ -193,10 +193,11 @@ class EditorMenuBar(QtWidgets.QMenuBar):
     def open_search(self):
         if self.search_window is not None:
             window = self.search_window
-            window.setWindowState(window.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+            window.setWindowState(window.windowState() & ~QtCore.Qt.WindowState.WindowMinimized | QtCore.Qt.WindowState.WindowActive)
             window.activateWindow()
         else:
             self.search_window = SearchWidget(self.editor)
             self.search_window.closing.connect(self.close_search)
         self.search_window.show()
+        self.search_window.setFocus()
 
