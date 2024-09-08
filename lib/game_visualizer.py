@@ -433,13 +433,28 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         self.resize(800, 400)
         self.game = MiniHook()
         self.game.initialize()
+        self.ctrwidget = QtWidgets.QWidget(self)
+        self.widgetlayout = QtWidgets.QVBoxLayout(self)
+
         self.info = QtWidgets.QTableWidget(self)
+        self.widgetlayout.addWidget(self.info)
         #self.helptext = QtWidgets.QTextEdit(self)
         self.setWindowTitle("Debug Info")
         #self.helptext.setReadOnly(True)
         self.info.setColumnCount(5)
 
-        self.setWidget(self.info)
+        self.ctrwidget.setLayout(self.widgetlayout)
+        self.setWidget(self.ctrwidget)
+
+        self.checkboxlayout = QtWidgets.QHBoxLayout(self)
+        self.advanced = QtWidgets.QRadioButton(self)
+        self.text = QtWidgets.QLabel("Advanced", self)
+        self.checkboxlayout.addWidget(self.advanced)
+        self.checkboxlayout.addWidget(self.text)
+        self.checkboxlayout.addStretch(1)
+        self.widgetlayout.addLayout(self.checkboxlayout)
+
+
         self.updatetimer = QTimer()
         self.updatetimer.setInterval(100)
         self.updatetimer.timeout.connect(self.update_info)
@@ -555,8 +570,15 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
 
     def set_row_values(self, row, *values):
         for i, v in enumerate(values):
-            item = Item(str(values[i]))
-            self.info.setItem(row, i, item)
+            curritem = self.info.item(row, i)
+            if curritem is not None:
+                curritem.setText(str(values[i]))
+            else:
+                item = Item(str(values[i]))
+                self.info.setItem(row, i, item)
+
+    def clear_row(self, row):
+        self.set_row_values(row, *["" for x in range(self.info.columnCount())])
 
     def set_color(self, row, column, color):
         item = self.info.item(row, column)
@@ -576,26 +598,30 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
             deref = self.game.deref
 
             info.append("\nHeap Info:")
-            self.set_row_values(1, "Mem1 free", self.get_mem1_remaining())
-            self.set_row_values(2, "Mem2 free", self.get_mem2_remaining())
+            self.set_row_values(0, "Mem1 free", self.get_mem1_remaining())
+            self.set_row_values(1, "Mem2 free", self.get_mem2_remaining())
 
             self.set_row_values(3, "Heap", "Address", "Total (Bytes)", "Used (Bytes)", "Free (Bytes)")
             i = 0
             for name, addr, advanced in self.heaps:
-                size = deref(addr + 0x64)
-                used = deref(addr + 0x48)
-                free = deref(addr + 0x4C)
-                """info.append(
-                    "{0}: \n Address: {1}\n Total: {3} bytes\n Used: {2} bytes\n Free: {4} bytes\n".format(
-                        name, hex(addr), used, size, free
-                    ))"""
-                self.set_row_values(4+i, name, hex(addr), size, used, free)
-                if size != 0:
-                    fac = used/size
-                    self.set_color(4+i, 4, self.gradient.get_value(fac))
-                i += 1
-            offset = 4+i+1
+                if not advanced or (advanced and self.advanced.isChecked()):
+                    size = deref(addr + 0x64)
+                    used = deref(addr + 0x48)
+                    free = deref(addr + 0x4C)
+                    """info.append(
+                        "{0}: \n Address: {1}\n Total: {3} bytes\n Used: {2} bytes\n Free: {4} bytes\n".format(
+                            name, hex(addr), used, size, free
+                        ))"""
+                    self.set_row_values(4+i, name, hex(addr), size, used, free)
+                    if size != 0:
+                        fac = used/size
+                        self.set_color(4+i, 4, self.gradient.get_value(fac))
+                    i += 1
+
+
             # "Size (Bytes)",
+            self.clear_row(4+i)
+            offset = 4 + i + 1
             self.set_row_values(offset, "Free list", "Address", "Total", "Max Used", "Free")
             i = offset + 1
             for name, addr in self.freelists:
@@ -618,7 +644,9 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                     self.set_color(i, 3, self.gradient.get_value(fac))
                     self.set_color(i, 4, self.gradient.get_value(fac2))
                 i += 1
-
+            for j in range(i, self.info.rowCount()+1):
+                self.clear_row(j)
+            self.info.resizeColumnToContents(0)
             """cursor = self.helptext.textCursor()
             hasselection = cursor.hasSelection()
             if hasselection:
