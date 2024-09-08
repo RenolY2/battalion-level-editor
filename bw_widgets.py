@@ -817,25 +817,26 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                     else:
                         if self.last_selectionbox is not None:
                             startbox, endbox = self.last_selectionbox
-                            minx = min(startbox[0], endbox[0])
-                            maxx = max(startbox[0], endbox[0])
-                            miny = min(startbox[1], endbox[1])
-                            maxy = max(startbox[1], endbox[1])
+                            if startbox is not None and endbox is not None:
+                                minx = min(startbox[0], endbox[0])
+                                maxx = max(startbox[0], endbox[0])
+                                miny = min(startbox[1], endbox[1])
+                                maxy = max(startbox[1], endbox[1])
 
-                            for obj in reversed(self.level_file.objects_with_positions.values()):
-                                if not vismenu.object_visible(obj.type, obj):
-                                    continue
+                                for obj in reversed(self.level_file.objects_with_positions.values()):
+                                    if not vismenu.object_visible(obj.type, obj):
+                                        continue
 
-                                if self.dolphin.do_visualize():
-                                    mtx = obj.mtxoverride
-                                else:
-                                    mtx = obj.getmatrix()
+                                    if self.dolphin.do_visualize():
+                                        mtx = obj.mtxoverride
+                                    else:
+                                        mtx = obj.getmatrix()
+                                        if mtx is not None:
+                                            mtx = mtx.mtx
                                     if mtx is not None:
-                                        mtx = mtx.mtx
-                                if mtx is not None:
-                                    objx, objz = mtx[12], mtx[14]
-                                    if minx <= objx <= maxx and miny <= objz <= maxy:
-                                        selected[obj] = True
+                                        objx, objz = mtx[12], mtx[14]
+                                        if minx <= objx <= maxx and miny <= objz <= maxy:
+                                            selected[obj] = True
                 else:
                     objlist = list(self.level_file.objects_with_positions.values())
                     self.graphics.render_select(objlist)
