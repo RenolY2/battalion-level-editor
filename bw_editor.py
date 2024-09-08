@@ -192,7 +192,7 @@ class LevelEditor(QMainWindow):
         if name != "":
             self.setWindowTitle("Battalion Level Editor v{0} - ".format(__version__)+name)
         else:
-            self.setWindowTitle("Battalion Level Editor v{0}")
+            self.setWindowTitle("Battalion Level Editor v{0}".format(__version__))
 
     def set_has_unsaved_changes(self, hasunsavedchanges):
         if hasunsavedchanges and not self._user_made_change:
