@@ -1,7 +1,7 @@
 import cProfile
 import pstats
 import traceback
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 import os
 from timeit import default_timer
@@ -190,24 +190,24 @@ class LevelEditor(QMainWindow):
     def set_base_window_title(self, name):
         self._window_title = name
         if name != "":
-            self.setWindowTitle("Battalion Level Editor - "+name)
+            self.setWindowTitle("Battalion Level Editor v{0} - ".format(__version__)+name)
         else:
-            self.setWindowTitle("Battalion Level Editor")
+            self.setWindowTitle("Battalion Level Editor v{0}")
 
     def set_has_unsaved_changes(self, hasunsavedchanges):
         if hasunsavedchanges and not self._user_made_change:
             self._user_made_change = True
 
             if self._window_title != "":
-                self.setWindowTitle("Battalion Level Editor [Unsaved Changes] - " + self._window_title)
+                self.setWindowTitle("Battalion Level Editor v{0} [Unsaved Changes] - ".format(__version__) + self._window_title)
             else:
-                self.setWindowTitle("Battalion Level Editor [Unsaved Changes] ")
+                self.setWindowTitle("Battalion Level Editor v{0} [Unsaved Changes] ".format(__version__))
         elif not hasunsavedchanges and self._user_made_change:
             self._user_made_change = False
             if self._window_title != "":
-                self.setWindowTitle("Battalion Level Editor - " + self._window_title)
+                self.setWindowTitle("Battalion Level Editor v{0} - ".format(__version__) + self._window_title)
             else:
-                self.setWindowTitle("Battalion Level Editor")
+                self.setWindowTitle("Battalion Level Editor v{0}".format(__version__))
 
     def goto_object(self, obj):
         if self.dolphin.do_visualize():
