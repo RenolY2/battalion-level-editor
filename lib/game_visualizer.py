@@ -43,6 +43,7 @@ class Game(object):
         self.objectlist_address = None
         self.shutdowncallback = shutdowncallback
         self.current_address = None
+        self.bw2 = False
 
     def initialize(self, level_file=None, shutdown=False, matchoverride=False, shutdowncallback=None):
         self.dolphin.reset()
@@ -70,10 +71,16 @@ class Game(object):
                     self.objectlist_address = 0x803b5f88
                 elif gameid == b"RBWE":  # US BW2
                     self.objectlist_address = 0x805c3ca8
+                    self.bw2 = True
                 elif gameid == b"RBWP": # PAL BW2
                     self.objectlist_address = 0x805c5828
+                    self.bw2 = True
                 elif gameid == b"RBWJ":  # JP BW2
                     self.objectlist_address = 0x805c5d68
+                    self.bw2 = True
+
+                if self.bw2:
+                    self.dolphin.update_mem1_offset()
 
                 if self.objectlist_address is None:
                     return "Not supported: Found Game ID '{0}'.".format(str(gameid, encoding="ascii"))
@@ -162,7 +169,7 @@ class Game(object):
             self.timer = 0
         else:
             return
-        if not self.dolphin.is_shared_memory_open():
+        if not self.dolphin.is_shared_memory_open(wii=self.bw2):
             self.shutdowncallback()
             return
 

@@ -117,7 +117,9 @@ SOFTWARE."""
 class Dolphin(object):
     def __init__(self):
         self.pid = -1
-        self.memory = None 
+        self.memory = None
+        self.mem1offset = None
+        self.curr_mem1_size = None
         
     def reset(self):
         self.pid = -1
@@ -154,17 +156,51 @@ class Dolphin(object):
         
         return True
 
-    def is_shared_memory_open(self):
+    def update_mem1_offset(self):
+        self.curr_mem1_size = self.read_uint32(0x80000028)
+
+        testread = self.read_ram(0x2040000, 16)
+        if testread is not None and len(testread) >= 4 and testread[:4] == b"\x02\x9F\x00\x10":
+            self.mem1offset = 0x2040000
+        else:
+            testread = self.read_ram(0x4040000, 16)
+            if testread is not None and len(testread) >= 4 and testread[:4] == b"\x02\x9F\x00\x10":
+                self.mem1offset = 0x4040000
+
+            else:
+                offset = 0x1800000
+                while True:
+                    value = self.read_ram(offset, 16)
+
+                    if value[:4] == unhexlify("029F0010"):
+                        print(hex(offset))
+                        print(hexlify(value))
+                        break
+                    if not value or len(value) <= 3:
+                        offset = None
+                        break
+                    offset += 16
+
+                self.mem1offset = offset
+
+    def is_shared_memory_open(self, wii=False):
         try:
             self.memory = None
             self.memory = shared_memory.SharedMemory('dolphin-emu.' + str(self.pid))
+            if self.read_uint32(0x80000028) != self.curr_mem1_size:
+                self.curr_mem1_size = self.read_uint32(0x80000028)
+                if wii:
+                    self.update_mem1_offset()
             return True
         except FileNotFoundError:
             return False
 
-    def init_shared_memory(self):
+    def init_shared_memory(self, wii=False):
         try:
             self.memory = shared_memory.SharedMemory('dolphin-emu.'+str(self.pid))
+
+            if wii:
+                self.update_mem1_offset()
             return True
         except FileNotFoundError:
             return False
@@ -178,7 +214,7 @@ class Dolphin(object):
     def read_uint32(self, addr):
         assert addr >= 0x80000000
         if addr >= 0x90000000:
-            value = self.read_ram(0x2040000+addr-0x90000000, 4)
+            value = self.read_ram(self.mem1offset+addr-0x90000000, 4)
         else:
             value = self.read_ram(addr-0x80000000, 4)
 
@@ -190,14 +226,14 @@ class Dolphin(object):
     def write_uint32(self, addr, val):
         assert addr >= 0x80000000
         if addr >= 0x90000000:
-            return self.write_ram(0x2040000 + addr - 0x90000000, pack(">I", val))
+            return self.write_ram(self.mem1offset + addr - 0x90000000, pack(">I", val))
         else:
             return self.write_ram(addr - 0x80000000, pack(">I", val))
 
     def read_float(self, addr):
         assert addr >= 0x80000000
         if addr >= 0x90000000:
-            value = self.read_ram(0x2040000 + addr - 0x90000000, 4)
+            value = self.read_ram(self.mem1offset + addr - 0x90000000, 4)
         else:
             value = self.read_ram(addr - 0x80000000, 4)
 
@@ -209,7 +245,7 @@ class Dolphin(object):
     def write_float(self, addr, val):
         assert addr >= 0x80000000
         if addr >= 0x90000000:
-            return self.write_ram(0x2040000 + addr - 0x90000000, pack(">f", val))
+            return self.write_ram(self.mem1offset + addr - 0x90000000, pack(">f", val))
         else:
             return self.write_ram(addr - 0x80000000, pack(">f", val))
 
@@ -244,7 +280,7 @@ if __name__ == "__main__":
     start = default_timer()
     
     print("Testing Shared Memory Method")
-    start = default_timer()
+    """start = default_timer()
     count = 500000
     for i in range(count):
         value = randint(0, 2**32-1)
@@ -254,5 +290,19 @@ if __name__ == "__main__":
         assert result == value
     diff = default_timer()-start 
     print(count/diff, "per sec")
-    print("time: ", diff)
+    print("time: ", diff)"""
+    from binascii import unhexlify, hexlify
+
+    print(hex(dolphin.read_uint32(0x80000028)))
+    # 0x4000000 -> 0x4040000
+    offset = 0
+    while True:
+        value = dolphin.read_ram(offset, 16)
+
+        if value[:4] == unhexlify("029F0010"):
+            print(hex(offset))
+            print(hexlify(value))
+            break
+        offset += 16
+    dolphin.memory.close()
     
