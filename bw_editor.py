@@ -1,7 +1,7 @@
 import cProfile
 import pstats
 import traceback
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 import os
 from timeit import default_timer
