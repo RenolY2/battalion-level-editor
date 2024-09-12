@@ -173,6 +173,9 @@ class BattalionLevelFile(object):
         for bwobject in self.objects.values():
             bwobject.resolve_pointers(self, other)
 
+        for bwobject in self.objects.values():
+            bwobject.updatemodelname()
+
     def add_object_new(self, bwobject):
         self.add_object(bwobject)
         self._root.append(bwobject._node)
@@ -391,7 +394,7 @@ class BattalionObject(object):
                 else:
                     setattr(self, attr_node.attrib["name"], result)
 
-        self.updatemodelname()
+
 
     def updatemodelname(self):
         self._modelname = None
@@ -514,6 +517,7 @@ class BattalionObject(object):
         xmlnode = etree.fromstring(xmltext)
         obj = cls(leveldata, xmlnode)
         obj.resolve_pointers(leveldata, preload)
+        obj.updatemodelname()
         if "customName" in xmlnode.attrib:
             obj._node.attrib["customName"] = xmlnode.attrib["customName"]
         elif "customName" in obj._node.attrib:
@@ -525,6 +529,7 @@ class BattalionObject(object):
         self.check_correctness(xmlnode, leveldata, preload)
         self.update_object_from_xml(xmlnode)
         self.resolve_pointers(leveldata, preload, xmlnode)
+        self.updatemodelname()
         if "customName" in xmlnode.attrib:
             self._node.attrib["customName"] = xmlnode.attrib["customName"]
         elif "customName" in self._node.attrib:
