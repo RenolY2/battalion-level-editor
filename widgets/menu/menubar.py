@@ -1,3 +1,4 @@
+import subprocess
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
@@ -76,7 +77,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.lua_menu = Menu(self, "Lua")
         self.lua_open_entity_init_action = self.lua_menu.add_action("Open EntityInitialise",
                                                                     self.lua_open_entity_initialise)
-
+        self.lua_open_workdir_action = self.lua_menu.add_action("Open Lua Script Folder",
+                                                                    self.lua_open_workdir)
 
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
@@ -89,6 +91,9 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
     def lua_open_entity_initialise(self):
         self.editor.lua_workbench.open_script("EntityInitialise")
+
+    def lua_open_workdir(self):
+        subprocess.run(["explorer.exe", self.editor.lua_workbench.workdir])
 
     def close_debug_window(self):
         self.debug_window = None

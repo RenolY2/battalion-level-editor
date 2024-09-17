@@ -141,7 +141,7 @@ class LuaWorkbench(object):
     def create_empty_template(self, script_name):
         script_path = os.path.join(self.workdir, script_name+".lua")
         with open(script_path, "w") as f:
-            f.write("function {0}(owner)\n")
+            f.write("function {0}(owner)\n".format(script_name))
             f.write("    \n")
             f.write("end")
 

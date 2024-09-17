@@ -339,13 +339,25 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
             mtx.mtx[12] += self.offsetx*4
             mtx.mtx[14] -= self.offsety*4
 
+        if obj.type == "cGameScriptResource" and obj.mName != "":
+            if self.parent.lua_workbench.script_exists(obj.mName):
+                number = 1
+                while True:
+                    newscriptname = "{0}_{1}".format(obj.mName, number)
+                    if not self.parent.lua_workbench.script_exists(newscriptname):
+                        obj.mName = newscriptname
+                        break
+                    else:
+                        number += 1
+
+            self.editor.lua_workbench.create_empty_if_not_exist(obj.mName)
+
         if obj.is_preload():
             self.editor.preload_file.add_object_new(obj)
         else:
             self.editor.level_file.add_object_new(obj)
 
-        if obj.type == "cGameScriptResource" and obj.mName != "":
-            self.editor.lua_workbench.create_empty_if_not_exist(obj.mName)
+
 
         self.donotreset = True
         self.textbox_xml.setText(content.replace(oldid, newid))

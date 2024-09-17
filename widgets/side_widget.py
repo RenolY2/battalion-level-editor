@@ -125,13 +125,24 @@ class PikminSideWidget(QWidget):
             mtx.mtx[12] += offsetx
             mtx.mtx[14] += offsetz
 
+        if obj.type == "cGameScriptResource" and obj.mName != "":
+            number = 1
+            while True:
+                newscriptname = "{0}_{1}".format(obj.mName, number)
+                if not self.parent.lua_workbench.script_exists(newscriptname):
+                    obj.mName = newscriptname
+                    break
+                else:
+                    number += 1
+
+            self.parent.lua_workbench.create_empty_if_not_exist(obj.mName)
+
+
         if obj.is_preload():
             preload.add_object_new(obj)
         else:
             level_file.add_object_new(obj)
 
-        if obj.type == "cGameScriptResource" and obj.mName != "":
-            self.parent.lua_workbench.create_empty_if_not_exist(obj.mName)
 
         return obj
 
@@ -305,8 +316,12 @@ class PikminSideWidget(QWidget):
 
                     if obj.type == "cGameScriptResource":
                         if self.parent.lua_workbench.script_exists(old_script_name):
-                            if not self.parent.lua_workbench.script_exists(obj.mName):
-                                self.parent.lua_workbench.rename(old_script_name, obj.mName)
+                            if obj.mName != "" and not self.parent.lua_workbench.script_exists(obj.mName):
+                                scripts = [x.mName for x in self.parent.level_file.scripts]
+                                if scripts.count(old_script_name) > 1:
+                                    self.parent.lua_workbench.create_empty_if_not_exist(obj.mName)
+                                else:
+                                    self.parent.lua_workbench.rename(old_script_name, obj.mName)
                         else:
                             self.parent.lua_workbench.create_empty_if_not_exist(obj.mName)
 
@@ -325,6 +340,17 @@ class PikminSideWidget(QWidget):
         else:
             if obj is not None:
                 obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
+
+                if obj.type == "cGameScriptResource":
+                    if self.parent.lua_workbench.script_exists(old_script_name):
+                        if obj.mName != "" and not self.parent.lua_workbench.script_exists(obj.mName):
+                            scripts = [x.mName for x in self.parent.level_file.scripts]
+                            if scripts.count(old_script_name) > 1:
+                                self.parent.lua_workbench.create_empty_if_not_exist(obj.mName)
+                            else:
+                                self.parent.lua_workbench.rename(old_script_name, obj.mName)
+                    else:
+                        self.parent.lua_workbench.create_empty_if_not_exist(obj.mName)
 
                 self.edit_windows[id].reset_unsaved()
                 self.parent.level_view.selected_positions = []
