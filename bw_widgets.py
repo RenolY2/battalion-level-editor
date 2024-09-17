@@ -53,6 +53,36 @@ MODE_3D = 1
 colors = [(0.0,191/255.0,255/255.0), (30/255.0,144/255.0,255/255.0), (0.0,0.0,255/255.0), (0.0,0.0,139/255.0)]
 
 
+class SelectionDebug(object):
+    def __init__(self, levelview: "BolMapViewer", enabled):
+        self.counter = 0
+        self.levelview = levelview
+        self.enabled = enabled
+
+
+    def record_view(self, name, x, y):
+        if self.enabled:
+            width = self.levelview.canvas_width
+            height = self.levelview.canvas_height
+            pixels = glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE)
+
+            img = QImage(pixels, width, height, QImage.Format.Format_RGBA8888)
+            if x is not None:
+                if x > 0 and x < width-1 and y > 0 and y < height-1:
+                    for ix in range(-1, 1+1):
+                        for iy in range(-1, 1+1):
+
+                            img.setPixelColor(x+ix, y+iy, QColor(255, 255, 255))
+                img.setPixelColor(x, y, QColor(0, 0, 0))
+            img.save("{1}_{0}.png".format(name, self.counter))
+
+        self.increment_counter()
+
+    def increment_counter(self):
+        self.counter += 1
+
+
+
 class SelectionQueue(list):
     def __init__(self):
         super().__init__()
@@ -62,7 +92,7 @@ class SelectionQueue(list):
             for i in self:
                 if i[-1] is True:
                     return
-        self.append((x, y, width, height, shift_pressed, do_gizmo))
+        self.append((int(x), int(y), width, height, shift_pressed, do_gizmo))
 
     def clear(self):
         tmp = [x for x in self]
@@ -269,6 +299,8 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
         self._dont_render = False
 
+        self.selectdebug = SelectionDebug(self, False)
+
     def stop_render(self):
         self._dont_render = True
 
@@ -406,6 +438,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                                 int(backgroundcolor[1])/255.0,
                                 int(backgroundcolor[2])/255.0,
                                 1.0)
+
+        if config.getboolean("selection_debug", fallback=False):
+            self.selectdebug.enabled = True
 
     def change_from_topdown_to_3d(self):
         if self.mode == MODE_3D:
@@ -721,6 +756,8 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         if self.paused_render:
             return
 
+        record_selection = False
+
         start = default_timer()
         offset_x = self.offset_x
         offset_z = self.offset_z
@@ -754,9 +791,12 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         #print(self.gizmo.position, campos)
         vismenu: FilterViewMenu = self.visibility_menu
         while len(self.selectionqueue) > 0:
+            record_selection = True
             glClearColor(1.0, 1.0, 1.0, 1.0)
             #
             click_x, click_y, clickwidth, clickheight, shiftpressed, do_gizmo = self.selectionqueue.queue_pop()
+            print(click_x, click_y, clickwidth, clickheight)
+
             original_click_y = click_y
             click_y = height - click_y
             hit = 0xFF
@@ -766,6 +806,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             if clickwidth == 1 and clickheight == 1:
                 self.gizmo.render_collision_check(gizmo_scale, is3d=self.mode == MODE_3D)
                 pixels = glReadPixels(click_x, click_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
+                self.selectdebug.record_view("Gizmo", int(click_x), int(click_y))
                 #print(pixels)
                 hit = pixels[2]
                 if do_gizmo and hit != 0xFF:
@@ -841,6 +882,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                     objlist = list(self.level_file.objects_with_positions.values())
                     self.graphics.render_select(objlist)
                     pixels = glReadPixels(click_x, click_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
+                    self.selectdebug.record_view("3DSelect", click_x, click_y)
                     #print(pixels, click_x, click_y, clickwidth, clickheight)
 
                     #for i in range(0, clickwidth*clickheight, 4):
@@ -1066,6 +1108,8 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
         glEnable(GL_DEPTH_TEST)
         glFinish()
+        if record_selection:
+            self.selectdebug.record_view("Finished", None, None)
         now = default_timer() - start
         #print("Frame time:", now, 1/now, "fps")
         #print("Spent on terrain: {0} {1}%".format(terraintime, round(terraintime/now, 3)*100))
