@@ -73,14 +73,22 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.apply_live_positions_action = self.dolphin_menu.add_action("Apply Live Positions to Selected",
                                                                 self.apply_live_positions)
 
+        self.lua_menu = Menu(self, "Lua")
+        self.lua_open_entity_init_action = self.lua_menu.add_action("Open EntityInitialise",
+                                                                    self.lua_open_entity_initialise)
+
 
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
         #self.addAction(self.collision_menu.menuAction())
         self.addAction(self.misc_menu.menuAction())
         self.addAction(self.dolphin_menu.menuAction())
+        self.addAction(self.lua_menu.menuAction())
 
         self.last_obj_select_pos = 0
+
+    def lua_open_entity_initialise(self):
+        self.editor.lua_workbench.open_script("EntityInitialise")
 
     def close_debug_window(self):
         self.debug_window = None
