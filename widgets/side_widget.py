@@ -130,6 +130,9 @@ class PikminSideWidget(QWidget):
         else:
             level_file.add_object_new(obj)
 
+        if obj.type == "cGameScriptResource" and obj.mName != "":
+            self.parent.lua_workbench.create_empty_if_not_exist(obj.mName)
+
         return obj
 
     def clone_object(self):
@@ -284,6 +287,7 @@ class PikminSideWidget(QWidget):
             self.edit_windows[id].unsaved_changes = unsaved
 
     def save_object_data(self, id, mass_save=False):
+
         content = self.edit_windows[id].get_content()
         obj = None
         if id in self.parent.level_file.objects:
@@ -291,10 +295,21 @@ class PikminSideWidget(QWidget):
         elif id in self.parent.preload_file.objects:
             obj = self.parent.preload_file.objects[id]
 
+        if obj.type == "cGameScriptResource":
+            old_script_name = obj.mName
+
         if not mass_save:
             if obj is not None:
                 try:
                     obj.update_object_from_text(content, self.parent.level_file, self.parent.preload_file)
+
+                    if obj.type == "cGameScriptResource":
+                        if self.parent.lua_workbench.script_exists(old_script_name):
+                            if not self.parent.lua_workbench.script_exists(obj.mName):
+                                self.parent.lua_workbench.rename(old_script_name, obj.mName)
+                        else:
+                            self.parent.lua_workbench.create_empty_if_not_exist(obj.mName)
+
                 except Exception as err:
                     open_error_dialog(str(err), None)
                 else:

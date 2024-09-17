@@ -344,6 +344,9 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
         else:
             self.editor.level_file.add_object_new(obj)
 
+        if obj.type == "cGameScriptResource" and obj.mName != "":
+            self.editor.lua_workbench.create_empty_if_not_exist(obj.mName)
+
         self.donotreset = True
         self.textbox_xml.setText(content.replace(oldid, newid))
         self.donotreset = False

@@ -21,6 +21,7 @@ import PyQt6.QtGui as QtGui
 
 import opengltext
 import py_obj
+from lib.lua.luaworkshop import LuaWorkbench
 from lib.bw_types import BWMatrix
 from lib.vectors import Vector3
 from widgets.menu.menubar import EditorMenuBar
@@ -62,6 +63,8 @@ class LevelEditor(QMainWindow):
         self.file_menu = EditorFileMenu(self)
         self.setup_ui()
         self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.lua_workbench: LuaWorkbench = None
+
         try:
             self.configuration = read_config()
             print("Config file loaded")
@@ -249,6 +252,12 @@ class LevelEditor(QMainWindow):
 
         if bwmatrix is not None:
            self.goto_object(obj)
+        elif obj.type == "cGameScriptResource" and obj.mName != "":
+            self.lua_workbench.open_script(obj.mName)
+        elif (obj.type in ("cGlobalScriptEntity", "cInitialisationScriptEntity")
+              and obj.mpScript is not None
+              and obj.mpScript.mName != ""):
+            self.lua_workbench.open_script(obj.mpScript.mName)
         else:
             self.pik_control.action_open_edit_object()
 

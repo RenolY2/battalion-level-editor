@@ -1,4 +1,5 @@
 import json
+import typing
 
 from functools import partial
 from collections.abc import MutableSequence, Iterable
@@ -8,6 +9,7 @@ except: # cElementTree not available
     import xml.etree.ElementTree as etree
 
 from lib.searchquery import fieldnames
+
 from numpy import array, float32
 #import xml.etree.ElementTree.Element as Element
 bwfieldnames = set()
@@ -129,6 +131,13 @@ class BattalionLevelFile(object):
         self._root = self._tree.getroot()
         self.objects = {}
         self.objects_with_positions = {}
+
+        self._categories: typing.Dict[str, typing.Dict[str, BattalionObject]] = {}
+        for category, attr in [("cGameScriptResource", "scripts")]:
+            self._categories[category] = {}
+            setattr(self, attr, self._categories[category])
+        self.scripts: typing.Dict[str, BattalionObject]
+
         self.bw2 = False
 
         for i, child in enumerate(self._root):
@@ -156,6 +165,8 @@ class BattalionLevelFile(object):
                 del self.objects[obj.id]
             if obj.id in self.objects_with_positions:
                 del self.objects_with_positions[obj.id]
+            if obj.type in self._categories and obj.id in self._categories[obj.type]:
+                del self._categories[obj.type][obj.id]
 
         deleted_refs = set(obj.id for obj in objects)
         newroot = etree.Element("Instances")
@@ -189,6 +200,9 @@ class BattalionLevelFile(object):
         if hasposition:
             self.objects_with_positions[bwobject.id] = bwobject
             assert bwobject.getmatrix() is not None
+
+        if bwobject.type in self._categories:
+            self._categories[bwobject.type][bwobject.id] = bwobject
 
     def write(self, f):
         f.write(b"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
@@ -580,7 +594,7 @@ class BattalionObject(object):
                 modelname = base.model.mName
             elif hasattr(base, "mBAN_Model"):
                 modelname = base.mBAN_Model.mName
-            elif self.type == "cGlobalScriptEntity":
+            elif self.type in ("cGlobalScriptEntity", "cInitialisationScriptEntity"):
                 return "{0}({1})".format(self.mpScript.mName, self.id)
             elif hasattr(base, "mName") and base.mName != "":
                 return "{0}({1})".format(self.mName, self.id)

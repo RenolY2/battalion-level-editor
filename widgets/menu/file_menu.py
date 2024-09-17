@@ -20,6 +20,7 @@ from lib.BattalionXMLLib import BattalionLevelFile, BattalionFilePaths, Battalio
 import gzip
 from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect, QObject
 from io import BytesIO
+from lib.lua.luaworkshop import LuaWorkbench
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -111,6 +112,8 @@ class EditorFileMenu(QMenu):
                     levelpaths = BattalionFilePaths(f)
                     if levelpaths.objectpath is None:
                         raise RuntimeError("Wrong XML loaded!\nMake sure you are loading the level's main XML file without Level or Preload in the name.")
+
+
                     base = os.path.dirname(filepath)
                     print(base, levelpaths.objectpath)
                     progressbar = LoadingProgress("Loading")
@@ -134,6 +137,13 @@ class EditorFileMenu(QMenu):
                     progressbar.set(20)
                     level_data.resolve_pointers(preload_data)
                     preload_data.resolve_pointers(level_data)
+
+                    del self.editor.lua_workbench
+                    self.editor.lua_workbench = LuaWorkbench(filepath+"_lua")
+                    if not self.editor.lua_workbench.is_initialized():
+                        respath = os.path.join(base, levelpaths.resourcepath)
+                        self.editor.lua_workbench.unpack_scripts(respath)
+                    self.editor.lua_workbench.read_entity_initialization()
 
                     for id, obj in preload_data.objects.items():
                         if obj.type == "cLevelSettings":
@@ -254,7 +264,13 @@ class EditorFileMenu(QMenu):
                 print("Skipping PF2..")
 
             progressbar.set(20)
-
+            if self.editor.editorconfig.getboolean("recompile_lua", fallback=True):
+                respath = os.path.join(base, levelpaths.resourcepath)
+                self.editor.lua_workbench.repack_scripts(respath,
+                                                         respath,
+                                                         scripts=[x.mName for x in self.level_data.scripts.values()]
+                                                         )
+            progressbar.set(25)
             for object in self.preload_data.objects.values():
                 object.update_xml()
             progressbar.set(30)
