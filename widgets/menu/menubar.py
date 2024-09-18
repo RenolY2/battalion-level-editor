@@ -1,4 +1,5 @@
 import subprocess
+import os
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
@@ -79,7 +80,9 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                                                                     self.lua_open_entity_initialise)
         self.lua_open_workdir_action = self.lua_menu.add_action("Open Lua Script Folder",
                                                                     self.lua_open_workdir)
-
+        self.lua_menu.addSeparator()
+        self.lua_reload_scripts_action = self.lua_menu.add_action("Reload Scripts from Resource",
+                                                                    self.lua_reload_scripts)
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
         #self.addAction(self.collision_menu.menuAction())
@@ -88,6 +91,27 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.addAction(self.lua_menu.menuAction())
 
         self.last_obj_select_pos = 0
+
+    def lua_reload_scripts(self):
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setText("Reloading the scripts from the level's resource file will overwrite your current scripts!")
+        msgbox.setInformativeText("Do you want to overwrite your current scripts?")
+        msgbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+        msgbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+        msgbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
+        msgbox.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
+        msgbox.setWindowTitle("Warning")
+        result = msgbox.exec()
+
+        if result == QtWidgets.QMessageBox.StandardButton.Yes:
+            basepath = os.path.dirname(self.editor.current_gen_path)
+            resname = self.editor.file_menu.level_paths.resourcepath
+            self.editor.statusbar.showMessage("Reloading scripts...")
+
+            print("reloading scripts from", os.path.join(basepath, resname))
+            self.editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname))
+            self.editor.statusbar.showMessage("Finished reloading scripts!")
+            print("finished reloading")
 
     def lua_open_entity_initialise(self):
         self.editor.lua_workbench.open_script("EntityInitialise")
