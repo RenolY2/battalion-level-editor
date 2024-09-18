@@ -7,6 +7,7 @@ import sys
 import traceback
 from functools import partial
 import PyQt6.QtGui as QtGui
+import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtCore as QtCore
 from PyQt6.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter, QApplication, QMdiSubWindow, QVBoxLayout,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
@@ -265,11 +266,28 @@ class EditorFileMenu(QMenu):
 
             progressbar.set(20)
             if self.editor.editorconfig.getboolean("recompile_lua", fallback=True):
-                respath = os.path.join(base, levelpaths.resourcepath)
-                self.editor.lua_workbench.repack_scripts(respath,
-                                                         respath,
-                                                         scripts=[x.mName for x in self.level_data.scripts.values()]
-                                                         )
+                try:
+                    respath = os.path.join(base, levelpaths.resourcepath)
+                    self.editor.lua_workbench.repack_scripts(respath,
+                                                             respath,
+                                                             scripts=[x.mName for x in self.level_data.scripts.values()]
+                                                             )
+                except Exception as err:
+                    msgbox = QtWidgets.QMessageBox()
+                    msgbox.setText(
+                        "An error appeared during compilation:\n\n"+str(err))
+                    msgbox.setInformativeText("Do you want to continue saving? This will skip compilation of Lua scripts.")
+                    msgbox.setStandardButtons(
+                        QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                    #msgbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+                    msgbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                    msgbox.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
+                    msgbox.setWindowTitle("Warning")
+                    result = msgbox.exec()
+
+                    if result == QtWidgets.QMessageBox.StandardButton.No:
+                        return
+
             progressbar.set(25)
             for object in self.preload_data.objects.values():
                 object.update_xml()
