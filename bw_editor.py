@@ -1066,6 +1066,24 @@ class LevelEditor(QMainWindow):
                 self.pik_control.reset_info("{0} objects selected".format(len(self.level_view.selected)))
                 self.pik_control.set_objectlist(selected)
 
+    def closeEvent(self, event:QtGui.QCloseEvent):
+        if self._user_made_change:
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setText(
+                "You have unsaved changes!")
+            msgbox.setInformativeText("Are you sure you want to quit? Unsaved changes will be lost!")
+            msgbox.setStandardButtons(
+                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+            msgbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+            msgbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+            msgbox.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
+            msgbox.setWindowTitle("Warning")
+            result = msgbox.exec()
+            if result == QtWidgets.QMessageBox.StandardButton.Yes:
+                super().closeEvent(event)
+            else:
+                event.ignore()
+
     @catch_exception
     def mapview_showcontextmenu(self, position):
         context_menu = QMenu(self)
