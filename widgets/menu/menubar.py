@@ -117,7 +117,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.editor.lua_workbench.open_script("EntityInitialise")
 
     def lua_open_workdir(self):
-        subprocess.run(["explorer.exe", self.editor.lua_workbench.workdir])
+        print("Opening", self.editor.lua_workbench.workdir)
+        os.startfile(self.editor.lua_workbench.workdir)
 
     def close_debug_window(self):
         self.debug_window = None
