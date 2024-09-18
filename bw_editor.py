@@ -1229,17 +1229,11 @@ if __name__ == "__main__":
         sys.excepthook = except_hook
 
         parser = argparse.ArgumentParser()
-        """parser.add_argument("--inputgen", default=None,
-                            help="Path to generator file to be loaded.")
-        parser.add_argument("--collision", default=None,
-                            help="Path to collision to be loaded.")
-        parser.add_argument("--waterbox", default=None,
-                            help="Path to waterbox file to be loaded.")"""
 
         parser.add_argument("filepath", default=None, help="Path to level to be loaded.", nargs="?")
 
         args = parser.parse_args()
-
+        os.environ['QT_ENABLE_HIGHDPI_SCALING'] = '0'
         app = QApplication(sys.argv)
 
         if platform.system() == "Windows":
