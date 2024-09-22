@@ -363,7 +363,26 @@ class LevelDataTreeView(QTreeWidget):
         else:
             return self.other
 
-    def set_objects(self, leveldata: BattalionLevelFile, preload: BattalionLevelFile):
+    def set_objects(self, leveldata: BattalionLevelFile, preload: BattalionLevelFile, remember_position=False):
+        expanded = {}
+        scrollvalue = self.verticalScrollBar().value()
+
+        if remember_position:
+            model = self.model()
+            for i in range(model.rowCount(self.rootIndex())):
+                index = model.index(i, 0)
+                item = self.itemFromIndex(index)
+                if item.isExpanded():
+                    expanded[item.text(0)] = True
+                childmodel = index.model()
+                for j in range(model.rowCount(index)):
+                    childindex = childmodel.index(j, 0, index)
+                    item2 = self.itemFromIndex(childindex)
+                    if item2.isExpanded():
+                        expanded[item2.text(0)] = True
+
+                #QtWidgets.QApplication.processEvents()
+
         self.reset()
 
         extra_categories = {}
@@ -383,7 +402,7 @@ class LevelDataTreeView(QTreeWidget):
             objecttype = object.type
             if objecttype not in extra_categories:
                 extra_categories[objecttype] = ObjectGroup(objecttype)
-                print(objecttype)
+                #print(objecttype)
 
             parent = extra_categories[objecttype]
             name = object.name
@@ -398,11 +417,25 @@ class LevelDataTreeView(QTreeWidget):
             if unused:
                 item.update_details_unused()
 
-
         for categoryname in sorted(extra_categories.keys()):
             category = extra_categories[categoryname]
             target = self.choose_category(categoryname)
             target.addChild(category)
+
+        if remember_position:
+            model = self.model()
+            for i in range(model.rowCount(self.rootIndex())):
+                index = model.index(i, 0)
+                item = self.itemFromIndex(index)
+                if item.text(0) in expanded:
+                    item.setExpanded(True)
+                childmodel = index.model()
+                for j in range(model.rowCount(index)):
+                    childindex = childmodel.index(j, 0, index)
+                    item2 = self.itemFromIndex(childindex)
+                    if item2.text(0) in expanded:
+                        item2.setExpanded(True)
+            self.verticalScrollBar().setValue(scrollvalue)
 
     def updatenames(self):
         levelsettings = None
