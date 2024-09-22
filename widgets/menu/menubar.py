@@ -109,7 +109,10 @@ class EditorMenuBar(QtWidgets.QMenuBar):
             self.editor.statusbar.showMessage("Reloading scripts...")
 
             print("reloading scripts from", os.path.join(basepath, resname))
-            self.editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname))
+            try:
+                self.editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname))
+            except Exception as err:
+                open_error_dialog(str(err), None)
             self.editor.statusbar.showMessage("Finished reloading scripts!")
             print("finished reloading")
 
