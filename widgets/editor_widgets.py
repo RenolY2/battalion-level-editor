@@ -279,12 +279,15 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
         self.resize(900, 500)
         self.setMinimumSize(QSize(300, 300))
         self.basewidget = QtWidgets.QWidget(self)
+        self.setWindowTitle("Add Object")
 
         self.setCentralWidget(self.basewidget)
-
+        self.explanation = QtWidgets.QLabel(("Insert the XML data of an object you want to add here. "
+                                             "This does not automatically add object dependencies or resources if they don't exist already.\n"
+                                             "Each press of 'Add Object' adds the object to the level with a new ID."))
         self.vlayout = QtWidgets.QVBoxLayout(self)
         self.basewidget.setLayout(self.vlayout)
-
+        self.vlayout.addWidget(self.explanation)
         self.textbox_xml = QTextEdit(self.basewidget)
 
 
@@ -325,7 +328,12 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
 
     def action_add_object(self):
         content = self.textbox_xml.toPlainText()
-        obj = BattalionObject.create_from_text(content, self.editor.level_file, self.editor.preload_file)
+        try:
+            obj = BattalionObject.create_from_text(content, self.editor.level_file, self.editor.preload_file)
+        except Exception as err:
+            open_error_dialog("Couldn't add object:\n"+str(err), None)
+            return
+
         oldid = obj.id
         obj.choose_unique_id(self.editor.level_file, self.editor.preload_file)
         newid = obj.id
@@ -340,11 +348,11 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
             mtx.mtx[14] -= self.offsety*4
 
         if obj.type == "cGameScriptResource" and obj.mName != "":
-            if self.parent.lua_workbench.script_exists(obj.mName):
+            if self.editor.lua_workbench.script_exists(obj.mName):
                 number = 1
                 while True:
                     newscriptname = "{0}_{1}".format(obj.mName, number)
-                    if not self.parent.lua_workbench.script_exists(newscriptname):
+                    if not self.editor.lua_workbench.script_exists(newscriptname):
                         obj.mName = newscriptname
                         break
                     else:
@@ -362,7 +370,7 @@ class AddBWObjectWindow(QtWidgets.QMainWindow):
         self.donotreset = True
         self.textbox_xml.setText(content.replace(oldid, newid))
         self.donotreset = False
-        self.editor.leveldatatreeview.set_objects(self.editor.level_file, self.editor.preload_file)
+        self.editor.leveldatatreeview.set_objects(self.editor.level_file, self.editor.preload_file, remember_position=True)
         self.editor.level_view.do_redraw(force=True)
 
 
