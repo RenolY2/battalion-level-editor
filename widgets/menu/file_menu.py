@@ -143,8 +143,14 @@ class EditorFileMenu(QMenu):
                     self.editor.lua_workbench = LuaWorkbench(filepath+"_lua")
                     if not self.editor.lua_workbench.is_initialized():
                         respath = os.path.join(base, levelpaths.resourcepath)
-                        self.editor.lua_workbench.unpack_scripts(respath)
-                    self.editor.lua_workbench.read_entity_initialization()
+                        try:
+                            self.editor.lua_workbench.unpack_scripts(respath)
+                        except Exception as err:
+                            open_error_dialog(str(err)+"\nPress OK to continue. Script decompilation will be skipped.",
+                                              None)
+
+                    if self.editor.lua_workbench.is_initialized():
+                        self.editor.lua_workbench.read_entity_initialization()
 
                     for id, obj in preload_data.objects.items():
                         if obj.type == "cLevelSettings":
