@@ -271,7 +271,8 @@ class EditorFileMenu(QMenu):
                 print("Skipping PF2..")
 
             progressbar.set(20)
-            if self.editor.editorconfig.getboolean("recompile_lua", fallback=True):
+            if (self.editor.editorconfig.getboolean("recompile_lua", fallback=True)
+                and self.editor.lua_workbench.is_initialized()):
                 try:
                     respath = os.path.join(base, levelpaths.resourcepath)
                     self.editor.lua_workbench.repack_scripts(respath,
