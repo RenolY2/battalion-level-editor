@@ -1,7 +1,7 @@
 import cProfile
 import pstats
 import traceback
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 import os
 from timeit import default_timer
@@ -404,8 +404,8 @@ class LevelEditor(QMainWindow):
 
         self.level_view.rotate_current.connect(self.action_rotate_object)
         self.leveldatatreeview.select_all.connect(self.select_all_of_group)
-        self.leveldatatreeview.reverse.connect(self.reverse_all_of_group)
-        self.leveldatatreeview.duplicate.connect(self.duplicate_group)
+        #self.leveldatatreeview.reverse.connect(self.reverse_all_of_group)
+        #self.leveldatatreeview.duplicate.connect(self.duplicate_group)
         self.leveldatatreeview.split.connect(self.split_group)
         self.leveldatatreeview.split_checkpoint.connect(self.split_group_checkpoint)
 
@@ -458,33 +458,6 @@ class LevelEditor(QMainWindow):
         self.leveldatatreeview.set_objects(self.level_file)
         self.update_3d()
         self.set_has_unsaved_changes(True)
-
-    def duplicate_group(self, item):
-        group = item.bound_to
-        if isinstance(group, libbol.EnemyPointGroup):
-            new_id = len(self.level_file.enemypointgroups.groups)
-            new_group = group.copy_group(new_id)
-            self.level_file.enemypointgroups.groups.append(new_group)
-
-            self.leveldatatreeview.set_objects(self.level_file)
-            self.update_3d()
-            self.set_has_unsaved_changes(True)
-
-    def reverse_all_of_group(self, item):
-        group = item.bound_to
-        if isinstance(group, libbol.CheckpointGroup):
-            group.points.reverse()
-            for point in group.points:
-                start = point.start
-                point.start = point.end
-                point.end = start
-        elif isinstance(group, libbol.EnemyPointGroup):
-            group.points.reverse()
-        elif isinstance(group, libbol.Route):
-            group.points.reverse()
-
-        self.leveldatatreeview.set_objects(self.level_file)
-        self.update_3d()
 
     def select_all_of_group(self, item):
         group = item.bound_to
@@ -659,52 +632,6 @@ class LevelEditor(QMainWindow):
 
 
             self.add_object_window.show()"""
-
-    @catch_exception
-    def button_add_item_window_save(self):
-        print("ohai")
-        if self.add_object_window is not None:
-            self.object_to_be_added = self.add_object_window.get_content()
-            if self.object_to_be_added is None:
-                return
-
-            obj = self.object_to_be_added[0]
-
-            if isinstance(obj, (libbol.EnemyPointGroup, libbol.CheckpointGroup, libbol.Route,
-                                                    libbol.LightParam, libbol.MGEntry)):
-                if isinstance(obj, libbol.EnemyPointGroup):
-                    self.level_file.enemypointgroups.groups.append(obj)
-                elif isinstance(obj, libbol.CheckpointGroup):
-                    self.level_file.checkpoints.groups.append(obj)
-                elif isinstance(obj, libbol.Route):
-                    self.level_file.routes.append(obj)
-                elif isinstance(obj, libbol.LightParam):
-                    self.level_file.lightparams.append(obj)
-                elif isinstance(obj, libbol.MGEntry):
-                    self.level_file.lightparams.append(obj)
-
-                self.addobjectwindow_last_selected_category = self.add_object_window.category_menu.currentIndex()
-                self.object_to_be_added = None
-                self.add_object_window.destroy()
-                self.add_object_window = None
-                self.leveldatatreeview.set_objects(self.level_file)
-
-            elif self.object_to_be_added is not None:
-                self.addobjectwindow_last_selected_category = self.add_object_window.category_menu.currentIndex()
-                self.pik_control.button_add_object.setChecked(True)
-                #self.pik_control.button_move_object.setChecked(False)
-                self.level_view.set_mouse_mode(mkdd_widgets.MOUSE_MODE_ADDWP)
-                self.add_object_window.destroy()
-                self.add_object_window = None
-                #self.pikmin_gen_view.setContextMenuPolicy(Qt.DefaultContextMenu)
-
-    @catch_exception
-    def button_add_item_window_close(self):
-        # self.add_object_window.destroy()
-        print("Hmmm")
-        self.add_object_window = None
-        self.pik_control.button_add_object.setChecked(False)
-        self.level_view.set_mouse_mode(mkdd_widgets.MOUSE_MODE_NONE)
 
     @catch_exception
     def action_add_object(self, x, z):
@@ -973,7 +900,7 @@ class LevelEditor(QMainWindow):
         self.level_view.selected_rotations = []
 
         self.pik_control.reset_info()
-        self.leveldatatreeview.set_objects(self.level_file, self.preload_file)
+        self.leveldatatreeview.set_objects(self.level_file, self.preload_file, remember_position=True)
         self.level_view.gizmo.hidden = True
         #self.pikmin_gen_view.update()
         self.level_view.do_redraw(force=True)
