@@ -166,7 +166,7 @@ class PikminSideWidget(QWidget):
                         newclones.append(clone.mPassenger[i])
 
         self.parent.level_view.do_select(newclones)
-        self.parent.leveldatatreeview.set_objects(self.parent.level_file, self.parent.preload_file)
+        self.parent.leveldatatreeview.set_objects(self.parent.level_file, self.parent.preload_file, remember_position=True)
         self.parent.update_3d()
         self.parent.level_view.do_redraw(force=True)
         self.set_objectlist(newclones)
