@@ -335,6 +335,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self._dont_render = False
 
         self.selectdebug = SelectionDebug(self, False)
+        self.frames = []
+
+        self.framecountercounter = 0
 
     def stop_render(self):
         self._dont_render = True
@@ -539,7 +542,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         if diff > 1 / 60.0:
 
             sys.stderr.flush()
-            if self._frame_invalid:
+            if True: #self._frame_invalid:
                 if not self.paused_render:
                     self.update()
                 self._lastrendertime = now
@@ -644,7 +647,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self._frame_invalid = True
         if forcelight:
             self._lastrendertime = 0
-            self.update()
+            #self.update()
         elif force:
             self.graphics.set_dirty()
             self._lastrendertime = 0
@@ -662,7 +665,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                         modelnames.add(obj.modelname)
             self.graphics.set_dirty_limited(modelnames)
             self._lastrendertime = 0
-            self.update()
+            #self.update()
 
     def reset(self, keep_collision=False):
         self.set_2d_selectionbox(None, None, None, None)
@@ -1148,7 +1151,16 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         if record_selection:
             self.selectdebug.record_view("Finished", None, None)
         now = default_timer() - start
-        self.fpscounter.frametime_total = now
+        if len(self.frames) > 30:
+            firstframe = self.frames.pop(0)
+            now = default_timer()
+            self.frames.append(now)
+            diff = now - firstframe
+            avgtime = diff/30.0
+        else:
+            self.frames.append(default_timer())
+            avgtime = 1
+        self.fpscounter.frametime_total = avgtime
         self.fpscounter.frametime_terrain = terraintime
         self.fpscounter.frametime_objects = objecttime
         #print("Frame time:", now, 1/now, "fps")
