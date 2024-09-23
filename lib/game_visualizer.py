@@ -595,6 +595,8 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         item = self.info.item(row, column)
         if item is not None:
             brush = QtGui.QBrush(QtGui.QColor(int(color[0]), int(color[1]), int(color[2])))
+            fr = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+            item.setForeground(fr)
             item.setBackground(brush)
 
     def update_info(self):
