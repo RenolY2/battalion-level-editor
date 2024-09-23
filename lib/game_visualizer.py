@@ -8,7 +8,7 @@ from math import pi, atan2, degrees, sin, cos
 #from lib.memorylib import Dolphin
 #from bw_widgets import BolMapViewer, MODE_TOPDOWN, MODE_3D
 #from lib.vectors import Vector3
-
+from timeit import default_timer
 from lib.memorylib import Dolphin
 from lib.vectors import Vector3
 from typing import TYPE_CHECKING
@@ -158,7 +158,9 @@ class Game(object):
         return self.running and self.visualize
 
     def logic(self, renderer, delta, diff):
+        starttime = default_timer()
         if not self.running:
+            renderer.fpscounter.frametime_liveedit = 0
             return
 
         renderer: bw_widgets.BolMapViewer
@@ -282,8 +284,10 @@ class Game(object):
                     print("warning, mtx test failed for", hex(addr), obj.name)
 
         #renderer.do_redraw()
+        renderer.fpscounter.frametime_liveedit = default_timer()-starttime
         renderer.do_redraw(forcespecific=updateobjects)
         self.do_once = False
+
         #if self.timer >= 60.0:
         #    self.timer = 0.0
 

@@ -137,6 +137,41 @@ class LiveIndicator(QtWidgets.QLabel):
         self.setVisible(True)
 
 
+class FPSCounter(QtWidgets.QLabel):
+    def __init__(self, posx, posy, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        font = QFont()
+        font.setFamily("Consolas")
+        font.setStyleHint(QFont.StyleHint.Monospace)
+        font.setFixedPitch(True)
+        font.setPointSize(20)
+
+        metrics = QFontMetrics(font)
+        self.setFont(font)
+        self.setStyleSheet("""QLabel {color: #000000}""")
+        #self.setVisible(False)
+        #self.reset()
+        self.frametime_total = 1
+        self.frametime_terrain = 0
+        self.frametime_objects = 0
+        self.frametime_liveedit = 0
+        self.move(posx, posy)
+        self.update_frametime()
+
+    def toggle_visible(self):
+        if self.isVisible():
+            self.setVisible(False)
+        else:
+            self.setVisible(True)
+
+    def update_frametime(self):
+        total = "Total: {0:.0f}msec ({1:.2f}fps)".format(self.frametime_total*1000, 1/self.frametime_total)
+        terraintime = "Terrain: {0:.0f}msec ({1:.1f}%)".format(self.frametime_terrain*1000, (self.frametime_terrain/self.frametime_total)*100)
+        objecttime = "Objects: {0:.0f}msec ({1:.1f}%)".format(self.frametime_objects*1000, (self.frametime_objects/self.frametime_total)*100)
+        liveedit = "Live View: {0:.0f}msec".format(self.frametime_liveedit*1000)
+        self.setText("\n".join((total, terraintime, objecttime, liveedit)))
+
+
 class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
     mouse_clicked = pyqtSignal(QMouseEvent)
     entity_clicked = pyqtSignal(QMouseEvent, str)
@@ -168,7 +203,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         #self.setMinimumSize(QSize(self.SIZEX, self.SIZEY))
         #self.setMaximumSize(QSize(self.SIZEX, self.SIZEY))
         self.setObjectName("bw_map_screen")
-
+        self.fpscounter = FPSCounter(0, 50, self)
         self.origin_x = self.SIZEX//2
         self.origin_z = self.SIZEY//2
 
@@ -502,12 +537,14 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.logic(timedelta, diff)
 
         if diff > 1 / 60.0:
+
             sys.stderr.flush()
             if self._frame_invalid:
                 if not self.paused_render:
                     self.update()
                 self._lastrendertime = now
                 self._frame_invalid = False
+            self.fpscounter.update_frametime()
         self._lasttime = now
 
     def handle_arrowkey_scroll(self, timedelta):
@@ -1111,6 +1148,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         if record_selection:
             self.selectdebug.record_view("Finished", None, None)
         now = default_timer() - start
+        self.fpscounter.frametime_total = now
+        self.fpscounter.frametime_terrain = terraintime
+        self.fpscounter.frametime_objects = objecttime
         #print("Frame time:", now, 1/now, "fps")
         #print("Spent on terrain: {0} {1}%".format(terraintime, round(terraintime/now, 3)*100))
         #print("Spent on objects: {0} {1}%".format(objecttime, round(objecttime/now, 3)*100))
