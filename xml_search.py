@@ -43,6 +43,33 @@ class WaypointSearch(Search):
             print(val, decompose_flag(val))
 
 
+class OOBSearch(Search):
+    def __init__(self):
+        pass
+
+    def searchlevel(self, level_data, preload):
+        for objid, obj in level_data.objects.items():
+            if obj.getmatrix() is not None:
+                mtx = obj.getmatrix().mtx
+                x,y,z = mtx[12:15]
+                if not -2048 <= x <= 2048 or not -2048 <= z <= 2048 or not -2048 <= y <= 2048:
+                    print(obj.name, "is out of bounds", x,y,z)
+
+    def conclusion(self):
+        pass
+
+
+class ThreeDeeeNogoSearch(Search):
+    def __init__(self):
+        pass
+
+    def searchlevel(self, level_data: BattalionLevelFile, preload: BattalionLevelFile):
+        for objid, obj in level_data.objects.items():
+            if obj.type == "cMapZone" and obj.mZoneType == "ZONETYPE_NOGOAREA" and obj.mFlags & 1:
+                print(obj.name)
+
+    def conclusion(self):
+        pass
 if __name__ == "__main__":
     import gzip
     import os
@@ -52,7 +79,8 @@ if __name__ == "__main__":
 
     types = set()
     alltypes = set()
-    search = WaypointSearch()
+    #search = WaypointSearch()
+    search = ThreeDeeeNogoSearch()
     for fname in os.listdir(BW1path):
 
         path = os.path.join(BW1path, fname)
