@@ -1061,11 +1061,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             self.cam_z = self.offset_z
 
 
-        matrix = BWMatrix(0, 0, 0, 0,
-                           0, 0, 0, 0,
-                           0, 0, 0, 0,
-                           0, 0, 0, 0)
-        glPushMatrix()
+
         glUseProgram(0)
         glDisable(GL_TEXTURE_2D)
         #glScale(1.0, -1.0, 1.0)
@@ -1083,7 +1079,6 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             vismenu = self.visibility_menu
             self.models.cubev2.unbind()
         objecttime = default_timer()-subtime
-        glPopMatrix()
         glColor4f(0.0, 1.0, 1.0, 1.0)
         """for points in self.paths.wide_paths:
             glBegin(GL_LINE_LOOP)
