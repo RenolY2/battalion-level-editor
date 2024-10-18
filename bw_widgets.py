@@ -145,18 +145,35 @@ class FPSCounter(QtWidgets.QLabel):
         font.setStyleHint(QFont.StyleHint.Monospace)
         font.setFixedPitch(True)
         font.setPointSize(20)
+        font.setBold(True)
 
-        metrics = QFontMetrics(font)
         self.setFont(font)
-        self.setStyleSheet("""QLabel {color: #000000}""")
-        #self.setVisible(False)
-        #self.reset()
+        self.move(posx, posy)
         self.frametime_total = 1
         self.frametime_terrain = 0
         self.frametime_objects = 0
         self.frametime_liveedit = 0
-        self.move(posx, posy)
         self.update_frametime()
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Get the bounding rectangle and expand it to fit the outline, and shift it 10 pixels to the right
+        rect = self.rect().adjusted(10, -2, 2, 2)  # Offset 10 pixels to the right, expand slightly vertically
+
+        # Draw the outline with a shift of 1 pixel in each direction
+        outline_color = QColor(255, 255, 255)
+        painter.setPen(outline_color)
+
+        # Draw the text with shifts of 1 pixel in all directions
+        for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
+            painter.drawText(rect.adjusted(dx, dy, dx, dy), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                             self.text())
+
+        text_color = QColor(0, 0, 0)
+        painter.setPen(text_color)
+        painter.drawText(rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, self.text())
+        painter.end()
 
     def toggle_visible(self):
         if self.isVisible():
@@ -203,7 +220,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         #self.setMinimumSize(QSize(self.SIZEX, self.SIZEY))
         #self.setMaximumSize(QSize(self.SIZEX, self.SIZEY))
         self.setObjectName("bw_map_screen")
-        self.fpscounter = FPSCounter(0, 50, self)
+        self.fpscounter = FPSCounter(0, 10, self)
         self.origin_x = self.SIZEX//2
         self.origin_z = self.SIZEY//2
 
