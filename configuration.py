@@ -23,7 +23,8 @@ def make_default_config():
         "wasdscrolling_speedupfactor": "5",
         "3d_background": "255 255 255",
         "regenerate_pf2": "True",
-        "regenerate_waypoints": "False"
+        "regenerate_waypoints": "False",
+        "fps_counter": "False"
     }
 
     with open("editor_config.ini", "w") as f:

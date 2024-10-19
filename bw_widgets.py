@@ -59,7 +59,6 @@ class SelectionDebug(object):
         self.levelview = levelview
         self.enabled = enabled
 
-
     def record_view(self, name, x, y):
         if self.enabled:
             width = self.levelview.canvas_width
@@ -80,7 +79,6 @@ class SelectionDebug(object):
 
     def increment_counter(self):
         self.counter += 1
-
 
 
 class SelectionQueue(list):
@@ -351,8 +349,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.indicator = LiveIndicator(self)
 
         self.fpscounter = FPSCounter(0, 10, self)
-
-        self.indicator.move(0, 150)
+        self.fpscounter.setVisible(False)
 
         self._dont_render = False
 
@@ -510,6 +507,12 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         if config.getboolean("selection_debug", fallback=False):
             self.selectdebug.enabled = True
 
+        if config.getboolean("fps_counter", fallback=False):
+            self.fpscounter.setVisible(True)
+            self.indicator.move(0, 150)
+        else:
+            self.fpscounter.setVisible(False)
+
     def change_from_topdown_to_3d(self):
         if self.mode == MODE_3D:
             return
@@ -569,7 +572,8 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
         self.logic(timedelta, diff)
 
-        if self._keep_redrawing:
+        # If fps counter isn't visible, no need to keep redrawing.
+        if self.fpscounter.isVisible() and self._keep_redrawing:
             self._frame_invalid = True
 
         if diff > 1 / 60.0:
