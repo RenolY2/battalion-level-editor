@@ -154,6 +154,7 @@ class FPSCounter(QtWidgets.QLabel):
         self.frametime_objects = 0
         self.frametime_liveedit = 0
         self.update_frametime()
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -220,7 +221,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         #self.setMinimumSize(QSize(self.SIZEX, self.SIZEY))
         #self.setMaximumSize(QSize(self.SIZEX, self.SIZEY))
         self.setObjectName("bw_map_screen")
-        self.fpscounter = FPSCounter(0, 10, self)
+
         self.origin_x = self.SIZEX//2
         self.origin_z = self.SIZEY//2
 
@@ -348,6 +349,10 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         #with open("D:/Wii games/BattWars/P-G8WP/files/Data/CompoundFiles/C1_OnPatrol.out", "rb") as f:
         #    self.bwterrain = BWTerrain(f)
         self.indicator = LiveIndicator(self)
+
+        self.fpscounter = FPSCounter(0, 10, self)
+
+        self.indicator.move(0, 150)
 
         self._dont_render = False
 
