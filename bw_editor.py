@@ -1184,24 +1184,32 @@ if __name__ == "__main__":
         os.environ['QT_ENABLE_HIGHDPI_SCALING'] = '0'
         app = QApplication(sys.argv)
 
-        app.setStyle('Fusion')
-        palette = QPalette()
+        try:
+            configuration = read_config()
+        except FileNotFoundError as e:
+            darkmode = False
+        else:
+            darkmode = configuration["editor"].getboolean("dark_mode", fallback=True)
 
-        palette.setColor(QPalette.ColorRole.Window, QColor(53, 53, 53))
-        palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-        palette.setColor(QPalette.ColorRole.Base, QColor(35, 35, 35))
-        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(53, 53, 53))
-        palette.setColor(QPalette.ColorRole.ToolTipBase, Qt.GlobalColor.white)
-        palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
-        palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
-        palette.setColor(QPalette.ColorRole.Button, QColor(53, 53, 53))
-        palette.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.white)
-        palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
-        palette.setColor(QPalette.ColorRole.Link, QColor(42, 130, 218))
-        palette.setColor(QPalette.ColorRole.Highlight, QColor(42, 130, 218))
-        palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
+        if darkmode:
+            app.setStyle('Fusion')
+            palette = QPalette()
 
-        app.setPalette(palette)
+            palette.setColor(QPalette.ColorRole.Window, QColor(53, 53, 53))
+            palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            palette.setColor(QPalette.ColorRole.Base, QColor(35, 35, 35))
+            palette.setColor(QPalette.ColorRole.AlternateBase, QColor(53, 53, 53))
+            palette.setColor(QPalette.ColorRole.ToolTipBase, Qt.GlobalColor.white)
+            palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
+            palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
+            palette.setColor(QPalette.ColorRole.Button, QColor(53, 53, 53))
+            palette.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.white)
+            palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
+            palette.setColor(QPalette.ColorRole.Link, QColor(42, 130, 218))
+            palette.setColor(QPalette.ColorRole.Highlight, QColor(42, 130, 218))
+            palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
+
+            app.setPalette(palette)
         if platform.system() == "Windows":
             import ctypes
             myappid = 'BWEditor'  # arbitrary string

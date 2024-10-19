@@ -24,7 +24,8 @@ def make_default_config():
         "3d_background": "255 255 255",
         "regenerate_pf2": "True",
         "regenerate_waypoints": "False",
-        "fps_counter": "False"
+        "fps_counter": "False",
+        "dark_mode": "True"
     }
 
     with open("editor_config.ini", "w") as f:
