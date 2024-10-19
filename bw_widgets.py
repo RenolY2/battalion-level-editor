@@ -356,6 +356,14 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
         self.framecountercounter = 0
 
+        self._keep_redrawing = True
+
+    def stop_redrawing(self):
+        self._keep_redrawing = False
+
+    def start_redrawing(self):
+        self._keep_redrawing = True
+
     def stop_render(self):
         self._dont_render = True
 
@@ -556,10 +564,13 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
         self.logic(timedelta, diff)
 
+        if self._keep_redrawing:
+            self._frame_invalid = True
+
         if diff > 1 / 60.0:
 
             sys.stderr.flush()
-            if True: #self._frame_invalid:
+            if self._frame_invalid:
                 if not self.paused_render:
                     self.update()
                 self._lastrendertime = now
