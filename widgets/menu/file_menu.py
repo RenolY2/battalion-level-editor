@@ -109,6 +109,7 @@ class EditorFileMenu(QMenu):
 
             with func_open(filepath, "rb") as f:
                 try:
+                    self.editor.level_view.stop_redrawing()
                     self.is_loading = True
                     levelpaths = BattalionFilePaths(f)
                     if levelpaths.objectpath is None:
@@ -211,7 +212,9 @@ class EditorFileMenu(QMenu):
                         widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)"""
 
                     QApplication.processEvents()
+                    self.editor.level_view.start_redrawing()
                 except Exception as error:
+                    self.editor.level_view.start_redrawing()
                     self.is_loading = False
                     print("Error appeared while loading:", error)
                     traceback.print_exc()
