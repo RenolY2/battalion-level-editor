@@ -1195,21 +1195,27 @@ if __name__ == "__main__":
             app.setStyle('Fusion')
             palette = QPalette()
 
-            palette.setColor(QPalette.ColorRole.Window, QColor(53, 53, 53))
-            palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-            palette.setColor(QPalette.ColorRole.Base, QColor(35, 35, 35))
-            palette.setColor(QPalette.ColorRole.AlternateBase, QColor(53, 53, 53))
-            palette.setColor(QPalette.ColorRole.ToolTipBase, Qt.GlobalColor.white)
-            palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
-            palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
-            palette.setColor(QPalette.ColorRole.Button, QColor(53, 53, 53))
-            palette.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.white)
-            palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
-            palette.setColor(QPalette.ColorRole.Link, QColor(42, 130, 218))
-            palette.setColor(QPalette.ColorRole.Highlight, QColor(42, 130, 218))
-            palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
+            for group in (QPalette.ColorGroup.Active, QPalette.ColorGroup.Inactive):
+                palette.setColor(group, QPalette.ColorRole.Window, QColor(53, 53, 53))
+                palette.setColor(group, QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                palette.setColor(group, QPalette.ColorRole.Base, QColor(35, 35, 35))
+                palette.setColor(group, QPalette.ColorRole.AlternateBase, QColor(53, 53, 53))
+                palette.setColor(group, QPalette.ColorRole.ToolTipBase, Qt.GlobalColor.white)
+                palette.setColor(group, QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
+                palette.setColor(group, QPalette.ColorRole.Text, Qt.GlobalColor.white)
+                palette.setColor(group, QPalette.ColorRole.Button, QColor(53, 53, 53))
+                palette.setColor(group, QPalette.ColorRole.ButtonText, Qt.GlobalColor.white)
+                palette.setColor(group, QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
+                palette.setColor(group, QPalette.ColorRole.Link, QColor(42, 130, 218))
+                palette.setColor(group, QPalette.ColorRole.Highlight, QColor(42, 130, 218))
+                palette.setColor(group, QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
+
+            # This disables a weird white outline used when e.g. a menu element was disabled
+            # Example: "Apply Live Positions to Selected"
+            palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Light, QColor(35, 35, 35))
 
             app.setPalette(palette)
+
         if platform.system() == "Windows":
             import ctypes
             myappid = 'BWEditor'  # arbitrary string
