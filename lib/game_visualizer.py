@@ -412,18 +412,19 @@ class Gradient(object):
     def __init__(self):
         self.grad = []
 
-    def add(self, val, color_r, color_g, color_b):
-        self.grad.append((val, color_r, color_g, color_b))
+    def add(self, val, color_r, color_g, color_b, text_r, text_g, text_b):
+        self.grad.append((val, color_r, color_g, color_b, text_r, text_g, text_b))
+        self.grad.sort(key=lambda x: x[0])
 
     def get_value(self, val):
         prev = None
 
-        for v, r, g, b in self.grad:
+        for v, r, g, b, textr, textg, textb in self.grad:
             if prev is None:
                 if val <= v:
-                    return r, g, b
+                    return r, g, b, textr, textg, textb
             elif v == val:
-                return r, g, b
+                return r, g, b, textr, textg, textb
             elif v < val:
                 pass
             else:
@@ -431,9 +432,14 @@ class Gradient(object):
                 diff = v-prev_v
                 val_rel = val-prev_v
                 fac = val_rel/diff
-                return fac*r + (1-fac)*prev[1], fac*g + (1-fac)*prev[2], fac*b + (1-fac)*prev[3]
-            prev = (v, r, g, b)
-        return r,g,b
+
+                texfac = round(fac)
+
+                return (fac*r + (1-fac)*prev[1], fac*g + (1-fac)*prev[2], fac*b + (1-fac)*prev[3],
+                        texfac*textr + (1-texfac)*prev[4], texfac*textg + (1-texfac)*prev[5], texfac*textb + (1-texfac)*prev[6])
+            prev = (v, r, g, b, textr, textg, textb)
+
+        return r,g,b, textr, textg, textb
 
 
 class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
@@ -477,11 +483,29 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         font.setFixedPitch(True)
         font.setPointSize(20)
 
+        palette = self.palette()
+        color = palette.color(QtGui.QPalette.ColorGroup.Active, QtGui.QPalette.ColorRole.Base)
+        textcolor = palette.color(QtGui.QPalette.ColorGroup.Active, QtGui.QPalette.ColorRole.Text)
+
         self.gradient = Gradient()
-        self.gradient.add(0.0, 255, 255, 255)
-        self.gradient.add(0.9, 255, 255, 255)
-        self.gradient.add(0.95, 255, 255, 0)
-        self.gradient.add(1.0, 255, 0, 0)
+        self.gradient.add(0.0,
+                          color.red(), color.blue(), color.green(),
+                          textcolor.red(), textcolor.green(), textcolor.blue())
+        self.gradient.add(0.9,
+                          color.red(), color.blue(), color.green(),
+                          textcolor.red(), textcolor.green(), textcolor.blue())
+        self.gradient.add(0.95,
+                          255, 255, 0,
+                          0, 0, 0)
+        self.gradient.add(1.0, 255, 0, 0,
+                          255, 255, 255)
+
+        r, g, b, _, _, _ = self.gradient.get_value(0.91)
+        r2, g2, b2, _, _, _ = self.gradient.get_value(0.97)
+        self.gradient.add(0.91,
+                          r, g, b, 0, 0, 0)
+        self.gradient.add(0.97, r2, g2, b2, 0, 0, 0)
+
         self.copyshortcut = QtGui.QShortcut("Ctrl+C", self)
         self.copyshortcut.activated.connect(self.copytable)
 
@@ -536,6 +560,8 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
             self.freelists.append(("Blend Transition Stretch", 0x8060047c))
 
         self.info.setRowCount(len(self.freelists) + len(self.heaps) + 10)
+
+        #self.testfac = 0.8
 
     def copytable(self):
         selectedrangelist: QtWidgets.QTableWidgetSelectionRange = self.info.selectedRanges()
@@ -595,7 +621,7 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         item = self.info.item(row, column)
         if item is not None:
             brush = QtGui.QBrush(QtGui.QColor(int(color[0]), int(color[1]), int(color[2])))
-            fr = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+            fr = QtGui.QBrush(QtGui.QColor(int(color[3]), int(color[4]), int(color[5])))
             item.setForeground(fr)
             item.setBackground(brush)
 
@@ -654,6 +680,12 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                 if size != 0:
                     fac = maxused/count
                     fac2 = (count-freeinactive) / count
+                    #self.testfac += 0.0001
+                    #if self.testfac > 1.0:
+                    #    self.testfac = 0.8
+
+                    #fac2 = self.testfac
+
                     self.set_color(i, 3, self.gradient.get_value(fac))
                     self.set_color(i, 4, self.gradient.get_value(fac2))
                 i += 1
