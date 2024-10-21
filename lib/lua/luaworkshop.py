@@ -185,7 +185,6 @@ class LuaWorkbench(object):
             compiled_file = os.path.join(self.tmp, script_name+".luap")
             decompiled_file = os.path.join(self.workdir, script_name+".lua")
             decompile_unluac(compiled_file, decompiled_file)
-
     
     def read_entity_initialization(self):
         self.entityinit.read_initialization(os.path.join(self.workdir, "EntityInitialise.lua"))
@@ -229,16 +228,14 @@ class LuaWorkbench(object):
         else:
             with open(newrespath, "wb") as f:
                 res.write(f)
-            
-    
+
     def current_scripts(self):
         result = []
         for fname in os.listdir(self.workdir):
             if fname.endswith(".lua"):  
                 result.append(fname.replace(".lua", ""))
         return result 
-       
-    
+
     def set_workdir(self, workdir):
         self.workdir = workdir
 
