@@ -110,6 +110,39 @@ class LevelEditor(QMainWindow):
         self.level_view.dolphin = self.dolphin
         self.last_chosen_type = ""
 
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(1000)
+        self.timer.timeout.connect(self.read_entityinit_if_changed)
+        self.timer.start()
+
+    def read_entityinit_if_changed(self):
+        if self.level_file is None or self.level_file.objects is None:
+            return
+
+        if self.lua_workbench.is_initialized():
+            if self.lua_workbench.did_file_change("EntityInitialise"):
+                print("detected change to EntityInitialise.lua, re-reading file.")
+
+                currentids = set(x for x in self.lua_workbench.entityinit.reflection_ids.keys())
+
+                self.lua_workbench.read_entity_initialization()
+                for id, name in self.lua_workbench.entityinit.reflection_ids.items():
+                    if id in self.level_file.objects:
+                        print("updating lua name for", id)
+                        obj = self.level_file.objects[id]
+                        obj.lua_name = name
+                    if id in currentids:
+                        currentids.remove(id)
+
+                for id in currentids:
+                    if id in self.level_file.objects:
+                        print("removing lua name for", id)
+                        obj = self.level_file.objects[id]
+                        obj.lua_name = ""
+
+                self.lua_workbench.record_file_change("EntityInitialise")
+                print("Finished reading")
+
     def save_filter_settings(self):
         self.menubar.visibility_menu.save(self.configuration)
         save_cfg(self.configuration)

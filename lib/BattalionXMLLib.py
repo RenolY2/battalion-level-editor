@@ -251,6 +251,7 @@ class BattalionObject(object):
 
         self._attributes = {}
         self._custom_name = ""
+        self.lua_name = ""
 
         self._referenced_by = set()
 
@@ -407,8 +408,6 @@ class BattalionObject(object):
                     setattr(self, attr_node.attrib["name"], result[0])
                 else:
                     setattr(self, attr_node.attrib["name"], result)
-
-
 
     def updatemodelname(self):
         self._modelname = None
