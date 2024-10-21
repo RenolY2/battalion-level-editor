@@ -211,6 +211,8 @@ class EditorFileMenu(QMenu):
                         widget.setCursor(cursor)
                         widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)"""
 
+                    self.editor.read_entityinit_and_update()
+
                     QApplication.processEvents()
                     self.editor.level_view.start_redrawing()
                 except Exception as error:

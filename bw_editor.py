@@ -122,26 +122,28 @@ class LevelEditor(QMainWindow):
         if self.lua_workbench.is_initialized():
             if self.lua_workbench.did_file_change("EntityInitialise"):
                 print("detected change to EntityInitialise.lua, re-reading file.")
-
-                currentids = set(x for x in self.lua_workbench.entityinit.reflection_ids.keys())
-
-                self.lua_workbench.read_entity_initialization()
-                for id, name in self.lua_workbench.entityinit.reflection_ids.items():
-                    if id in self.level_file.objects:
-                        print("updating lua name for", id)
-                        obj = self.level_file.objects[id]
-                        obj.lua_name = name
-                    if id in currentids:
-                        currentids.remove(id)
-
-                for id in currentids:
-                    if id in self.level_file.objects:
-                        print("removing lua name for", id)
-                        obj = self.level_file.objects[id]
-                        obj.lua_name = ""
-
+                self.read_entityinit_and_update()
                 self.lua_workbench.record_file_change("EntityInitialise")
-                print("Finished reading")
+
+    def read_entityinit_and_update(self):
+        currentids = set(x for x in self.lua_workbench.entityinit.reflection_ids.keys())
+
+        self.lua_workbench.read_entity_initialization()
+        for id, name in self.lua_workbench.entityinit.reflection_ids.items():
+            if id in self.level_file.objects:
+                print("updating lua name for", id)
+                obj = self.level_file.objects[id]
+                obj.lua_name = name
+            if id in currentids:
+                currentids.remove(id)
+
+        for id in currentids:
+            if id in self.level_file.objects:
+                print("removing lua name for", id)
+                obj = self.level_file.objects[id]
+                obj.lua_name = ""
+
+        print("Finished reading")
 
     def save_filter_settings(self):
         self.menubar.visibility_menu.save(self.configuration)

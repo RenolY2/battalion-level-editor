@@ -71,6 +71,7 @@ class PikminSideWidget(QWidget):
         self.verticalLayout.addStretch(20)
 
         self.name_label = QLabel(parent)
+        self.name_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.name_label.setFont(font)
         self.name_label.setWordWrap(True)
         self.name_label.setMinimumSize(self.name_label.width(), 30)
@@ -392,9 +393,12 @@ class PikminSideWidget(QWidget):
                                     ", ".join(usedby)))
         else:
             if obj.customname is not None:
-                self.name_label.setText("Selected: {} ({}, {})".format(obj.type, obj.customname, obj.id))
+                self.name_label.setText("Selected: \n{} ({}, {})".format(obj.type, obj.customname, obj.id))
             else:
-                self.name_label.setText("Selected: {} ({})".format(obj.type, obj.id))
+                self.name_label.setText("Selected: \n{} ({})".format(obj.type, obj.id))
+
+
+
         #self.identifier_label.setText(obj.get_identifier())
         if self.object_data_edit is not None:
             #self.verticalLayout.removeWidget(self.object_data_edit)
@@ -412,13 +416,17 @@ class PikminSideWidget(QWidget):
 
         self.objectlist = []
         self.comment_label.setText("")
+        if obj.lua_name:
+            self.comment_label.setText("Lua name:\n{}".format(obj.lua_name))
 
     def set_objectlist(self, objs):
         self.objectlist = []
         objectnames = []
 
+        lua_names = []
+
         for obj in objs:
-            if len(objectnames) < 25:
+            if len(objectnames) < 20:
                 if obj.customname is not None:
                     objectnames.append("{0} ({1}, {2})".format(obj.type, obj.customname,  obj.id))
                 else:
@@ -427,6 +435,8 @@ class PikminSideWidget(QWidget):
                     objectnames.append("{0} ({1}, {2})".format(obj.customname, obj.type, obj.id))
                 else:
                     objectnames.append(obj.name)"""
+            if obj.lua_name:
+                lua_names.append(obj.lua_name)
             self.objectlist.append(obj)
 
         objectnames.sort()
@@ -437,9 +447,22 @@ class PikminSideWidget(QWidget):
                 text += "\nAnd {0} more object".format(diff)
             elif diff > 1:
                 text += "\nAnd {0} more objects".format(diff)
-
         else:
             text = ""
+
+        if len(lua_names) > 0:
+            if len(lua_names) > 20:
+                part = lua_names[:20]
+                rest = len(lua_names) - 20
+            else:
+                part = lua_names
+                rest = 0
+
+            text += "\n\nSelected Lua names:\n"+("\n".join(part))
+            if rest == 1:
+                text += "\nAnd 1 more object"
+            elif rest > 1:
+                text += "\nAnd {0} more objects".format(rest)
 
         self.comment_label.setText(text)
 
