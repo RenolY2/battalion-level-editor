@@ -431,7 +431,7 @@ class PikminSideWidget(QWidget):
 
         objectnames.sort()
         if len(objs) > 0:
-            text = "Selected objects:\n" + (", ".join(objectnames))
+            text = "Selected objects:\n" + ("\n".join(objectnames))
             diff = len(objs) - len(objectnames)
             if diff == 1:
                 text += "\nAnd {0} more object".format(diff)
