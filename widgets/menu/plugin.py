@@ -1,6 +1,7 @@
 import importlib
 import os
 import traceback
+from functools import partial
 
 from collections import namedtuple
 from PyQt6.QtCore import QTimer
@@ -14,6 +15,7 @@ pluginfolder = "plugins"
 class PluginMenu(Menu):
     def __init__(self, parent):
         super().__init__(parent, "Plugins")
+        self.parent = parent
 
         self.plugins = {}
         self.plugin_folder_last_changed = os.stat(pluginfolder).st_mtime
@@ -34,7 +36,7 @@ class PluginMenu(Menu):
                     shortcut = action[2]
                 else:
                     shortcut = None 
-                menu.add_action(name, func=func, shortcut=shortcut)
+                menu.add_action(name, func=partial(func, self.parent.editor), shortcut=shortcut)
             self.menus.append(menu)
 
         for menu in self.menus:
@@ -73,19 +75,26 @@ class PluginMenu(Menu):
 
     def load_plugin(self, pluginname, reload=False):
         assert pluginname not in self.plugins
-        module = importlib.import_module("plugins."+pluginname)
-        plugin = module.Plugin()
-        module.__time = os.stat(pluginfolder).st_mtime
-        self.plugins[pluginname] = PluginEntry(module, plugin)
+        importlib.invalidate_caches()
+        try:
+            module = importlib.import_module("plugins."+pluginname)
+            plugin = module.Plugin()
+        except:
+            traceback.print_exc()
+        else:
+            module.__time = os.stat(pluginfolder).st_mtime
+            self.plugins[pluginname] = PluginEntry(module, plugin)
 
     def reload_plugin(self, pluginname):
         self.plugins[pluginname].plugin.unload()  # Allow the plugin to do cleanup before reloading it
 
         try:
-        module = importlib.reload(self.plugins[pluginname].module)
-        plugin = module.Plugin()
+            module = importlib.reload(self.plugins[pluginname].module)
+            plugin = module.Plugin()
 
-        self.plugins[pluginname] = PluginEntry(module, plugin)
+            self.plugins[pluginname] = PluginEntry(module, plugin)
+        except:
+            traceback.print_exc()
 
     def reload_changed_plugins(self):
         self.load_plugins()  # Check for newly added plugins
@@ -110,7 +119,7 @@ class PluginMenu(Menu):
                     func = getattr(entry.plugin, eventname)
                     func(*args, **kwargs)
                 except:
-                    traceback.print_tb()
+                    traceback.print_exc()
 
 
 if __name__ == "__main__":
