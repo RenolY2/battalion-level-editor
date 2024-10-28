@@ -5,6 +5,7 @@ import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
 import bw_widgets
 from widgets.menu.menu import Menu
+from widgets.menu.plugin import PluginMenu
 from widgets.filter_view import FilterViewMenu
 from widgets.search_widget import SearchWidget
 from widgets.editor_widgets import open_error_dialog
@@ -89,6 +90,12 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.addAction(self.misc_menu.menuAction())
         self.addAction(self.dolphin_menu.menuAction())
         self.addAction(self.lua_menu.menuAction())
+
+        self.plugin_menu = PluginMenu(self)
+        self.plugin_menu.load_plugins()
+        self.plugin_menu.add_menu_actions()
+        self.addAction(self.plugin_menu.menuAction())
+
 
         self.last_obj_select_pos = 0
 
