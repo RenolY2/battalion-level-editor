@@ -9,7 +9,7 @@ from widgets.menu.menu import Menu
 
 PluginEntry = namedtuple("PluginEntry", ("module", "plugin"))
 
-pluginfolder = "plugins"
+pluginfolder = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 
 class PluginMenu(Menu):
