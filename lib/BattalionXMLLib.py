@@ -1,5 +1,6 @@
 import json
 import typing
+import hashlib
 
 from functools import partial
 from collections.abc import MutableSequence, Iterable
@@ -593,7 +594,7 @@ class BattalionObject(object):
                 modelname = base.model.mName
             elif hasattr(base, "mBAN_Model"):
                 modelname = base.mBAN_Model.mName
-            elif self.type in ("cGlobalScriptEntity", "cInitialisationScriptEntity"):
+            elif self.type in ("cGlobalScriptEntity", "cInitialisationScriptEntity") and self.mpScript is not None:
                 return "{0}({1})".format(self.mpScript.mName, self.id)
             elif hasattr(base, "mName") and base.mName != "":
                 return "{0}({1})".format(self.mName, self.id)
@@ -693,4 +694,124 @@ class BattalionObject(object):
         self.update_xml()
         return etree.tostring(self._node, encoding="unicode", short_empty_elements=False)
 
+    def calc_hash(self):
+        hash = hashlib.new("md5")
+        result = []
+        for attr_node in self._node:
+            if attr_node.tag in ("Pointer", "Resource"):
+                continue
+            else:
+                attribname = attr_node.attrib["name"]
+                attribtype = attr_node.attrib["type"]
+                val = getattr(self, attribname)
+                if not isinstance(val, list):
+                    val = [val]
 
+                for value in val:
+                    stringval = bytes(convert_to(attribtype, value), encoding="ascii")
+                    hash.update(stringval)
+
+        return hash.digest()
+
+    def calc_hash_recursive(self, visited=None):
+        if visited is None:
+            visited = {}
+
+        if self.id in visited:
+            return self.calc_hash()
+        basehash = hashlib.new("md5")
+        basehash.update(self.calc_hash())
+
+        for attr_node in self._node:
+            if attr_node.tag in ("Pointer", "Resource"):
+                attribname = attr_node.attrib["name"]
+                attribtype = attr_node.attrib["type"]
+                val = getattr(self, attribname)
+                if not isinstance(val, list):
+                    val = [val]
+
+                for value in val:
+                    if value is None:
+                        basehash.update(b"\x00")
+                    else:
+                        visited[self.id] = True
+                        basehash.update(value.calc_hash_recursive(visited))
+
+        return basehash.digest()
+
+    def iterate_fields_recursive(self, path=[], visited=None):
+        if visited is None:
+            visited = {}
+
+        if self.id not in visited:
+            nodes = [attr_node for attr_node in self._node]
+            nodes.sort(key=lambda x: x.tag in ("Pointer", "Resource"))
+
+            for attr_node in nodes:
+                attribname = attr_node.attrib["name"]
+                val = getattr(self, attribname)
+
+                yield path + [attribname]
+
+                if attr_node.tag in ("Pointer", "Resource"):
+                    if isinstance(val, list):
+                        for i in range(len(val)):
+                            if val[i] is None:
+                                yield path + [attribname, i]
+                            else:
+                                yield from val[i].iterate_fields_recursive(path+[attribname, i])
+                    else:
+                        if val is not None:
+                            yield from val.iterate_fields_recursive(path+[attribname])
+
+    def get_value(self, path):
+        if len(path) == 0:
+            return self
+
+        assert len(path) > 0
+        attrname = path[0]
+        val = getattr(self, attrname)
+
+        if len(path) == 1:
+            return val
+        else:
+            if isinstance(val, list):
+                assert isinstance(path[1], int)
+                index = path[1]
+                if val[index] is None:
+                    return None
+                else:
+                    return val[index].get_value(path[2:])
+            else:
+                return val.get_value(path[1:])
+
+    def diff(self, otherobj):
+        if self.type != otherobj.type:
+            raise RuntimeError("Cannot compare objects of different types")
+
+        diff = []
+
+        for path in self.iterate_fields_recursive():
+            val = self.get_value(path)
+            try:
+                otherval = otherobj.get_value(path)
+            except:
+                diff.append((path, val, None))
+                continue
+
+
+            if isinstance(val, BattalionObject) and isinstance(otherval, BattalionObject):
+                continue
+
+            if isinstance(val, list):
+                for i in range(len(val)):
+                    if isinstance(val[i], BattalionObject) and isinstance(otherval[i], BattalionObject):
+                        continue
+                    if val[i] != otherval[i]:
+                        diff.append((path, val, otherval))
+                        break
+            else:
+                if val != otherval:
+                    diff.append((path, val, otherval))
+
+        return diff
