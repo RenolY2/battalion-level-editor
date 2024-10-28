@@ -40,6 +40,9 @@ class Plugin(object):
         if yes:
             print("randomize...")
             newids = {}
+
+            editor.lua_workbench.entityinit.reflection_ids = {}
+
             for id, obj in editor.level_file.objects.items():
                 newid = random.randint(1, 800000)
                 while newid in newids:
@@ -49,10 +52,15 @@ class Plugin(object):
                 assert newid not in newids
                 newids[newid] = True
 
+                if obj.lua_name:
+                    editor.lua_workbench.entityinit.reflection_ids[newid] = obj.lua_name
+
+                editor.lua_workbench.write_entity_initialization()
+
             for id, obj in editor.level_file.objects.items():
                 obj.update_xml()
             print("done")
-            
+
     def save_state(self, editor: "bw_editor.LevelEditor"):
         try:
             os.mkdir("savestates")
