@@ -1,11 +1,12 @@
+import gzip
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
-
+from binascii import hexlify
 
 class Search(object):
     def __init__(self):
         pass
 
-    def searchlevel(self, level_data: BattalionLevelFile, preload: BattalionLevelFile):
+    def searchlevel(self, level_data: BattalionLevelFile, preload: BattalionLevelFile, bw1=False):
         for objid, obj in level_data.objects.items():
             pass
 
@@ -63,15 +64,134 @@ class ThreeDeeeNogoSearch(Search):
     def __init__(self):
         pass
 
-    def searchlevel(self, level_data: BattalionLevelFile, preload: BattalionLevelFile):
+    def searchlevel(self,f, level_data: BattalionLevelFile, preload: BattalionLevelFile):
         for objid, obj in level_data.objects.items():
             if obj.type == "cMapZone" and obj.mZoneType == "ZONETYPE_NOGOAREA" and obj.mFlags & 1:
                 print(obj.name)
 
     def conclusion(self):
         pass
-if __name__ == "__main__":
-    import gzip
+
+
+class HashTest(Search):
+    def __init__(self):
+        self.b1objects = {}
+        self.b2objects = {}
+        self.b2objectsid = {}
+
+    def searchlevel(self, f, path, level_data: BattalionLevelFile, preload: BattalionLevelFile, bw1=False):
+        if not bw1:
+            return
+
+        for objid, obj in level_data.objects.items():#.items():
+            if "resource" in obj.type.lower():
+                objhash = obj.calc_hash_recursive()
+
+                objects = self.b1objects if bw1 else self.b2objects
+
+                if objhash not in objects:
+                    objects[objhash] = [(obj.name, path)]
+                else:
+                    objects[objhash].append((obj.name, path))
+
+    def conclusion(self):
+        with open("result.txt", "w") as f:
+            for k, v in self.b1objects.items():
+                if len(v) > 1:
+                    f.write("=============\n")
+                    f.write(str(k)+"\n")
+                    for val in v:
+                        f.write(str(val))
+                        f.write("\n")
+                    f.write("\n")
+                    #print(k, v)
+
+
+class IDHashTest(Search):
+    def __init__(self):
+        self.b1objects = {}
+        self.b2objects = {}
+
+    def searchlevel(self, f, path, level_data: BattalionLevelFile, preload: BattalionLevelFile, bw1=False):
+        if not bw1:
+            return
+
+        for objid, obj in level_data.objects.items():#.items():
+            #if "resource" in obj.type.lower():
+            if True:
+                objhash = obj.calc_hash_recursive()
+
+                objects = self.b1objects if bw1 else self.b2objects
+
+                if obj.id not in objects:
+                    objects[obj.id] = [(obj, objhash, path)]
+                else:
+                    objects[obj.id].append((obj, objhash, path))
+
+    def conclusion(self):
+        with open("result.txt", "w") as f:
+            for k, v in self.b1objects.items():
+                if len(v) > 1:
+                    f.write("=============\n")
+                    f.write(str(k)+"\n")
+                    for val, hash, path in v:
+                        f.write("{0} {1}".format(val.type, val.name))
+                        f.write(" ")
+                        f.write(str(hexlify(hash)))
+                        f.write(" ")
+                        f.write(path)
+                        f.write("\n")
+                    f.write("\n")
+
+
+def level_get_object(path, objid):
+    preload_path = path.replace("_Level", "_Level_preload")
+    if path.endswith(".gz"):
+        with gzip.open(path, "rb") as f:
+            level = BattalionLevelFile(f)
+        with gzip.open(preload_path, "rb") as f:
+            preload = BattalionLevelFile(f)
+
+    else:
+        with open(path, "rb") as f:
+            level = BattalionLevelFile(f)
+        with open(preload_path, "rb") as f:
+            preload = BattalionLevelFile(f)
+
+    level.resolve_pointers(preload)
+    preload.resolve_pointers(level)
+
+    return level.objects[objid]
+
+
+def format_path(path):
+    out = ""
+    for item in path:
+        if isinstance(item, int):
+            out += "[{}]".format(item)
+        else:
+            if not out:
+                out += item
+            else:
+                out += "."+item
+    return out
+
+
+if True:
+    troopbase1 = level_get_object(r"D:\Wii games\BattWars\P-G8WP\files\Data\CompoundFiles\C1_Bonus_Level.xml",
+                                  "2138047564")
+    troopbase2 = level_get_object(r"D:\Wii games\BattWars\P-G8WP\files\Data\CompoundFiles\C1_Gauntlet_Level.xml",
+                                  "2138047564")
+    troopbase3 = level_get_object(r"D:\Wii games\BattWars\P-G8WP\files\Data\CompoundFiles\C1_Gauntlet_Level.xml",
+                                  "2138049765")
+
+    for diffpath, val1, val2 in troopbase2.diff(troopbase3):
+        print(format_path(diffpath), val1, val2)
+
+    #for path in troopbase1.iterate_fields_recursive():
+    #    print(format_path(path), "=", troopbase1.get_value(path))
+
+if False: #__name__ == "__main__":
     import os
 
     BW1path = r"D:\Wii games\BattWars\P-G8WP\files\Data\CompoundFiles"
@@ -80,7 +200,7 @@ if __name__ == "__main__":
     types = set()
     alltypes = set()
     #search = WaypointSearch()
-    search = ThreeDeeeNogoSearch()
+    search = IDHashTest()
     for fname in os.listdir(BW1path):
 
         path = os.path.join(BW1path, fname)
@@ -93,8 +213,9 @@ if __name__ == "__main__":
                 with open(preload, "rb") as h:
                     with open(path + ".info.txt", "w") as f:
                         preload_data = BattalionLevelFile(h)
-
-                        search.searchlevel(level_data, preload_data)
+                        level_data.resolve_pointers(preload_data)
+                        preload_data.resolve_pointers(level_data)
+                        search.searchlevel(f, path, level_data, preload_data, bw1=True)
 
     for fname in os.listdir(BW2path):
         path = os.path.join(BW2path, fname)
@@ -106,7 +227,10 @@ if __name__ == "__main__":
                 with gzip.open(preload, "rb") as h:
                     with open(path + ".info.txt", "w") as f:
                         preload_data = BattalionLevelFile(h)
-                        search.searchlevel(level_data, preload_data)
+                        level_data.resolve_pointers(preload_data)
+                        preload_data.resolve_pointers(level_data)
+
+                        search.searchlevel(f, path, level_data, preload_data, bw1=False)
 
     search.conclusion()
     """with open("../credits_Level_Preload.xml", "r") as f:
