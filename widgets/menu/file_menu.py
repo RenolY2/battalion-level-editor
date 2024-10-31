@@ -530,7 +530,7 @@ class PF2(object):
 
 
                         drawtarget.ellipse((img_x-rad+offsetx, img_y-rad, img_x+rad+offsetx, img_y+rad), outline=(0xF0, 0xF0, 0xF0), fill=(0xF0, 0xF0, 0xF0))
-                    if object.mSize.x != 0 and object.mSize.y != 0 and object.mSize.z != 0:
+                    if object.mSize.x != 0 and object.mSize.z != 0:
                         sizex, sizey, sizez = object.mSize.x/2.0, object.mSize.y/2.0, object.mSize.z/2.0
 
                         corner1 = mymtx.dot(numpy.array([-sizex, 0, -sizez, 1]))
