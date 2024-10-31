@@ -127,7 +127,7 @@ class TextureBW1(Section):
         with open(filepath, "rb") as f:
             data = f.read()
 
-        return cls(b"TXET", fname.replace(".texture", "", data))
+        return cls(b"TXET", fname.replace(".texture", ""), data)
 
     def write(self, f):
         f.write(self.secname)
@@ -298,7 +298,7 @@ class Model(Section):
         with open(filepath, "rb") as f:
             data = f.read()
 
-        return cls(fname.replace(".modl", "", data))
+        return cls(fname.replace(".modl", ""), data)
 
     def write(self, f):
         f.write(b"LDOM")
@@ -569,14 +569,42 @@ class BattalionArchive(object):
 if __name__ == "__main__":
     with open("C1_Bonus_Level.res", "rb") as f:
         arc = BattalionArchive.from_file(f)
+    for x in arc.sounds.sounds:
+        print(x.name)
+        x.dump_to_directory("restest")
+        newx = Sound.from_filepath("restest/"+x.name+".adp")
+        assert x.name == newx.name
+        assert x.data == newx.data
+
+    for x in arc.textures.textures:
+        print(x.name)
+        x.dump_to_directory("restest")
+        newx = TextureBW1.from_filepath("restest/" + x.name + ".texture")
+        assert x.name == newx.name
+        assert x.data == newx.data
+
     for x in arc.models():
         print(x.name)
+        x.dump_to_directory("restest")
+
+        newx = Model.from_filepath("restest/" + x.name + ".modl")
+        assert x.name == newx.name
+        assert x.data == newx.data
+
     for x in arc.animations():
+        x.dump_to_directory("restest")
         print(x.name)
+        newx = Animation.from_filepath("restest/" + x.name + ".anim")
+        assert x.name == newx.name
+        assert x.data == newx.data
+
     for x in arc.effects():
+        x.dump_to_directory("restest")
         print(x.name)
-    for x in arc.scripts():
-        print(x.name)
+        newx = Effect.from_filepath("restest/" + x.name + ".txt")
+        assert x.name == newx.name
+        assert x.data == newx.data
+
 
     with open("C1_Bonus_LevelNew.res", "wb") as f:
         arc.write(f)
@@ -586,6 +614,42 @@ if __name__ == "__main__":
 
     with gzip.open("MP4_Level.res.gz", "rb") as f:
         arc = BattalionArchive.from_file(f)
+
+    for x in arc.sounds.sounds:
+        print(x.name)
+        x.dump_to_directory("restest")
+        newx = Sound.from_filepath("restest/"+x.name+".adp")
+        assert x.name == newx.name
+        assert x.data == newx.data
+
+    for x in arc.textures.textures:
+        print(x.name)
+        x.dump_to_directory("restest")
+        newx = TextureBW2.from_filepath("restest/" + x.name + ".texture")
+        assert x.name == newx.name
+        assert x.data == newx.data
+
+    for x in arc.models():
+        print(x.name)
+        x.dump_to_directory("restest")
+
+        newx = Model.from_filepath("restest/" + x.name + ".modl")
+        assert x.name == newx.name
+        assert x.data == newx.data
+
+    for x in arc.animations():
+        x.dump_to_directory("restest")
+        print(x.name)
+        newx = Animation.from_filepath("restest/" + x.name + ".anim")
+        assert x.name == newx.name
+        assert x.data == newx.data
+
+    for x in arc.effects():
+        x.dump_to_directory("restest")
+        print(x.name)
+        newx = Effect.from_filepath("restest/" + x.name + ".txt")
+        assert x.name == newx.name
+        assert x.data == newx.data
 
     with open("MP4_LevelNew.res", "wb") as f:
         arc.write(f)
