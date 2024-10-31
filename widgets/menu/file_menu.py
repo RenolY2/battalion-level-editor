@@ -294,6 +294,7 @@ class EditorFileMenu(QMenu):
                                                                  scripts=[x.mName for x in self.level_data.scripts.values()]
                                                                  )
                     except Exception as err:
+                        traceback.print_exc()
                         msgbox = QtWidgets.QMessageBox()
                         msgbox.setText(
                             "An error appeared during compilation:\n\n"+str(err))
