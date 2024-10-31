@@ -804,14 +804,53 @@ class BattalionObject(object):
                 continue
 
             if isinstance(val, list):
-                for i in range(len(val)):
-                    if isinstance(val[i], BattalionObject) and isinstance(otherval[i], BattalionObject):
-                        continue
-                    if val[i] != otherval[i]:
-                        diff.append((path, val, otherval))
-                        break
+                if otherval is None:
+                    diff.append((path, val, otherval))
+                else:
+                    for i in range(len(val)):
+                        if isinstance(val[i], BattalionObject) and isinstance(otherval[i], BattalionObject):
+                            continue
+                        if val[i] != otherval[i]:
+                            diff.append((path, val, otherval))
+                            break
             else:
-                if val != otherval:
+                if otherval is None or val != otherval:
                     diff.append((path, val, otherval))
 
         return diff
+
+    def same(self, otherobj):
+        if self.type != otherobj.type:
+            raise RuntimeError("Cannot compare objects of different types")
+
+        same = []
+
+        for path in self.iterate_fields_recursive():
+            val = self.get_value(path)
+            try:
+                otherval = otherobj.get_value(path)
+            except:
+                continue
+
+
+            if isinstance(val, BattalionObject) and isinstance(otherval, BattalionObject):
+                continue
+
+            if isinstance(val, list):
+                if otherval is None:
+                    pass
+                else:
+                    for i in range(len(val)):
+                        if isinstance(val[i], BattalionObject) and isinstance(otherval[i], BattalionObject):
+                            continue
+                        if val[i] == otherval[i]:
+                            same.append((path, val, otherval))
+                            break
+            else:
+                if val is None and otherval is None:
+                    same.append((path, val, otherval))
+                else:
+                    if otherval is not None and val == otherval:
+                        same.append((path, val, otherval))
+
+        return same
