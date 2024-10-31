@@ -476,17 +476,17 @@ class BattalionArchive(object):
 
     def add_script(self, script: LuaScript):
         for sec in self.sections:
-            if sec.secname == b"PRCS" and sec.script_name == script.script_name:
+            if sec.secname == b"PRCS" and sec.name == script.name:
                 sec.data = script.data 
                 break 
         else:
             self.sections.append(script)
-            self.sections.sort(key=lambda x: ORDER[x.name])
+            self.sections.sort(key=lambda x: ORDER[x.secname])
     
     def delete_script(self, script_name):
         for i in range(len(self.sections)):
             sec = self.sections[i]
-            if sec.secname == b"PRCS" and sec.script_name == script_name:
+            if sec.secname == b"PRCS" and sec.name == script_name:
                 self.sections.pop(i)
                 break
     
@@ -668,7 +668,7 @@ if __name__ == "__main__":
 
         
     newscript = LuaScript.from_filepath("test/C1Bonus_BigBattle.luap")
-    newscript.script_name = "DefinitelyNewScript"
+    newscript.name = "DefinitelyNewScript"
     arc.add_script(newscript)
     arc.delete_script("C1Bonus_Encounter_WFgunships")
     with open("Test2.res", "wb") as f:
