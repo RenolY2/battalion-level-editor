@@ -3,6 +3,7 @@ import os
 import io
 import platform
 import sys
+from io import BytesIO
 
 import lib.lua.bwarchivelib as bwarchivelib
 import gzip
@@ -176,9 +177,9 @@ class LuaWorkbench(object):
                 res = bwarchivelib.BattalionArchive.from_file(f)
                 
         for script in res.scripts():
-            print("dumping", script.script_name)
+            print("dumping", script.name)
             script.dump_to_directory(self.tmp)
-            script_names.append(script.script_name)
+            script_names.append(script.name)
         
         for script_name in script_names:
             print("decompiling", script_name)
@@ -214,20 +215,23 @@ class LuaWorkbench(object):
         if delete_rest:
             scripts = [x for x in res.scripts()]
             for script in scripts:
-                print("deleting", script.script_name)
-                res.delete_script(script.script_name)
+                print("deleting", script.name)
+                res.delete_script(script.name)
             
         for script in script_sections:
-            print("adding", script.script_name)
+            print("adding", script.name)
             res.add_script(script)
         
         print("writing resource file")
+        tmp = BytesIO()
+        res.write(tmp)
+
         if newrespath.endswith(".gz"):
             with gzip.open(newrespath, "wb") as f:
-                res.write(f)
+                f.write(tmp.getbuffer())
         else:
             with open(newrespath, "wb") as f:
-                res.write(f)
+                f.write(tmp.getbuffer())
 
     def current_scripts(self):
         result = []
