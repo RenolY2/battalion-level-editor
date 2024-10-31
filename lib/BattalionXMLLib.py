@@ -785,6 +785,34 @@ class BattalionObject(object):
             else:
                 return val.get_value(path[1:])
 
+    def get_dependencies(self, visited=None):
+        if visited is None:
+            visited = {}
+
+        dependencies = []
+
+        if self.id not in visited:
+            visited[self.id] = True
+
+            for attr_node in self._node:
+                attribname = attr_node.attrib["name"]
+                val = getattr(self, attribname)
+
+                if attr_node.tag in ("Pointer", "Resource"):
+                    if isinstance(val, list):
+                        for i in range(len(val)):
+                            if val[i] is None:
+                                pass
+                            else:
+                                dependencies.append(val[i])
+                                dependencies.extend(val[i].get_dependencies(visited))
+                    else:
+                        if val is not None:
+                            dependencies.append(val)
+                            dependencies.extend(val.get_dependencies(visited))
+
+        return dependencies
+
     def diff(self, otherobj):
         if self.type != otherobj.type:
             raise RuntimeError("Cannot compare objects of different types")
@@ -798,7 +826,6 @@ class BattalionObject(object):
             except:
                 diff.append((path, val, None))
                 continue
-
 
             if isinstance(val, BattalionObject) and isinstance(otherval, BattalionObject):
                 continue
