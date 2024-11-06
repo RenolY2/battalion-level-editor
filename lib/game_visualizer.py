@@ -518,8 +518,34 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
 
         self.mem1addresses = None
         self.mem2addresses = None
+        if self.game.region == b"G8WE":
+            self.heaps.append(("Lua Memory", 0x802fcf70, False))
+            self.heaps.append(("Action Heap", 0x802fe02c, False))
+            self.heaps.append(("Unit Group Item Heap", 0x802fdfc4, True))
+            self.heaps.append(("Texture Cache ARAM Heap", 0x8031340c, True))
 
-        if self.game.region == b"RBWE":
+            self.freelists.append(("Quad Tree Nodes", 0x803bbf00))  # QuadTree Nodes
+            self.freelists.append(("Quad Tree Lists", 0x803bbf04))  # Quadtree lists
+
+            self.freelists.append(("Joints", 0x802c86fc))
+            self.freelists.append(("Joint Anims", 0x802c8700))  # Joint Anims
+
+            self.freelists.append(("Ban Joints", 0x802c8704))
+            self.freelists.append(("Object Instances", 0x803bbdd8))
+            self.freelists.append(("Object Anim Instances", 0x803bbde0))
+
+            self.freelists.append(("Polynodes", 0x803bf09c))
+
+            self.freelists.append(("Node Hierarchies", 0x803bbee0))
+
+            self.freelists.append(("Blend Animation", 0x803bbd78))
+            self.freelists.append(("Animation Stretch Blends", 0x803bbdc4))
+            self.freelists.append(("Blend Nodes Stretch Continuous", 0x803bbd84))
+            self.freelists.append(("Blend Nodes Continuous", 0x803bbd90))
+            self.freelists.append(("Blend Transitions", 0x803bbd9c))
+            self.freelists.append(("Blend Transition Stretch", 0x803bbda8))
+
+        elif self.game.region == b"RBWE":
             self.mem1addresses = (0x805acf6c, 0x805acf68, 0x805acf74, 0x805acf30, 0x80600330)
             self.mem2addresses = (0x805acfc0, 0x805acfbc, 0x805acfc8, 0x805acf84, 0x80600330)
 
@@ -628,31 +654,51 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
     def update_info(self):
         info = []
         if self.game.running:
-            if self.game.region != b"RBWE":
+            bw1 = False
+
+            if self.game.region in (b"RBWE", b"RBWP", b"RBWJ"):
+                if self.game.region != b"RBWE":
+                    self.set_row_values(0,
+                                        "Only the US version of Battalion Wars 2 is currently supported. If it is running, please close this debug window and reopen it again.")
+                    self.info.resizeRowsToContents()
+                    return
+            elif self.game.region in (b"G8WP", b"G8WE", b"G8WJ"):
+                bw1 = True
+                if self.game.region != b"G8WE":
+                    self.set_row_values(0,
+                                        "Only the US version of Battalion Wars 1 is currently supported. If it is running, please close this debug window and reopen it again.")
+                    self.info.resizeRowsToContents()
+                    return
+            else:
                 self.set_row_values(0,
-                                    "Only the US version of Battalion Wars 2 is currently supported. If it is running, please close this debug window and reopen it again.")
+                                    "Unsupported game.")
                 self.info.resizeRowsToContents()
                 return
 
             deref = self.game.deref
 
             info.append("\nHeap Info:")
-            self.set_row_values(0, "Mem1 free", self.get_mem1_remaining())
-            self.set_row_values(1, "Mem2 free", self.get_mem2_remaining())
+            if self.mem1addresses is not None:
+                self.set_row_values(0, "Mem1 free", self.get_mem1_remaining())
+                self.set_row_values(1, "Mem2 free", self.get_mem2_remaining())
 
             self.set_row_values(3, "Heap", "Address", "Total (Bytes)", "Used (Bytes)", "Free (Bytes)")
             i = 0
             for name, addr, advanced in self.heaps:
                 if not advanced or (advanced and self.advanced.isChecked()):
-                    size = deref(addr + 0x64)
-                    used = deref(addr + 0x48)
-                    free = deref(addr + 0x4C)
+                    size = deref(addr + 0x60)
+                    if bw1:
+                        used = "-"
+                        free = "-"
+                    else:
+                        used = deref(addr + 0x48)
+                        free = deref(addr + 0x4C)
                     """info.append(
                         "{0}: \n Address: {1}\n Total: {3} bytes\n Used: {2} bytes\n Free: {4} bytes\n".format(
                             name, hex(addr), used, size, free
                         ))"""
                     self.set_row_values(4+i, name, hex(addr), size, used, free)
-                    if size != 0:
+                    if not bw1 and size != 0:
                         fac = used/size
                         self.set_color(4+i, 4, self.gradient.get_value(fac))
                     i += 1
@@ -670,8 +716,12 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                 freelist_addr = deref(freelistinfo_ptr+0)
                 totalsize = deref(freelistinfo_ptr+0x18)
                 count = deref(freelistinfo_ptr+0x14)
-                freeinactive = deref(freelistinfo_ptr+0x28)
-                maxused = deref(freelistinfo_ptr+0x2C)
+                if bw1:
+                    freeinactive = deref(freelistinfo_ptr + 0x24)
+                    maxused = deref(freelistinfo_ptr + 0x28)
+                else:
+                    freeinactive = deref(freelistinfo_ptr+0x28)
+                    maxused = deref(freelistinfo_ptr+0x2C)
                 #info.append("{}: \n Address: {}\n Total size: {}\n Free or inactive:{}\n Max used/Max count: {}/{}\n".format(
                 #    name, hex(freelist_addr), totalsize, freeinactive, maxused, count,
                 #))#
