@@ -785,7 +785,7 @@ class BattalionObject(object):
             else:
                 return val.get_value(path[1:])
 
-    def get_dependencies(self, visited=None):
+    def get_dependencies(self, visited=None, skip=[]):
         if visited is None:
             visited = {}
 
@@ -799,17 +799,18 @@ class BattalionObject(object):
                 val = getattr(self, attribname)
 
                 if attr_node.tag in ("Pointer", "Resource"):
-                    if isinstance(val, list):
-                        for i in range(len(val)):
-                            if val[i] is None:
-                                pass
-                            else:
-                                dependencies.append(val[i])
-                                dependencies.extend(val[i].get_dependencies(visited))
-                    else:
-                        if val is not None:
-                            dependencies.append(val)
-                            dependencies.extend(val.get_dependencies(visited))
+                    if attribname not in skip:
+                        if isinstance(val, list):
+                            for i in range(len(val)):
+                                if val[i] is None:
+                                    pass
+                                else:
+                                    dependencies.append(val[i])
+                                    dependencies.extend(val[i].get_dependencies(visited))
+                        else:
+                            if val is not None:
+                                dependencies.append(val)
+                                dependencies.extend(val.get_dependencies(visited))
 
         return dependencies
 
