@@ -315,9 +315,9 @@ class EditorFileMenu(QMenu):
                     object.update_xml()
                 progressbar.set(30)
 
-                if self.level_data.bw2:
-                    print("Sorting XML nodes for BW2...")
-                    self.level_data.sort_nodes()
+
+                print("Sorting XML nodes...")
+                self.level_data.sort_nodes()
 
                 tmp = BytesIO()
                 print("Writing level data to temp file...")
