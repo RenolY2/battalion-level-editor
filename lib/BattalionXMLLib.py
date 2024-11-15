@@ -310,6 +310,9 @@ class BattalionLevelFile(object):
                 self.add_object(bwobject)
                 if callback is not None: callback(len(self._root), i)
 
+        if self.bw2:
+            print("Detected XML as BW2")
+
     def delete_objects(self, objects):
         for obj in objects:
             assert not obj.deleted
