@@ -32,6 +32,162 @@ else:
         BWICONS = json.load(f)
 
 
+TYPEORDER = [
+    "cTequilaEffectResource",
+    "cNodeHierarchyResource",
+    "cGameScriptResource",
+    "sSampleResource",
+    "cTextureResource",
+    "cSoundBase",
+    "cGUINumberNumber",
+    "cGUINumberFromFunction",
+    "cGUINumberFromLabel",
+    "cGUIScriptFunction",
+    "cGUIVectorFromLabel",
+    "cGUIVectorFromFunction",
+    "cGUIScaleFromFunction",
+    "cGUIColourFromLabel",
+    "cGUIColourFromFunction",
+    "cGUIBoolFromFunction",
+    "cGUIBoolBool",
+    "cGUIButtonSpriteSet",
+    "cGUIColourColour",
+    "cGUIColourNumber",
+    "cGUIStringFromLabel",
+    "cGUIStringFromFunction",
+    "cCameraBase",
+    "cGUIMatrixFromLabel",
+    "cGUIStringString",
+    "cGUIScaleVector",
+    "cGUIBoolFromLabel",
+    "cGUIVectorVector",
+    "cGUIScaleFromLabel",
+    "cSprite",
+    "cGUIEvent",
+    "cGUISpriteWidget",
+    "sSpriteBasetype",
+    "cWaypoint",
+    "cScriptedSound",
+    "cGUISoundWidget",
+    "cGUIButtonWidget",
+    "cGUISliderWidget",
+    "cGUITextureWidget",
+    "cGUITextBoxWidget",
+    "cGUICustomWidget",
+    "cGUIDialogBox3Widget",
+    "cGUIDialogBox2Widget",
+    "cGUIDialogBox1Widget",
+    "cGUIDialogBox0Widget",
+    "cGUI3DModelData",
+    "cGUI3DObjectWidget",
+    "cRenderParams",
+    "cGlobalScriptEntity",
+    "cInitialisationScriptEntity",
+    "cGUIPage",
+    "cGUIRectWidget",
+    "cGUIVertexColouredRectWidget",
+    "cGUIControllerBlip",
+    "cScriptSprite",
+    "cSKUSpecificData",
+    "cGUITequilaData",
+    "cGUIListBoxWidget",
+    "cGUIEventHandler",
+    "cGUITequilaWidget",
+    "cScriptedEffectBase",
+    "cCamera",
+    "cAnimationResource",
+    "cSimpleTequilaTaggedEffectBase",
+    "cCoverPointBase",
+    "sDestroyBase",
+    "sSceneryClusterBase",
+    "cAnimationTriggeredEffectChainItemGroundImpact",
+    "cAdvancedWeaponBase",
+    "cImpactTableTaggedEffectBase",
+    "cProjectileSoundBase",
+    "sProjectileBase",
+    "sWeaponBase",
+    "sAirVehicleBase",
+    "cTroopAnimationSet",
+    "cTroopVoiceManagerBase",
+    "sTroopBase",
+    "cReflectedPhysicsParams",
+    "cGroundVehiclePhysicsBase",
+    "cGroundVehicleSoundBase",
+    "cSeatBase",
+    "cGroundVehicleBase",
+    "cAnimationTriggeredEffectManager",
+    "cSoundCurve",
+    "cAirVehicleEngineSoundBase",
+    "cBuildingImpBase",
+    "cWeaponSoundBase",
+    "cArmyAllegiance",
+    "cPanelSprites",
+    "cObjectiveMarkerBase",
+    "cAirVehicleSoundBase",
+    "sExplodeBase",
+    "cImpactBase",
+    "cImpactTableBase",
+    "cIncidentalBase",
+    "cTerrainParticleGeneratorBase",
+    "cCapturePointBase",
+    "cAnimationTriggeredEffectChainItemSound",
+    "cAnimationTriggeredEffectChainItemTequilaEffect",
+    "cReticuleState",
+    "cAnimationTriggeredEffect",
+    "cTroopVoiceMessageBase",
+    "cHUDSoundBlock",
+    "sPickupBase",
+    "cAirVehiclePhysicsBase",
+    "cGroundVehicleEngineSoundBase",
+    "cRevConScrollRegionBase",
+    "cContextSensitiveIdle",
+    "cContextSensitiveIdleList",
+    "cPlayerSettings",
+    "cHUDVariables",
+    "cHUD",
+    "cHUDTutorial",
+    "cAttackSustainReleaseEnvelope",
+    "cFlightData",
+    "cMapZone",
+    "cPhase",
+    "cObjective",
+    "cMorphingBuilding",
+    "cStrategicInstallation",
+    "cActionParameterData",
+    "cMeleeHitReactionData",
+    "cAmbientAreaPointSoundSphere",
+    "cActionParameters",
+    "cDestroyableObject",
+    "cSceneryCluster",
+    "cTroop",
+    "cGroundVehicle",
+    "cAirVehicle",
+    "cBuilding",
+    "cCapturePoint",
+    "cObjectiveMarker",
+    "cWaterVehiclePhysicsBase",
+    "cWaterVehicleSoundBase",
+    "cWaterVehicleBase",
+    "cCoastZone",
+    "cReflectedUnitGroup",
+    "cWaterVehicle",
+    "cPickupReflected",
+    "cDamageZone",
+    "cNogoHintZone"
+]
+
+TYPEORDER_VALUE = {}
+for i, v in enumerate(TYPEORDER):
+    TYPEORDER_VALUE[v] = i
+
+
+def sort_key(key):
+    if key in TYPEORDER_VALUE:
+        return TYPEORDER_VALUE
+    else:
+        return 99999
+
+
 class PointerPlaceholder(object):
     def __init__(self, pointer):
         self.pointer = pointer
@@ -171,12 +327,27 @@ class BattalionLevelFile(object):
 
         deleted_refs = set(obj.id for obj in objects)
         newroot = etree.Element("Instances")
+
         for node in self._root:
             if node.tag == "Object":
                 if node.attrib["id"] not in deleted_refs:
                     newroot.append(node)
             else:
                 newroot.append(node)
+
+        self._tree._setroot(newroot)
+        self._root = self._tree.getroot()
+
+    def sort_nodes(self):
+        nodes = []
+        for node in self._root:
+            nodes.append(node)
+
+        nodes.sort(key=sort_key)
+
+        newroot = etree.Element("Instances")
+        for node in nodes:
+            newroot.append(node)
 
         self._tree._setroot(newroot)
         self._root = self._tree.getroot()
