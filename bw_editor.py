@@ -55,6 +55,9 @@ def get_treeitem(root:QTreeWidgetItem, obj):
     return None
 
 
+EDITOR_ROOT = os.path.dirname(__file__)
+
+
 class LevelEditor(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -114,6 +117,9 @@ class LevelEditor(QMainWindow):
         self.timer.setInterval(1000)
         self.timer.timeout.connect(self.read_entityinit_if_changed)
         self.timer.start()
+
+    def get_editor_folder(self):
+        return EDITOR_ROOT
 
     def read_entityinit_if_changed(self):
         if self.level_file is None or self.level_file.objects is None:
