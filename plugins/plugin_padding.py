@@ -96,13 +96,7 @@ class Plugin(object):
             else:
                 editor.file_menu.level_paths.objectpath = path
             node[0].attrib["name"] = path
-
-            tmp = BytesIO()
-            editor.file_menu.level_paths.write(tmp)
-
-            with open(editor.file_menu.current_path, "wb") as f:
-                f.write(tmp.getvalue())
-                print("Updated", editor.file_menu.current_path, "with changed compression settings")
+            editor.set_has_unsaved_changes(True)
 
     def toggle_gzip_preload(self, editor):
         self.toggle_gzip(editor, True)
@@ -123,13 +117,13 @@ class Plugin(object):
                 size = len(tmp.getbuffer())
                 padding = int(size*(1+value/100.0))
                 editor.file_menu.level_paths.set_preload_padding(padding)
+                editor.set_has_unsaved_changes(True)
                 print("Padding has been set to", padding, "bytes.")
                 msgbox = MessageDialog(editor,
                                        (f"Padding has been set to {padding} bytes.\n"
                                         f"A headroom of {padding-size} bytes over unpadded ({size} bytes)."),
                                        "")
                 msgbox.exec()
-
 
                 if editor.file_menu.level_paths.objectpath.endswith(".gz"):
                     msgbox = YesNoQuestionDialog(editor,
@@ -140,12 +134,6 @@ class Plugin(object):
                     result = msgbox.exec()
                     if result == QtWidgets.QMessageBox.StandardButton.Yes:
                         self.toggle_gzip(editor, preload=True, confirm=True)
-            tmp = BytesIO()
-            editor.file_menu.level_paths.write(tmp)
-
-            with open(editor.file_menu.current_path, "wb") as f:
-                f.write(tmp.getvalue())
-                print("Updated", editor.file_menu.current_path, "with changed padding settings")
 
     def pad_object(self, editor: "bw_editor.LevelEditor"):
         inputdialog = PaddingDialog(editor, "Level XML Padding")
@@ -156,10 +144,11 @@ class Plugin(object):
                 editor.file_menu.level_paths.clear_object_padding()
             else:
                 tmp = BytesIO()
-                editor.preload_file.write(tmp)
+                editor.level_file.write(tmp)
                 size = len(tmp.getbuffer())
                 padding = int(size*(1+value/100.0))
                 editor.file_menu.level_paths.set_object_padding(padding)
+                editor.set_has_unsaved_changes(True)
                 print("Padding has been set to", padding, "bytes.")
                 msgbox = MessageDialog(editor,
                                        (f"Padding has been set to {padding} bytes.\n"
@@ -178,13 +167,6 @@ class Plugin(object):
                     result = msgbox.exec()
                     if result == QtWidgets.QMessageBox.StandardButton.Yes:
                         self.toggle_gzip(editor, preload=False, confirm=True)
-
-            tmp = BytesIO()
-            editor.file_menu.level_paths.write(tmp)
-
-            with open(editor.file_menu.current_path, "wb") as f:
-                f.write(tmp.getvalue())
-                print("Updated", editor.file_menu.current_path, "with changed padding settings")
 
     def unload(self):
         print("I have been unloaded")
