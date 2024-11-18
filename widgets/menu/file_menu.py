@@ -377,6 +377,12 @@ class EditorFileMenu(QMenu):
                                     self
                                 )
 
+                tmp = BytesIO()
+                self.level_paths.write(tmp)
+
+                with open(self.current_path, "wb") as f:
+                    f.write(tmp.getvalue())
+
                 print("Done!")
                 progressbar.set(100)
                 self.editor.level_view.start_redrawing()
