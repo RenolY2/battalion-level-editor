@@ -283,9 +283,14 @@ class AttributeList(MutableSequence, Iterable):
     
         
 class BattalionLevelFile(object):
-    def __init__(self, fileobj, callback=None):
-        self._tree = etree.parse(fileobj)
+    def __init__(self, fileobj=None, callback=None):
+        if fileobj is None:
+            root = etree.Element("Instances")
+            self._tree = etree.ElementTree(root)
+        else:
+            self._tree = etree.parse(fileobj)
         self._root = self._tree.getroot()
+
         self.objects = {}
         self.objects_with_positions = {}
 
@@ -417,6 +422,40 @@ class BattalionFilePaths(object):
                     self.preloadpath = child[0].attrib["name"]
                     if "padding" in child[0].attrib:
                         self.preloadpadding = int(child[0].attrib["padding"])
+
+    def clear_object_padding(self):
+        self.preloadpadding = None
+        for child in self._tree.getroot():
+            if child.tag == "level":
+                for child2 in child:
+                    if child2.tag == "objectfiles":
+                        if "padding" in child2[0].attrib:
+                            del child2[0].attrib["padding"]
+
+    def set_object_padding(self, pad):
+        self.objectfilepadding = pad
+        for child in self._tree.getroot():
+            if child.tag == "level":
+                for child2 in child:
+                    if child2.tag == "objectfiles":
+                        child2[0].attrib["padding"] = str(pad)
+
+    def clear_preload_padding(self):
+        self.preloadpadding = None
+        for child in self._tree.getroot():
+            if child.tag == "preload":
+                if "padding" in child[0].attrib:
+                    del child[0].attrib["padding"]
+
+    def set_preload_padding(self, pad):
+        self.preloadpadding = pad
+        for child in self._tree.getroot():
+            if child.tag == "preload":
+                child[0].attrib["padding"] = str(pad)
+
+    def write(self, f):
+        f.write(b"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
+        self._tree.write(f, encoding="utf-8", short_empty_elements=False)
 
 
 class BattalionObject(object):
