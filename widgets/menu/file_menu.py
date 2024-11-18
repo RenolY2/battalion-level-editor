@@ -343,6 +343,15 @@ class EditorFileMenu(QMenu):
                             if g.tell() < self.level_paths.objectfilepadding:
                                 g.write(b" "*(self.level_paths.objectfilepadding - g.tell()))
 
+                            else:
+                                open_error_dialog(
+                                    f"Level XML has exceeded Padding! "
+                                    f"({g.tell()} vs {self.level_paths.objectfilepadding})\n"
+                                    "If you need padding, you have to update the padding to a higher value.\n"
+                                    "If you are using save states, you have to restart the game normally and set a new savestate.",
+                                    self
+                                )
+
                 progressbar.set(90)
 
                 if levelpaths.preloadpath.endswith(".gz"):
@@ -359,6 +368,14 @@ class EditorFileMenu(QMenu):
                         if self.level_paths.preloadpadding is not None:
                             if g.tell() < self.level_paths.preloadpadding:
                                 g.write(b" "*(self.level_paths.preloadpadding - g.tell()))
+                            else:
+                                open_error_dialog(
+                                    f"Preload XML has exceeded Padding! "
+                                    f"({g.tell()} vs {self.level_paths.objectfilepadding})\n"
+                                    "If you need padding, you have to update the padding to a higher value.\n"
+                                    "If you are using save states, you have to restart the game and set a new savestate.",
+                                    self
+                                )
 
                 print("Done!")
                 progressbar.set(100)
