@@ -7,6 +7,7 @@ from lib.BattalionXMLLib import BattalionFilePaths
 
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
+from widgets.editor_widgets import open_error_dialog
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
@@ -107,6 +108,18 @@ class Plugin(object):
                     levelpaths = BattalionFilePaths(f)
 
                 pf2path = fname[:-4] + ".pf2"
+
+                for path in (levelpaths.terrainpath,
+                             levelpaths.resourcepath,
+                             levelpaths.objectpath,
+                             levelpaths.preloadpath):
+                    if not os.path.exists(os.path.join(
+                        savestatepath, path
+                        )):
+                        open_error_dialog("Savestate was created with a different compression setting compared to current level!"
+                                          "Cannot load.", editor)
+                        return
+
 
                 for path in (levelpaths.terrainpath,
                              levelpaths.resourcepath,
