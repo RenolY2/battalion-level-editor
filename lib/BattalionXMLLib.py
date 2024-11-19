@@ -394,6 +394,8 @@ class BattalionFilePaths(object):
         self._tree = etree.parse(fileobj)
         self._root = self._tree.getroot()
 
+        self.dirty = False
+
         self.terrainpath = None
         self.stringpaths = {}
         self.resourcepath = None
@@ -453,9 +455,50 @@ class BattalionFilePaths(object):
             if child.tag == "preload":
                 child[0].attrib["padding"] = str(pad)
 
+    def set_uncompressed(self):
+        levelxml = self._tree.find("level/objectfiles")
+        preload = self._tree.find("preload")
+        terrain = self._tree.find("terrain")
+        resource = self._tree.find("level/resourcefiles")
+
+        self.objectpath = self.objectpath.removesuffix(".gz")
+        self.preloadpath = self.preloadpath.removesuffix(".gz")
+        self.terrainpath = self.terrainpath.removesuffix(".gz")
+        self.resourcepath = self.resourcepath.removesuffix(".gz")
+
+        levelxml[0].attrib["name"] = self.objectpath
+        preload[0].attrib["name"] = self.preloadpath
+        terrain[0].attrib["name"] = self.terrainpath
+        resource[0].attrib["name"] = self.resourcepath
+
+        self.dirty = True
+
+    def set_compressed(self):
+        levelxml = self._tree.find("level/objectfiles")
+        preload = self._tree.find("preload")
+        terrain = self._tree.find("terrain")
+        resource = self._tree.find("level/resourcefiles")
+
+        if not self.objectpath.endswith(".gz"):
+            self.objectpath += ".gz"
+        if not self.preloadpath.endswith(".gz"):
+            self.preloadpath += ".gz"
+        if not self.terrainpath.endswith(".gz"):
+            self.terrainpath += ".gz"
+        if not self.resourcepath.endswith(".gz"):
+            self.resourcepath += ".gz"
+
+        levelxml[0].attrib["name"] = self.objectpath
+        preload[0].attrib["name"] = self.preloadpath
+        terrain[0].attrib["name"] = self.terrainpath
+        resource[0].attrib["name"] = self.resourcepath
+
+        self.dirty = True
+
     def write(self, f):
         f.write(b"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
         self._tree.write(f, encoding="utf-8", short_empty_elements=False)
+        self.dirty = False
 
 
 class BattalionObject(object):
