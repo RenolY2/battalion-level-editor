@@ -177,6 +177,15 @@ class BW2Model(Model):
             #break
             #node.transform.reset_transform()
 
+    def get_texture_names(self):
+        alltextures = []
+        for node in self.nodes:
+            for material in node.materials:
+                for texturename in material.textures():
+                    if texturename not in alltextures:
+                        alltextures.append(texturename)
+        return alltextures
+
     def make_textured_model(self, texturearchive):
         model = TexturedBWModel()
         alltextures = {}
@@ -185,6 +194,9 @@ class BW2Model(Model):
                 for texturename in material.textures():
                     if texturename not in alltextures:
                         alltextures[texturename] = TexturedBWMesh(texturename.strip(b"\x00").decode("ascii"))
+                        tex = texturename.strip(b"\x00").decode("ascii")
+                        if tex not in model.all_textures:
+                            model.all_textures.append(tex)
 
         for node in self.nodes:
             if node.do_skip():

@@ -439,6 +439,10 @@ class TexturedModel(object):
 
 
 class TexturedBWModel(TexturedModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.all_textures = []
+
     def render(self, texarchive, selected=False):
         for mesh in self.mesh_list:
             mesh.render(texarchive, selected)
