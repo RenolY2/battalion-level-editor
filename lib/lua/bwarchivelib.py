@@ -118,13 +118,17 @@ class TextureBW1(Section):
 
     def dump_to_directory(self, dirpath):
         fname = self.name+".texture"
+        encoded_name = bytes(self.name, "ascii").ljust(0x10, b"\x00")
+
         with open(os.path.join(dirpath, fname), "wb") as f:
+            f.write(encoded_name)
             f.write(self.data)
 
     @classmethod
     def from_filepath(cls, filepath):
         fname = os.path.basename(filepath)
         with open(filepath, "rb") as f:
+            f.read(0x10)
             data = f.read()
 
         return cls(b"TXET", fname.replace(".texture", ""), data)
@@ -157,13 +161,17 @@ class TextureBW2(Section):
 
     def dump_to_directory(self, dirpath):
         fname = self.name+".texture"
+        encoded_name = bytes(self.name, "ascii").ljust(0x20, b"\x00")
+
         with open(os.path.join(dirpath, fname), "wb") as f:
+            f.write(encoded_name)
             f.write(self.data)
 
     @classmethod
     def from_filepath(cls, filepath):
         fname = os.path.basename(filepath)
         with open(filepath, "rb") as f:
+            f.read(0x20)
             data = f.read()
 
         return cls(b"DXTG", fname.replace(".texture", ""), data)
@@ -290,7 +298,7 @@ class Model(Section):
     def dump_to_directory(self, dirpath):
         fname = self.name+".modl"
         with open(os.path.join(dirpath, fname), "wb") as f:
-            f.write(self.data)
+            f.write(self.data[8:])
 
     @classmethod
     def from_filepath(cls, filepath):
@@ -298,7 +306,9 @@ class Model(Section):
         with open(filepath, "rb") as f:
             data = f.read()
 
-        return cls(fname.replace(".modl", ""), data)
+        prefix = b"LDOM"+pack("I", len(data))
+
+        return cls(fname.replace(".modl", ""), prefix+data)
 
     def write(self, f):
         f.write(b"LDOM")
