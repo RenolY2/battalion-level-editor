@@ -223,11 +223,13 @@ class EditorFileMenu(QMenu):
                     self.editor.menubar.plugin_menu.execute_event("after_load")
 
                 except Exception as error:
+                    QApplication.restoreOverrideCursor()
+                    QApplication.processEvents()
                     self.editor.level_view.start_redrawing()
                     self.is_loading = False
                     print("Error appeared while loading:", error)
                     traceback.print_exc()
-                    open_error_dialog(str(error), self)
+                    open_error_dialog("An error appeared during load. Check if all the level files are alright!\n\n"+str(error), self)
                     return
 
     @catch_exception_with_dialog
@@ -376,6 +378,49 @@ class EditorFileMenu(QMenu):
                                     "If you are using save states, you have to restart the game and set a new savestate.",
                                     self
                                 )
+
+                if self.level_paths.dirty:
+                    if levelpaths.terrainpath.endswith(".gz"):
+                        oldpath = levelpaths.terrainpath.removesuffix(".gz")
+                        pathold = os.path.join(base, oldpath)
+                        pathnew = os.path.join(base, levelpaths.terrainpath)
+
+                        with gzip.open(pathold, "rb") as f:
+                            data = f.read()
+                        with open(pathnew, "wb") as f:
+                            f.write(data)
+
+                    else:
+                        oldpath = levelpaths.terrainpath + ".gz"
+                        pathold = os.path.join(base, oldpath)
+                        pathnew = os.path.join(base, levelpaths.terrainpath)
+
+                        with open(pathold, "rb") as f:
+                            data = f.read()
+                        with gzip.open(pathnew, "wb") as f:
+                            f.write(data)
+
+                    if levelpaths.resourcepath.endswith(".gz"):
+                        oldpath = levelpaths.resourcepath.removesuffix(".gz")
+                        pathold = os.path.join(base, oldpath)
+                        pathnew = os.path.join(base, levelpaths.resourcepath)
+
+                        with gzip.open(pathold, "rb") as f:
+                            data = f.read()
+                        with open(pathnew, "wb") as f:
+                            f.write(data)
+
+                    else:
+                        oldpath = levelpaths.resourcepath + ".gz"
+                        pathold = os.path.join(base, oldpath)
+                        pathnew = os.path.join(base, levelpaths.resourcepath)
+
+                        with open(pathold, "rb") as f:
+                            data = f.read()
+                        with gzip.open(pathnew, "wb") as f:
+                            f.write(data)
+
+
 
                 tmp = BytesIO()
                 self.level_paths.write(tmp)
