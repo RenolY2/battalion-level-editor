@@ -51,38 +51,33 @@ class Plugin(object):
         self.name = "Padding"
         self.actions = [("Set Preload XML Padding", self.pad_preload),
                         ("Set Level XML Padding", self.pad_object),
-                        ("Toggle Preload gzip Compression", self.toggle_gzip_preload),
-                        ("Toggle Level gzip Compression", self.toggle_gzip_level)]
+                        ("Toggle gzip Compression", self.toggle_gzip)]
 
-    def toggle_gzip(self, editor: "bw_editor.LevelEditor", preload=False, confirm=False):
+    def toggle_gzip(self, editor: "bw_editor.LevelEditor", confirm=False):
         if not editor.level_file.bw2:
             open_error_dialog("BW1 does not use gzip compression. No toggling necessary.", editor)
             return
 
-        filepathtree = editor.file_menu.level_paths._tree
-        if preload:
-            path = editor.file_menu.level_paths.preloadpath
-            result = editor.file_menu.level_paths._tree.findall("preload")
+        path = editor.file_menu.level_paths.objectpath
+        result = editor.file_menu.level_paths._tree.findall("level/objectfiles")
 
-            text = "Compression for the Preload XML is"
-        else:
-            path = editor.file_menu.level_paths.objectpath
-            result = editor.file_menu.level_paths._tree.findall("level/objectfiles")
-
-            text = "Compression for the Level XML is"
+        text = "Gzip compression for this level is"
 
         node = result[0]
         print(node[0].attrib["name"])
+
+        decompress = False
 
         if path.endswith(".gz"):
             path = path.replace(".gz", "")
             text += " enabled."
             actiontext = "Do you want to turn compression off?\n(Will take action on saving!)"
-
+            decompress = True
         else:
             path = path+".gz"
             text += " disabled."
             actiontext = "Do you want to turn compression on?\n(Will take action on saving!)"
+
         if not confirm:
             msgbox = YesNoQuestionDialog(editor, text, actiontext)
 
@@ -91,18 +86,12 @@ class Plugin(object):
             result = QtWidgets.QMessageBox.StandardButton.Yes
 
         if result == QtWidgets.QMessageBox.StandardButton.Yes:
-            if preload:
-                editor.file_menu.level_paths.preloadpath = path
+            if decompress:
+                editor.file_menu.level_paths.set_uncompressed()
             else:
-                editor.file_menu.level_paths.objectpath = path
-            node[0].attrib["name"] = path
+                editor.file_menu.level_paths.set_compressed()
+
             editor.set_has_unsaved_changes(True)
-
-    def toggle_gzip_preload(self, editor):
-        self.toggle_gzip(editor, True)
-
-    def toggle_gzip_level(self, editor):
-        self.toggle_gzip(editor, False)
 
     def pad_preload(self, editor: "bw_editor.LevelEditor"):
         inputdialog = PaddingDialog(editor, "Preload XML Padding")
@@ -127,13 +116,13 @@ class Plugin(object):
 
                 if editor.file_menu.level_paths.objectpath.endswith(".gz"):
                     msgbox = YesNoQuestionDialog(editor,
-                                                 "Level XML is compressed! Padding won't be used.",
-                                                 ("Do you want to decompress XML and use padding? "
+                                                 "Level files are compressed! Padding won't be used.",
+                                                 ("Do you want to decompress the level files and use padding? "
                                                   "(Will take action on saving!)"))
 
                     result = msgbox.exec()
                     if result == QtWidgets.QMessageBox.StandardButton.Yes:
-                        self.toggle_gzip(editor, preload=True, confirm=True)
+                        self.toggle_gzip(editor, confirm=True)
 
     def pad_object(self, editor: "bw_editor.LevelEditor"):
         inputdialog = PaddingDialog(editor, "Level XML Padding")
@@ -160,13 +149,13 @@ class Plugin(object):
 
                 if editor.file_menu.level_paths.objectpath.endswith(".gz"):
                     msgbox = YesNoQuestionDialog(editor,
-                                                 "Level XML is compressed! Padding won't be used.",
-                                                 ("Do you want to decompress XML and use padding? "
+                                                 "Level files are compressed! Padding won't be used.",
+                                                 ("Do you want to decompress the level files and use padding? "
                                                   "(Will take action on saving!)"))
 
                     result = msgbox.exec()
                     if result == QtWidgets.QMessageBox.StandardButton.Yes:
-                        self.toggle_gzip(editor, preload=False, confirm=True)
+                        self.toggle_gzip(editor, confirm=True)
 
     def unload(self):
         print("I have been unloaded")
