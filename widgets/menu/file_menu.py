@@ -287,6 +287,47 @@ class EditorFileMenu(QMenu):
                     print("Skipping PF2..")
 
                 progressbar.set(20)
+                if self.level_paths.dirty:
+                    if levelpaths.terrainpath.endswith(".gz"):
+                        oldpath = levelpaths.terrainpath.removesuffix(".gz")
+                        pathold = os.path.join(base, oldpath)
+                        pathnew = os.path.join(base, levelpaths.terrainpath)
+
+                        with open(pathold, "rb") as f:
+                            data = f.read()
+                        with gzip.open(pathnew, "wb") as f:
+                            f.write(data)
+                    else:
+                        oldpath = levelpaths.terrainpath + ".gz"
+                        pathold = os.path.join(base, oldpath)
+                        pathnew = os.path.join(base, levelpaths.terrainpath)
+
+                        with gzip.open(pathold, "rb") as f:
+                            data = f.read()
+                        with open(pathnew, "wb") as f:
+                            f.write(data)
+
+                    if levelpaths.resourcepath.endswith(".gz"):
+                        oldpath = levelpaths.resourcepath.removesuffix(".gz")
+                        pathold = os.path.join(base, oldpath)
+                        pathnew = os.path.join(base, levelpaths.resourcepath)
+
+                        with open(pathold, "rb") as f:
+                            data = f.read()
+                        with gzip.open(pathnew, "wb") as f:
+                            f.write(data)
+                    else:
+                        oldpath = levelpaths.resourcepath + ".gz"
+                        pathold = os.path.join(base, oldpath)
+                        pathnew = os.path.join(base, levelpaths.resourcepath)
+
+                        with gzip.open(pathold, "rb") as f:
+                            data = f.read()
+                        with open(pathnew, "wb") as f:
+                            f.write(data)
+
+
+
                 if (self.editor.editorconfig.getboolean("recompile_lua", fallback=True)
                     and self.editor.lua_workbench.is_initialized()):
                     try:
@@ -378,47 +419,6 @@ class EditorFileMenu(QMenu):
                                     "If you are using save states, you have to restart the game and set a new savestate.",
                                     self
                                 )
-
-                if self.level_paths.dirty:
-                    if levelpaths.terrainpath.endswith(".gz"):
-                        oldpath = levelpaths.terrainpath.removesuffix(".gz")
-                        pathold = os.path.join(base, oldpath)
-                        pathnew = os.path.join(base, levelpaths.terrainpath)
-
-                        with gzip.open(pathold, "rb") as f:
-                            data = f.read()
-                        with open(pathnew, "wb") as f:
-                            f.write(data)
-
-                    else:
-                        oldpath = levelpaths.terrainpath + ".gz"
-                        pathold = os.path.join(base, oldpath)
-                        pathnew = os.path.join(base, levelpaths.terrainpath)
-
-                        with open(pathold, "rb") as f:
-                            data = f.read()
-                        with gzip.open(pathnew, "wb") as f:
-                            f.write(data)
-
-                    if levelpaths.resourcepath.endswith(".gz"):
-                        oldpath = levelpaths.resourcepath.removesuffix(".gz")
-                        pathold = os.path.join(base, oldpath)
-                        pathnew = os.path.join(base, levelpaths.resourcepath)
-
-                        with gzip.open(pathold, "rb") as f:
-                            data = f.read()
-                        with open(pathnew, "wb") as f:
-                            f.write(data)
-
-                    else:
-                        oldpath = levelpaths.resourcepath + ".gz"
-                        pathold = os.path.join(base, oldpath)
-                        pathnew = os.path.join(base, levelpaths.resourcepath)
-
-                        with open(pathold, "rb") as f:
-                            data = f.read()
-                        with gzip.open(pathnew, "wb") as f:
-                            f.write(data)
 
 
 
