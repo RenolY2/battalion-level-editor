@@ -2,12 +2,14 @@ import os
 import time
 import shutil
 import random
+from PIL import Image
 
 from lib.BattalionXMLLib import BattalionFilePaths
 
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 from widgets.editor_widgets import open_error_dialog
+from widgets.menu.file_menu import PF2
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
@@ -33,8 +35,48 @@ class Plugin(object):
         self.name = "Misc"
         self.actions = [("ID Randomizer", self.randomize_ids),
                         ("Save State", self.save_state),
-                        ("Load State", self.load_savestate)]
+                        ("Load State", self.load_savestate),
+                        ("Dump PF2 to PNG", self.pf2dump)]
         print("I have been initialized")
+
+    def pf2dump(self, editor):
+        filepath, chosentype = QtWidgets.QFileDialog.getOpenFileName(
+            editor, "Open PF2 File",
+            editor.pathsconfig["xml"],
+            "PF2 files (*.pf2);;All files (*)")
+
+        pf2 = PF2(filepath)
+
+        missionboundary = Image.new("RGB", (512, 512))
+        ford = Image.new("RGB", (512, 512))
+        nogo = Image.new("RGB", (512, 512))
+
+        for i in range(512*512):
+            x = (i) % 512
+            y = (i) // 512
+            if x < 256:
+                x *= 2
+            else:
+                x = x - 256
+                x *= 2
+                x += 1
+
+            # NOGO
+            val = pf2.data[x][y][0]
+            nogo.putpixel((x,y), (val, val, val))
+
+            # FORD
+            val = pf2.data[x][y][1]
+            ford.putpixel((x, y), (val, val, val))
+
+            # MISSION BOUNDARY
+            val = pf2.data[x][y][2]
+            missionboundary.putpixel((x, y), (val, val, val))
+
+        nogo.save(filepath+"_dump_nogo.png")
+        ford.save(filepath+"_dump_ford.png")
+        missionboundary.save(filepath+"_dump_missionboundary.png")
+        print("Saved PNG dumps in same folder as", filepath)
 
     def randomize_ids(self, editor: "bw_editor.LevelEditor"):
         yes = open_yesno_box("You are about to randomize all IDs.", "Are you sure?")
