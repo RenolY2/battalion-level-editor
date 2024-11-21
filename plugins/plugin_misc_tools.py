@@ -2,7 +2,7 @@ import os
 import time
 import shutil
 import random
-from PIL import Image
+from PIL import Image, ImageOps
 
 from lib.BattalionXMLLib import BattalionFilePaths
 
@@ -73,9 +73,9 @@ class Plugin(object):
             val = pf2.data[x][y][2]
             missionboundary.putpixel((x, y), (val, val, val))
 
-        nogo.save(filepath+"_dump_nogo.png")
-        ford.save(filepath+"_dump_ford.png")
-        missionboundary.save(filepath+"_dump_missionboundary.png")
+        ImageOps.flip(nogo).save(filepath+"_dump_nogo.png")
+        ImageOps.flip(ford).save(filepath+"_dump_ford.png")
+        ImageOps.flip(missionboundary).save(filepath+"_dump_missionboundary.png")
         print("Saved PNG dumps in same folder as", filepath)
 
     def randomize_ids(self, editor: "bw_editor.LevelEditor"):
