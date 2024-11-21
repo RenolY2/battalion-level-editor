@@ -19,8 +19,8 @@ def move_object_to_start(tree, objects):
 class Plugin(object):
     def __init__(self):
         self.name = "Misc XML Tools"
-        self.actions = [("Move Selected Objects to Start of XML", self.movetostart),
-                        ("Move Selected Objects and Dependencies to Start of XML", self.movetostart_dependencies)]
+        self.actions = []#("Move Selected Objects to Start of XML", self.movetostart),
+                        #("Move Selected Objects and Dependencies to Start of XML", self.movetostart_dependencies)]
         print("I have been initialized")
 
     def movetostart(self, editor: "bw_editor.LevelEditor"):
