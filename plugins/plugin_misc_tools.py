@@ -33,7 +33,7 @@ def open_yesno_box(mainmsg, sidemsg):
 class Plugin(object):
     def __init__(self):
         self.name = "Misc"
-        self.actions = [("ID Randomizer", self.randomize_ids),
+        self.actions = [#("ID Randomizer", self.randomize_ids),
                         ("Save State", self.save_state),
                         ("Load State", self.load_savestate),
                         ("Dump PF2 to PNG", self.pf2dump)]
