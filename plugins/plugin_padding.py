@@ -1,3 +1,5 @@
+import os
+import gzip
 from io import BytesIO
 from PyQt6 import QtWidgets, QtGui
 from collections import namedtuple
@@ -35,12 +37,12 @@ class MessageDialog(QtWidgets.QMessageBox):
 
 
 class PaddingDialog(QtWidgets.QInputDialog):
-    def __init__(self, parent, text):
+    def __init__(self, parent, text, filetype="XML"):
         super().__init__(parent)
         self.setInputMode(QtWidgets.QInputDialog.InputMode.IntInput)
         self.setIntValue(5)
         self.setIntRange(0, 25)
-        self.setLabelText("Padding will fill up the XML file up to a specific size.\n"
+        self.setLabelText(f"Padding will fill up the {filetype} file up to a specific size.\n"
                           "This can help with testing mods more quickly using Dolphin save states\n"
                           "Enter padding percentage (0 for no padding):")
         self.setWindowTitle(text)
@@ -51,6 +53,7 @@ class Plugin(object):
         self.name = "Padding"
         self.actions = [("Set Preload XML Padding", self.pad_preload),
                         ("Set Level XML Padding", self.pad_object),
+                        ("Set Resource Padding", self.pad_res),
                         ("Toggle gzip Compression", self.toggle_gzip)]
 
     def toggle_gzip(self, editor: "bw_editor.LevelEditor", confirm=False):
@@ -100,6 +103,7 @@ class Plugin(object):
             value = inputdialog.intValue()
             if value == 0:
                 editor.file_menu.level_paths.clear_preload_padding()
+                editor.set_has_unsaved_changes(True)
             else:
                 tmp = BytesIO()
                 editor.preload_file.write(tmp)
@@ -131,12 +135,59 @@ class Plugin(object):
             value = inputdialog.intValue()
             if value == 0:
                 editor.file_menu.level_paths.clear_object_padding()
+                editor.set_has_unsaved_changes(True)
             else:
                 tmp = BytesIO()
                 editor.level_file.write(tmp)
                 size = len(tmp.getbuffer())
                 padding = int(size*(1+value/100.0))
                 editor.file_menu.level_paths.set_object_padding(padding)
+                editor.set_has_unsaved_changes(True)
+                print("Padding has been set to", padding, "bytes.")
+                msgbox = MessageDialog(editor,
+                                       (f"Padding has been set to {padding} bytes.\n"
+                                        f"A headroom of {padding-size} bytes over unpadded ({size} bytes)."),
+                                       "")
+                msgbox.exec()
+
+                print("Padding has been set to", padding, "bytes.")
+
+                if editor.file_menu.level_paths.objectpath.endswith(".gz"):
+                    msgbox = YesNoQuestionDialog(editor,
+                                                 "Level files are compressed! Padding won't be used.",
+                                                 ("Do you want to decompress the level files and use padding? "
+                                                  "(Will take action on saving!)"))
+
+                    result = msgbox.exec()
+                    if result == QtWidgets.QMessageBox.StandardButton.Yes:
+                        self.toggle_gzip(editor, confirm=True)
+
+    def pad_res(self, editor: "bw_editor.LevelEditor"):
+        inputdialog = PaddingDialog(editor, "Resource File Padding", "Resource")
+
+        if inputdialog.exec():
+            value = inputdialog.intValue()
+            if value == 0:
+                editor.file_menu.level_paths.clear_res_padding()
+                editor.set_has_unsaved_changes(True)
+            else:
+                base = os.path.dirname(editor.file_menu.current_path)
+                if editor.file_menu.level_paths.resourcepath.endswith(".gz"):
+                    with gzip.open(os.path.join(base,
+                                           editor.file_menu.level_paths.resourcepath),
+                              "rb") as f:
+                        data = f.read()
+                else:
+                    with open(os.path.join(base,
+                                           editor.file_menu.level_paths.resourcepath),
+                              "rb") as f:
+                        data = f.read()
+
+                size = len(data)
+                del data
+
+                padding = int(size*(1+value/100.0))
+                editor.file_menu.level_paths.set_res_padding(padding)
                 editor.set_has_unsaved_changes(True)
                 print("Padding has been set to", padding, "bytes.")
                 msgbox = MessageDialog(editor,
