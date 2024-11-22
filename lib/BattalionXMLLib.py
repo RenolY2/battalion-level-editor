@@ -181,9 +181,9 @@ for i, v in enumerate(TYPEORDER):
     TYPEORDER_VALUE[v] = i
 
 
-def sort_key(key):
-    if key in TYPEORDER_VALUE:
-        return TYPEORDER_VALUE
+def sort_key(node):
+    if "type" in node.attrib and node.attrib["type"] in TYPEORDER_VALUE:
+        return TYPEORDER_VALUE[node.attrib["type"]]
     else:
         return 99999
 
