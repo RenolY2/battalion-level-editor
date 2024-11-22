@@ -58,6 +58,20 @@ class TextureArchive(object):
         self.result_queue = mp.Queue()
         self.texture_processor = mp.Process(target=process, args=(self.texture_queue, self.result_queue))
 
+    def update_textures(self, archive: "BattalionArchive"):
+        for texture in archive.textures.textures:
+            lower = texture.name.lower()
+            if lower not in self.textures:
+                texture.data_ready = False
+
+                self.textures[texture.name.lower()] = texture
+                name = bytes(texture.name, encoding="ascii").lower()
+                if self.is_bw1:
+                    name2 = name.ljust(0x10, b"\x00")
+                else:
+                    name2 = name.ljust(0x20, b"\x00")
+                self.textures[name2] = texture
+
     def reset(self):
         for name, val in self._cached.items():
             del val

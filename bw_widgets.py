@@ -384,6 +384,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             self.bwmodelhandler = BWModelHandler.from_file(f, callback)
         self.doneCurrent()
 
+    def update_models(self, res):
+        self.bwmodelhandler.update_models(res)
+
     def reloadTerrain(self, f, callback=None):
         if self.bwmodelhandler is None:
             return
