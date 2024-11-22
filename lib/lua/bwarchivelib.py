@@ -478,6 +478,8 @@ class BattalionArchive(object):
                     section = Animation.from_file(f)
                 elif peek == b"FEQT":
                     section = Effect.from_file(f)
+                    if section.name == "__PADDING__":
+                        continue
                 else:
                     section = Section.from_file(f)
                 arc.sections.append(section)
@@ -583,7 +585,13 @@ class BattalionArchive(object):
         self.sections.sort(key=lambda x: ORDER[x.secname])
 
     def set_additional_padding(self, padding):
-        self.sounds._padding = padding
+        padding_res = self.get_resource(b"FEQT", "__PADDING__")
+        if padding_res is not None:
+            padding_res.data = b" "*padding
+        else:
+            padding_res = Effect("__PADDING__", b" "*padding)
+            self.add_resource(padding_res)
+            self.sort_sections()
 
 
 if __name__ == "__main__":
@@ -627,7 +635,6 @@ if __name__ == "__main__":
         newx = Effect.from_filepath("restest/" + x.name + ".txt")
         assert x.name == newx.name
         assert x.data == newx.data
-
 
     with open("C1_Bonus_LevelNew.res", "wb") as f:
         arc.write(f)
