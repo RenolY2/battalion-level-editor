@@ -404,6 +404,8 @@ class BattalionFilePaths(object):
 
         self.objectfilepadding = None
         self.preloadpadding = None
+        self.respadding = None
+
         if self._root.tag == "levelfiles":
             for child in self._tree.getroot():
                 #print(child.tag)
@@ -413,6 +415,8 @@ class BattalionFilePaths(object):
                     for child2 in child:
                         if child2.tag == "resourcefiles":
                             self.resourcepath = child2[0].attrib["name"]
+                            if "padding" in child2[0].attrib:
+                                self.respadding = int(child2[0].attrib["padding"])
                         elif child2.tag == "objectfiles":
                             self.objectpath = child2[0].attrib["name"]
                             if "padding" in child2[0].attrib:
@@ -440,6 +444,23 @@ class BattalionFilePaths(object):
             if child.tag == "level":
                 for child2 in child:
                     if child2.tag == "objectfiles":
+                        child2[0].attrib["padding"] = str(pad)
+
+    def clear_res_padding(self):
+        self.respadding = None
+        for child in self._tree.getroot():
+            if child.tag == "level":
+                for child2 in child:
+                    if child2.tag == "resourcefiles":
+                        if "padding" in child2[0].attrib:
+                            del child2[0].attrib["padding"]
+
+    def set_res_padding(self, pad):
+        self.respadding = pad
+        for child in self._tree.getroot():
+            if child.tag == "level":
+                for child2 in child:
+                    if child2.tag == "resourcefiles":
                         child2[0].attrib["padding"] = str(pad)
 
     def clear_preload_padding(self):
