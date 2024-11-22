@@ -190,12 +190,14 @@ class SoundArchive(Section):
         super().__init__(b"DNOS", b"")
         self.level_name = level_name
         self.sounds = sounds
+        self._padding = 0
 
     @classmethod
     def from_file(cls, f):
         name = f.read(4)
         assert name == b"DNOS"
-        size = read_uint32(f)
+        totalsize = read_uint32(f)
+        curr = f.tell()
         name_length = read_uint32(f)
         level_name = f.read(name_length)
 
@@ -211,6 +213,8 @@ class SoundArchive(Section):
             sound = Sound.from_file(f)
             sounds.append(sound)
 
+        # Skip padding
+        f.seek(curr+totalsize)
         return cls(level_name, sounds)
 
     def write(self, f):
@@ -225,6 +229,9 @@ class SoundArchive(Section):
 
         for sound in self.sounds:
             sound.write(f)
+
+        if self._padding > 0:
+            f.write(b"\x00"*self._padding)
 
         end = f.tell()
         f.seek(archive_size)
@@ -575,10 +582,16 @@ class BattalionArchive(object):
     def sort_sections(self):
         self.sections.sort(key=lambda x: ORDER[x.secname])
 
+    def set_additional_padding(self, padding):
+        self.sounds._padding = padding
+
 
 if __name__ == "__main__":
     with open("C1_Bonus_Level.res", "rb") as f:
         arc = BattalionArchive.from_file(f)
+
+    arc.set_additional_padding(10000)
+
     for x in arc.sounds.sounds:
         print(x.name)
         x.dump_to_directory("restest")
@@ -621,6 +634,12 @@ if __name__ == "__main__":
 
     with open("C1_Bonus_LevelNew.res", "rb") as f:
         newarc = BattalionArchive.from_file(f)
+
+    for sec in newarc.sections:
+        print(sec.secname)
+
+    with open("C1_Bonus_LevelNew2.res", "wb") as f:
+        newarc.write(f)
 
     with gzip.open("MP4_Level.res.gz", "rb") as f:
         arc = BattalionArchive.from_file(f)

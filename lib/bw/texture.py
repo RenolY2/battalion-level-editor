@@ -2,6 +2,7 @@ import os
 import sys
 import multiprocessing as mp
 
+from lib.lua.bwarchivelib import BattalionArchive
 from OpenGL.GL import *
 from io import BytesIO
 from array import array
@@ -22,7 +23,7 @@ def process(queuein, queueout):
 
 
 class TextureArchive(object):
-    def __init__(self, archive):
+    def __init__(self, archive: "BattalionArchive"):
         self.cachefolder = os.path.join(os.path.dirname(sys.argv[0]), "texture_cache")
         if not os.path.exists(self.cachefolder):
             os.mkdir(self.cachefolder)
@@ -32,17 +33,19 @@ class TextureArchive(object):
             if filename.endswith(".png"):
                 self.cached_textures[filename.replace(".png", "")] = True
 
-        self.game = archive.get_game()
+        self.is_bw1 = archive.textures.is_bw1
 
         self.textures = {}
         self.texture_decoded_data = {}
-        for texture in archive.textures:
+        for texture in archive.textures.textures:
             texture.data_ready = False
-            name = bytes(texture.res_name).lower()
-            self.textures[name] = texture
 
-
-            name2 = name.strip(b"\x00").decode("ascii")
+            self.textures[texture.name.lower()] = texture
+            name = bytes(texture.name, encoding="ascii").lower()
+            if self.is_bw1:
+                name2 = name.ljust(0x10, b"\x00")
+            else:
+                name2 = name.ljust(0x20, b"\x00")
             self.textures[name2] = texture
 
 
@@ -54,7 +57,6 @@ class TextureArchive(object):
         self.texture_queue = mp.Queue()
         self.result_queue = mp.Queue()
         self.texture_processor = mp.Process(target=process, args=(self.texture_queue, self.result_queue))
-
 
     def reset(self):
         for name, val in self._cached.items():
@@ -110,9 +112,9 @@ class TextureArchive(object):
                 f = self.textures[texname].fileobj
                 f.seek(0)
 
-                if self.game == "BW1":
+                if self.is_bw1:
                     tex = BW1Texture.from_file(f, ignoremips=True)
-                elif self.game == "BW2":
+                else:
                     tex = BW2Texture.from_file(f, ignoremips=True)
 
                 tex.dump_to_file(os.path.join(self.cachefolder, texname+".png"))

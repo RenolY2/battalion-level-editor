@@ -4,7 +4,8 @@ from .model_rendering import BW1Model, BW2Model
 from .bw_archive import BWArchive
 from .texture import TextureArchive
 from lib.render.model_renderingv2 import BWModelV2
-
+from lib.lua.bwarchivelib import BattalionArchive
+from io import BytesIO
 
 class BWModelHandler(object):
     def __init__(self):
@@ -16,25 +17,26 @@ class BWModelHandler(object):
     def from_file(cls, f, callback=None):
         bwmodels = cls()
 
-        bwarc = BWArchive(f)
+        bwarc = BattalionArchive.from_file(f) #BWArchive(f)
 
         bwmodels.textures = TextureArchive(bwarc)
-
-        for i, modeldata in enumerate(bwarc.models):
-            name = str(modeldata.res_name, encoding="ascii")
+        models = [x for x in bwarc.models()]
+        for i, modeldata in enumerate(models):
+            name = modeldata.name#str(modeldata.res_name, encoding="ascii")
             print(name)
-            if bwarc.is_bw2():
-                model = BW2Model()
-            else:
+            if bwarc.textures.is_bw1:
                 model = BW1Model()
-            data = modeldata.entries[0]
-            data.fileobj.seek(0)
-            f = data.fileobj
+            else:
+                model = BW2Model()
+            #data = modeldata.entries[0]
+            #data.fileobj.seek(0)
+            #f = data.fileobj
+            f = BytesIO(modeldata.data[8:])
             model.from_file(f)
             texmodel = model.make_textured_model(bwmodels.textures)
             bwmodels.models[name] = texmodel#model
             bwmodels.instancemodels[name] = BWModelV2.from_textured_bw_model(texmodel)
-            if callback is not None: callback(len(bwarc.models), i)
+            if callback is not None: callback(len(models), i)
         return bwmodels
 
     def rendermodel(self, name, mtx, bwterrain, offset):
