@@ -142,7 +142,7 @@ class BW2Model(Model):
     def _skip_section(self, f, secname):
         name = f.read(4)
         #print(name)
-        assert name == secname
+        assert name == secname, f"{name} vs {secname} expected"
         size = read_uint32_le(f)
         f.read(size)
 
