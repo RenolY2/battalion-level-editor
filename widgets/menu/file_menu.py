@@ -18,6 +18,9 @@ from widgets.editor_widgets import catch_exception_with_dialog, open_error_dialo
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 import traceback
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionFilePaths, BattalionObject
+from lib.lua.bwarchivelib import BattalionArchive
+from lib.bw.vectors import Vector3
+import time
 import gzip
 from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect, QObject
 from io import BytesIO
@@ -29,21 +32,108 @@ if TYPE_CHECKING:
     from lib.bw_terrain import BWTerrainV2
 
 
+class LoadingBar(QtWidgets.QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        WIDTH = 200
+        HEIGHT = 50
+        self.setFixedWidth(WIDTH)
+        self.setFixedHeight(HEIGHT)
+
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(1000//60)
+        self.timer.timeout.connect(self.update_loadingbar)
+        self.timer.start()
+
+        self.progress = 0
+        self.starttime = time.time()
+
+        self.vertical_distance = 10
+        self.horizontal_distance = 10
+        self.loadingbar_width = WIDTH-self.horizontal_distance*2
+        self.loadingbar_height = HEIGHT-self.vertical_distance*2
+
+        self.bar_highlight = -20
+        self.last_time = None
+        self.force = False
+
+    def closeEvent(self, closeevent):
+        self.timer.stop()
+        if not self.force:
+            closeevent.ignore()
+
+    def force_close(self):
+        self.force = True
+        self.close()
+
+    def update_loadingbar(self):
+
+
+        #timepassed = (time.time()-self.starttime)*3
+        #self.progress = timepassed/100.0
+        #self.progress = min(self.progress, 1.0)
+
+        if self.last_time is None:
+            self.last_time = time.time()
+        else:
+            curr = time.time()
+            delta = curr-self.last_time
+            self.last_time = curr
+            self.bar_highlight += delta*50
+            if self.bar_highlight > self.loadingbar_width * self.progress+100:
+                self.bar_highlight = -20
+        self.update()
+
+    def paintEvent(self, paintevent:QtGui.QPaintEvent):
+        painter = QtGui.QPainter(self)
+        bar_limit = int(self.loadingbar_width * self.progress)
+        painter.fillRect(self.horizontal_distance,
+                         self.vertical_distance,
+                         bar_limit,
+                         self.loadingbar_height,
+                         0x00FF00)
+
+        # This highlight animation is cool but it doesn't update when
+        # editor is inside a computation loop
+        """highlightcolor = Vector3(0xCF, 0xFF, 0xCF)
+        barcolor = Vector3(0x00, 0xFF, 0x00)
+
+        for x in range(0, self.loadingbar_width):
+            distance = ((x-self.bar_highlight)**2)/1000.0 #abs(x - self.bar_highlight)/20.0
+            if distance > 1:
+                distance = 1
+
+            color = highlightcolor*(1-distance) + barcolor*distance
+            pencolor = int(color.x)<<16 | int(color.y)<<8 | int(color.z)
+            painter.setPen(pencolor)
+            if x < bar_limit:
+                painter.drawLine(x+self.horizontal_distance,
+                                 self.vertical_distance,
+                                 x+self.horizontal_distance,
+                                 self.vertical_distance+self.loadingbar_height)"""
+
+
 class LoadingProgress(QObject):
     progressupdate = pyqtSignal(str, int)
 
-    def __init__(self, text):
+    def __init__(self, text, loadingbar: LoadingBar):
         super().__init__()
         self.curr = 0
         self.text = text
 
+        self.loadingbar = loadingbar
+        self.loadingbar.setWindowTitle(text)
+
     def callback(self, scale, max, i):
         self.progressupdate.emit(self.text, int(self.curr + (i/max)*scale))
+        self.loadingbar.progress = int(self.curr + (i/max)*scale)/100.0
         QApplication.processEvents()
 
     def set(self, progress):
         self.curr = progress
         self.progressupdate.emit(self.text, int(self.curr))
+        self.loadingbar.progress = int(self.curr) / 100.0
+        QApplication.processEvents()
 
 
 class EditorFileMenu(QMenu):
@@ -121,7 +211,9 @@ class EditorFileMenu(QMenu):
 
                     base = os.path.dirname(filepath)
                     print(base, levelpaths.objectpath)
-                    progressbar = LoadingProgress("Loading")
+                    loadingbar = LoadingBar(self.editor)
+                    loadingbar.show()
+                    progressbar = LoadingProgress("Loading", loadingbar)
                     QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
                     progressbar.progressupdate.connect(self.updatestatus)
                     if levelpaths.objectpath.endswith(".gz"):
@@ -221,6 +313,7 @@ class EditorFileMenu(QMenu):
                     self.editor.level_view.start_redrawing()
 
                     self.editor.menubar.plugin_menu.execute_event("after_load")
+                    loadingbar.force_close()
 
                 except Exception as error:
                     QApplication.restoreOverrideCursor()
@@ -230,6 +323,7 @@ class EditorFileMenu(QMenu):
                     print("Error appeared while loading:", error)
                     traceback.print_exc()
                     open_error_dialog("An error appeared during load. Check if all the level files are alright!\n\n"+str(error), self)
+                    loadingbar.force_close()
                     return
 
     @catch_exception_with_dialog
@@ -238,7 +332,9 @@ class EditorFileMenu(QMenu):
             self.editor.level_view.stop_redrawing()
             if self.level_paths is not None:
                 levelpaths = self.level_paths
-                progressbar = LoadingProgress("Saving")
+                loadingbar = LoadingBar(self.editor)
+                loadingbar.show()
+                progressbar = LoadingProgress("Saving", loadingbar)
                 progressbar.progressupdate.connect(self.updatestatus)
 
                 base = os.path.dirname(self.current_gen_path)
@@ -420,6 +516,20 @@ class EditorFileMenu(QMenu):
                                     self
                                 )
 
+                if not levelpaths.resourcepath.endswith(".gz"):
+                    if levelpaths.respadding is not None:
+                        respath = os.path.join(base, levelpaths.resourcepath)
+                        with open(respath, "rb") as f:
+                            data = f.read()
+
+                        topad = levelpaths.respadding - len(data)
+                        if topad > 0:
+                            with open(respath, "rb") as f:
+                                arc = BattalionArchive.from_file(f)
+                            arc.set_additional_padding(topad)
+
+                            with open(respath, "wb") as f:
+                                arc.write(f)
 
 
                 tmp = BytesIO()
@@ -430,12 +540,15 @@ class EditorFileMenu(QMenu):
 
                 print("Done!")
                 progressbar.set(100)
+
                 self.editor.level_view.start_redrawing()
                 self.editor.set_has_unsaved_changes(False)
+                loadingbar.force_close()
             #else:
             #    self.button_save_level_as()
         except Exception as err:
             self.editor.level_view.start_redrawing()
+            loadingbar.force_close()
             raise
 
     def button_save_level_as(self, *args, **kwargs):
@@ -675,7 +788,6 @@ class PF2(object):
         #ImageOps.flip(nogo).save("nogotest.png")
         #ImageOps.flip(missionboundary).save("missionboundarytest.png")
         #ImageOps.flip(ford).save("fordtest.png")
-
 
     def save(self, path):
         with open(path, "wb") as f:
