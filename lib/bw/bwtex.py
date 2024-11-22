@@ -262,10 +262,10 @@ class BW2Texture(Texture):
                 f.write(imgdata.getbuffer())
     
     @classmethod 
-    def from_file(cls, f, ignoremips=False):
+    def from_file(cls, name, f, ignoremips=False):
         #f.seek(0)
-        start = f.tell()
-        name = f.read(0x20).rstrip(b"\x00").decode("ascii")
+        #start = f.tell()
+        #name = f.read(0x20).rstrip(b"\x00").decode("ascii")
         tex = cls(name)
         
         size_x2 = read_uint32(f)
@@ -511,8 +511,8 @@ class BW1Texture(Texture):
                 f.write(imgdata.getbuffer())
                 
     @classmethod 
-    def from_file(cls, f, ignoremips=False):
-        name = f.read(0x10).rstrip(b"\x00").decode("ascii")
+    def from_file(cls, name, f, ignoremips=False):
+        #name = f.read(0x10).rstrip(b"\x00").decode("ascii")
         tex = cls(name)
         assert len(name) <= 0x10
         tex.size_x = read_uint32_le(f)

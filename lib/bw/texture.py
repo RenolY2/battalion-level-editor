@@ -123,13 +123,13 @@ class TextureArchive(object):
                 tex = Texture.from_png(texname, os.path.join(self.cachefolder, texname+".png"))
             else:
 
-                f = self.textures[texname].fileobj
+                f = BytesIO(self.textures[texname].data)
                 f.seek(0)
 
                 if self.is_bw1:
-                    tex = BW1Texture.from_file(f, ignoremips=True)
+                    tex = BW1Texture.from_file(self.textures[texname].name, f, ignoremips=True)
                 else:
-                    tex = BW2Texture.from_file(f, ignoremips=True)
+                    tex = BW2Texture.from_file(self.textures[texname].name, f, ignoremips=True)
 
                 tex.dump_to_file(os.path.join(self.cachefolder, texname+".png"))
 
