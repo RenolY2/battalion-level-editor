@@ -974,6 +974,8 @@ class BattalionObject(object):
     def calc_hash(self):
         hash = hashlib.new("md5")
         result = []
+        hash.update(bytes(self.type, encoding="ascii"))
+
         for attr_node in self._node:
             if attr_node.tag in ("Pointer", "Resource"):
                 continue
