@@ -1157,18 +1157,37 @@ class EditorLevelPositionsHistory(EditorHistory):
         objects = self.editor.level_view.selected
         self.record(objects)
 
+    def print_state(self):
+        indicators = ["  " for x in range(self.historysize)]
+        indicators[self.top] = " v"
+        indices = [str(x).rjust(2, " ") for x in range(self.historysize)]
+
+        print(" ".join(indicators))
+        print(" ".join(indices))
+
     def history_undo(self):
         if self.top == 0:
             return None
         elif self.top == len(self.history):
             top = self.history[-1]
-            stash = self.stash_record(record[0] for record in top)
+            stash = self.stash_record(obj for obj in self.editor.level_file.objects_with_positions.values())
             self.record_stash(stash)
             if len(stash) > 0 and not self.editor.dolphin.do_visualize():
                 self.top -= 1
 
         self.top -= 1
+        self.print_state()
         return self.history[self.top]
+
+    def history_redo(self):
+        if self.top >= len(self.history)-1:
+            return None
+
+        self.top += 1
+        item = self.history[self.top]
+
+        self.print_state()
+        return item
 
 
 import sys
