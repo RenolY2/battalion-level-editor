@@ -22,6 +22,37 @@ if TYPE_CHECKING:
     import bw_editor
 
 
+class YesNoQuestionDialog(QtWidgets.QMessageBox):
+    def __init__(self, parent, text, instructiontext):
+        super().__init__(parent)
+        self.setText(text)
+        self.setInformativeText(instructiontext)
+        self.setStandardButtons(
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+        self.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+        self.setIcon(QtWidgets.QMessageBox.Icon.Question)
+        self.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
+        self.setWindowTitle("Question")
+
+
+class MessageDialog(QtWidgets.QMessageBox):
+    def __init__(self, parent, text, instructiontext=None):
+        super().__init__(parent)
+        self.setText(text)
+        if instructiontext is not None:
+            self.setInformativeText(instructiontext)
+        self.setStandardButtons(
+            QtWidgets.QMessageBox.StandardButton.Yes)
+        self.setIcon(QtWidgets.QMessageBox.Icon.Information)
+        self.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
+        self.setWindowTitle("Information")
+
+
+def open_message_dialog(message, instructiontext=None, parent=None):
+    messagebox = MessageDialog(parent, message, instructiontext)
+    messagebox.exec()
+
+
 def catch_exception(func):
     def handle(*args, **kwargs):
         try:

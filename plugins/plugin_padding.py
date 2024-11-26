@@ -4,36 +4,12 @@ from io import BytesIO
 from PyQt6 import QtWidgets, QtGui
 from collections import namedtuple
 
-from widgets.editor_widgets import open_error_dialog
+from widgets.editor_widgets import open_error_dialog, YesNoQuestionDialog, MessageDialog
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
 
-
-class YesNoQuestionDialog(QtWidgets.QMessageBox):
-    def __init__(self, parent, text, instructiontext):
-        super().__init__(parent)
-        self.setText(text)
-        self.setInformativeText(instructiontext)
-        self.setStandardButtons(
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
-        self.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
-        self.setIcon(QtWidgets.QMessageBox.Icon.Question)
-        self.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
-        self.setWindowTitle("Question")
-
-
-class MessageDialog(QtWidgets.QMessageBox):
-    def __init__(self, parent, text, instructiontext):
-        super().__init__(parent)
-        self.setText(text)
-        self.setInformativeText(instructiontext)
-        self.setStandardButtons(
-            QtWidgets.QMessageBox.StandardButton.Yes)
-        self.setIcon(QtWidgets.QMessageBox.Icon.Information)
-        self.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
-        self.setWindowTitle("Information")
 
 
 class PaddingDialog(QtWidgets.QInputDialog):
