@@ -200,9 +200,6 @@ class Plugin(object):
 
         additional_textures = []
         for obj in to_be_exported:
-            if obj.id in selected_ids:
-                obj._node.attrib["isroot"] = "1"
-
             if obj.type == "cNodeHierarchyResource":
                 modelname = obj.mName
 
@@ -222,8 +219,13 @@ class Plugin(object):
 
         re_export = BattalionLevelFile(tmp)
 
-
         for objid, obj in re_export.objects.items():
+            if obj.id in selected_ids:
+                obj._node.attrib["isroot"] = "1"
+            else:
+                if "isroot" in obj._node.attrib:
+                    del obj._node.attrib["isroot"]
+
             if not include_passenger:
                 if hasattr(obj, "mPassenger"):
                     print("skipping passenger", obj.name, obj.mPassenger)
