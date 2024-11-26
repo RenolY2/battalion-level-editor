@@ -11,7 +11,7 @@ from collections import namedtuple
 import lib.lua.bwarchivelib as bwarchivelib
 from lib.lua.bwarchivelib import BattalionArchive
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
-from widgets.editor_widgets import open_error_dialog
+from widgets.editor_widgets import open_error_dialog, open_message_dialog
 from plugins.plugin_padding import YesNoQuestionDialog
 
 from typing import TYPE_CHECKING
@@ -272,6 +272,8 @@ class Plugin(object):
             with open(respath, "rb") as f:
                 res = BattalionArchive.from_file(f)
 
+        resource_count = 0
+
         for objid, obj in re_export.objects.items():
             resource = False
             if obj.type == "cAnimationResource":
@@ -291,7 +293,11 @@ class Plugin(object):
 
             if resource is not False:
                 print(obj.type, obj.mName)
+                resource_count += 1
                 resource.dump_to_directory(bundle_path)
+
+        open_message_dialog(f"{len(re_export.objects)} XML object(s) and {resource_count} resource(s) have been exported for '{bundle_name}'!",
+                            parent=editor)
 
     def importobject(self, editor: "bw_editor.LevelEditor"):
         self.initiate_object_folder(editor)
@@ -311,7 +317,7 @@ class Plugin(object):
         if chosen_path:
             with open(os.path.join(chosen_path, "bundle.xml"), "rb") as f:
                 bundle = BattalionLevelFile(f)
-
+            bundlename = os.path.basename(chosen_path)
             bundle.resolve_pointers(None)
 
             hashed_objects = {}
@@ -362,13 +368,18 @@ class Plugin(object):
                     res = BattalionArchive.from_file(f)
 
             print("We gonna add:")
+            already_exist_count = 0
+            to_be_added_count = 0
+            resources_count = 0
+
             for obj in to_add:
                 assert not obj.is_preload(), "Preload Object Import not supported"
 
                 if obj.calc_hash_recursive() in hashed_objects:
                     print(obj.name, "has already been added")
                 else:
-                    print(obj.name, "has not been added")
+                    print(obj.name, "will be added")
+                    to_be_added_count += 1
                     resource = None
                     if obj.type == "cAnimationResource":
                         resource = bwarchivelib.Animation.from_filepath(
@@ -402,6 +413,7 @@ class Plugin(object):
                                              obj.mName + ".texture"))
 
                     if resource is not None:
+                        resources_count += 1
                         if isinstance(resource, bwarchivelib.LuaScript):
                             res.add_script(resource)
                         else:
@@ -431,6 +443,13 @@ class Plugin(object):
                     editor.goto_object(obj)
 
             editor.level_view.do_redraw(force=True)
+
+            instructions = None
+            if to_be_added_count == 0:
+                instructions = "Objects from this bundle probably already exist in this level!"
+            open_message_dialog(f"{to_be_added_count} new object(s) and {resources_count} new resources added for '{bundlename}'!",
+                                instructiontext=instructions,
+                                parent=editor)
 
     def unload(self):
         print("I have been unloaded")
