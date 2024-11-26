@@ -49,7 +49,7 @@ class MessageDialog(QtWidgets.QMessageBox):
 
 
 def open_message_dialog(message, instructiontext=None, parent=None):
-    messagebox = MessageDialog(parent, message, instructiontext)
+    messagebox = MessageDialog(parent, message, instructiontext=instructiontext)
     messagebox.exec()
 
 
