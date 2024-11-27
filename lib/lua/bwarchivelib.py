@@ -586,12 +586,16 @@ class BattalionArchive(object):
 
     def set_additional_padding(self, padding):
         padding_res = self.get_resource(b"FEQT", "__PADDING__")
-        if padding_res is not None:
-            padding_res.data = b" "*padding
-        else:
-            padding_res = Effect("__PADDING__", b" "*padding)
-            self.add_resource(padding_res)
-            self.sort_sections()
+
+        if padding_res is not None and padding == 0:
+            self.delete_resource(padding_res)
+        elif padding > 0:
+            if padding_res is not None:
+                padding_res.data = b" "*padding
+            else:
+                padding_res = Effect("__PADDING__", b" "*padding)
+                self.add_resource(padding_res)
+                self.sort_sections()
 
 
 if __name__ == "__main__":
