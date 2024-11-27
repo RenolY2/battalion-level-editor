@@ -3,7 +3,8 @@ import gzip
 import shutil
 import PyQt6.QtWidgets as QtWidgets
 from io import BytesIO
-
+from pathlib import Path
+from collections import UserDict
 
 from PyQt6.QtWidgets import QDialog, QMessageBox
 from collections import namedtuple
@@ -17,6 +18,15 @@ from plugins.plugin_padding import YesNoQuestionDialog
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
+
+
+class CaseInsensitiveDict(UserDict):
+    def __setitem__(self, key, value):
+        super().__setitem__(key.lower(), value)
+
+    def __getitem__(self, item):
+        return super().__getitem__(item.lower())
+
 
 
 def replace_references(obj, replacement_map):
@@ -276,25 +286,36 @@ class Plugin(object):
 
         for objid, obj in re_export.objects.items():
             resource = False
+            respath = None
+
             if obj.type == "cAnimationResource":
                 resource = res.get_resource(b"MINA", obj.mName)
+                respath = os.path.join(bundle_path, "Animations")
             elif obj.type == "cTequilaEffectResource":
                 resource = res.get_resource(b"FEQT", obj.mName)
+                respath = os.path.join(bundle_path, "SpecialEffects")
             elif obj.type == "cNodeHierarchyResource":
                 resource = res.get_resource(b"LDOM", obj.mName)
+                respath = os.path.join(bundle_path, "Models")
             elif obj.type == "cGameScriptResource":
                 resource = res.get_resource(b"PRCS", obj.mName)
+                respath = os.path.join(bundle_path, "Scripts")
             elif obj.type == "sSampleResource":
                 resource = res.get_resource(b"HPSD", obj.mName)
+                respath = os.path.join(bundle_path, "Sounds")
             elif obj.type == "cTextureResource":
                 resource = res.get_resource(b"DXTG", obj.mName)
                 if resource is None:
                     resource = res.get_resource(b"TXET", obj.mName)
 
+                respath = os.path.join(bundle_path, "Textures")
+
             if resource is not False:
                 print(obj.type, obj.mName)
                 resource_count += 1
-                resource.dump_to_directory(bundle_path)
+                Path(respath).mkdir(parents=True, exist_ok=True)
+                print(respath)
+                resource.dump_to_directory(respath)
 
         open_message_dialog(f"{len(re_export.objects)} XML object(s) and {resource_count} resource(s) have been exported for '{bundle_name}'!",
                             parent=editor)
@@ -360,17 +381,18 @@ class Plugin(object):
 
             base = os.path.dirname(editor.file_menu.current_path)
             respath = os.path.join(base, editor.file_menu.level_paths.resourcepath)
-            if respath.endswith(".gz"):
-                with gzip.open(respath, "rb") as f:
-                    res = BattalionArchive.from_file(f)
-            else:
-                with open(respath, "rb") as f:
-                    res = BattalionArchive.from_file(f)
+            res = editor.file_menu.resource_archive
 
             print("We gonna add:")
             already_exist_count = 0
             to_be_added_count = 0
             resources_count = 0
+
+            files = CaseInsensitiveDict()
+
+            for dirpath, dirnames, filenames in os.walk(chosen_path):
+                for fname in filenames:
+                    files[fname] = os.path.join(dirpath, fname)
 
             for obj in to_add:
                 assert not obj.is_preload(), "Preload Object Import not supported"
@@ -382,35 +404,20 @@ class Plugin(object):
                     to_be_added_count += 1
                     resource = None
                     if obj.type == "cAnimationResource":
-                        resource = bwarchivelib.Animation.from_filepath(
-                                        os.path.join(chosen_path,
-                                        obj.mName+".anim"))
+                        resource = bwarchivelib.Animation.from_filepath(files[obj.mName+".anim"])
                     elif obj.type == "cTequilaEffectResource":
-                        resource = bwarchivelib.Effect.from_filepath(
-                                         os.path.join(chosen_path,
-                                         obj.mName + ".txt"))
+                        resource = bwarchivelib.Effect.from_filepath(files[obj.mName+".txt"])
                     elif obj.type == "cNodeHierarchyResource":
-                        resource = bwarchivelib.Model.from_filepath(
-                            os.path.join(chosen_path,
-                                         obj.mName + ".modl"))
+                        resource = bwarchivelib.Model.from_filepath(files[obj.mName+".modl"])
                     elif obj.type == "cGameScriptResource":
-                        resource = bwarchivelib.LuaScript.from_filepath(
-                            os.path.join(chosen_path,
-                                         obj.mName + ".luap"))
+                        resource = bwarchivelib.LuaScript.from_filepath(files[obj.mName+".luap"])
                     elif obj.type == "sSampleResource":
-                        resource = bwarchivelib.Sound.from_filepath(
-                            os.path.join(chosen_path,
-                                         obj.mName + ".adp"))
-
-                    elif obj.type == "cTextureResource":
+                        resource = bwarchivelib.Sound.from_filepath(files[obj.mName+".adp"])
+                    elif obj.type == "cTextureResource": 
                         if game == "bw2":
-                            resource = bwarchivelib.TextureBW2.from_filepath(
-                                        os.path.join(chosen_path,
-                                        obj.mName + ".texture"))
+                            resource = bwarchivelib.TextureBW2.from_filepath(files[obj.mName+".texture"])
                         else:
-                            resource = bwarchivelib.TextureBW1.from_filepath(
-                                os.path.join(chosen_path,
-                                             obj.mName + ".texture"))
+                            resource = bwarchivelib.TextureBW1.from_filepath(files[obj.mName+".texture"])
 
                     if resource is not None:
                         resources_count += 1
@@ -423,15 +430,7 @@ class Plugin(object):
                     editor.level_file.add_object_new(obj)
 
             res.sort_sections()
-            tmp = BytesIO()
-            res.write(tmp)
-            tmp.seek(0)
-            if respath.endswith(".gz"):
-                with gzip.open(respath, "wb") as f:
-                    f.write(tmp.getvalue())
-            else:
-                with open(respath, "wb") as f:
-                    f.write(tmp.getvalue())
+
             editor.set_has_unsaved_changes(True)
             editor.leveldatatreeview.set_objects(editor.level_file, editor.preload_file,
                                                 remember_position=True)
