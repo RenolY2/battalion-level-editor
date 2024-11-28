@@ -1,4 +1,5 @@
 import os
+from io import StringIO
 from collections import namedtuple
 from typing import TYPE_CHECKING
 
@@ -13,7 +14,8 @@ class Plugin(object):
     def __init__(self):
         self.name = "Misc Lua Tools"
         self.actions = [("Clear Out Scripts", self.clear_lua),
-                        ("Clear EntityInitialise", self.clear_entityinitialise)]
+                        ("Clear EntityInitialise", self.clear_entityinitialise),
+                        ("Comment Out Scripts", self.comment_out_lua)]
         print("I have been initialized")
 
     def clear_lua(self, editor: "bw_editor.LevelEditor"):
@@ -36,6 +38,32 @@ class Plugin(object):
                         f.write(startline)
                         f.write("\n\nend")
             print("Cleared Lua Scripts")
+
+    def comment_out_lua(self, editor: "bw_editor.LevelEditor"):
+        yes = open_yesno_box("This will comment out all lua scripts and make them do nothing.",
+                             "Are you sure?")
+        if yes:
+            for script in editor.lua_workbench.current_scripts():
+                path = os.path.join(editor.lua_workbench.workdir,
+                                    script+".lua")
+
+                if script != "EntityInitialise":
+                    startline = None
+                    newscript = StringIO()
+                    with open(path, "r") as f:
+                        for line in f:
+                            if line.startswith("function"):
+                                newscript.write(line)
+                                newscript.write("--[[\n")
+                            elif line.startswith("end"):
+                                newscript.write("--]]\n")
+                                newscript.write(line)
+                            else:
+                                newscript.write(line)
+
+                    with open(path, "w") as f:
+                        f.write(newscript.getvalue())
+            print("Commented out Lua Scripts")
 
     def clear_entityinitialise(self, editor: "bw_editor.LevelEditor"):
         yes = open_yesno_box("This will clear the entire list of defined entity names in EntityInitialise.lua",
