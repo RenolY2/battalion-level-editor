@@ -233,10 +233,6 @@ class LuaWorkbench(object):
         for script in script_sections:
             print("adding", script.name)
             res.add_script(script)
-        
-        print("writing resource file")
-        tmp = BytesIO()
-        res.write(tmp)
 
     def current_scripts(self):
         result = []
