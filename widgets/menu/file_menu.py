@@ -409,24 +409,6 @@ class EditorFileMenu(QMenu):
                         with open(pathnew, "wb") as f:
                             f.write(data)
 
-                    if levelpaths.resourcepath.endswith(".gz"):
-                        oldpath = levelpaths.resourcepath.removesuffix(".gz")
-                        pathold = os.path.join(base, oldpath)
-                        pathnew = os.path.join(base, levelpaths.resourcepath)
-
-                        with open(pathold, "rb") as f:
-                            data = f.read()
-                        with gzip.open(pathnew, "wb") as f:
-                            f.write(data)
-                    else:
-                        oldpath = levelpaths.resourcepath + ".gz"
-                        pathold = os.path.join(base, oldpath)
-                        pathnew = os.path.join(base, levelpaths.resourcepath)
-
-                        with gzip.open(pathold, "rb") as f:
-                            data = f.read()
-                        with open(pathnew, "wb") as f:
-                            f.write(data)
 
                 if (self.editor.editorconfig.getboolean("recompile_lua", fallback=True)
                     and self.editor.lua_workbench.is_initialized()):
@@ -506,14 +488,14 @@ class EditorFileMenu(QMenu):
                                     f"({g.tell()} vs {self.level_paths.objectfilepadding})\n"
                                     "If you need padding, you have to update the padding to a higher value.\n"
                                     "If you are using save states, you have to restart the game and set a new savestate.",
-                                    self
-                                )
+                                    self)
+
                 if levelpaths.resourcepath.endswith(".gz"):
                     self.resource_archive.set_additional_padding(0)
                     out = BytesIO()
                     self.resource_archive.write(out)
 
-                    with gzip.open(levelpaths.resourcepath, "wb") as f:
+                    with gzip.open(os.path.join(base, levelpaths.resourcepath), "wb") as f:
                         f.write(out.getvalue())
                 else:
                     self.resource_archive.set_additional_padding(0)
@@ -527,7 +509,7 @@ class EditorFileMenu(QMenu):
                     out = BytesIO()
                     self.resource_archive.write(out)
 
-                    with open(levelpaths.resourcepath, "wb") as f:
+                    with open(os.path.join(base, levelpaths.resourcepath), "wb") as f:
                         f.write(out.getvalue())
 
 
