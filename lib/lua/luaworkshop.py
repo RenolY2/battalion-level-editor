@@ -24,7 +24,6 @@ def decompile_luadec(path, out):
     print(result)
 
 
-
 def decompile_unluac(path, out):
     with open(out, "wb") as f:
         cmd = ["java", "-jar", UNLUAC_PATH, path]
@@ -58,15 +57,19 @@ class EntityInitialization(object):
     def read_initialization(self, path):
         self.reflection_ids = {}
         reflect_regex = re.compile(r"([0-9A-Za-z\._]+)\s*=\s*RegisterReflectionId\(\"(\d+)\"\)")
-        with open(path, "r") as f:
-            for line in f:
-                line = line.strip()
-                if "RegisterReflectionId" in line:
-                    match = reflect_regex.match(line)
-                    
-                    name = match.group(1)
-                    objectid = match.group(2)
-                    self.reflection_ids[objectid] = name
+
+        try:
+            with open(path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if "RegisterReflectionId" in line:
+                        match = reflect_regex.match(line)
+
+                        name = match.group(1)
+                        objectid = match.group(2)
+                        self.reflection_ids[objectid] = name
+        except FileNotFoundError:
+            pass
     
     def update_initialization(self, path, newpath):
         lines = []
