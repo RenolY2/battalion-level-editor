@@ -335,6 +335,7 @@ class EditorFileMenu(QMenu):
     @catch_exception_with_dialog
     def button_save_level(self, *args, **kwargs):
         try:
+            self.editor.menubar.plugin_menu.execute_event("before_save")
             self.editor.level_view.stop_redrawing()
             if self.level_paths is not None:
                 levelpaths = self.level_paths
@@ -361,6 +362,8 @@ class EditorFileMenu(QMenu):
 
                 self.editor.level_view.do_redraw(force=True)
                 self.editor.leveldatatreeview.updatenames()
+
+
 
                 progressbar.set(5)
                 for object in self.level_data.objects.values():
