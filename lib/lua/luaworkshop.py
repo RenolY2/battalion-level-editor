@@ -24,7 +24,6 @@ def decompile_luadec(path, out):
     print(result)
 
 
-
 def decompile_unluac(path, out):
     with open(out, "wb") as f:
         cmd = ["java", "-jar", UNLUAC_PATH, path]
@@ -58,15 +57,19 @@ class EntityInitialization(object):
     def read_initialization(self, path):
         self.reflection_ids = {}
         reflect_regex = re.compile(r"([0-9A-Za-z\._]+)\s*=\s*RegisterReflectionId\(\"(\d+)\"\)")
-        with open(path, "r") as f:
-            for line in f:
-                line = line.strip()
-                if "RegisterReflectionId" in line:
-                    match = reflect_regex.match(line)
-                    
-                    name = match.group(1)
-                    objectid = match.group(2)
-                    self.reflection_ids[objectid] = name
+
+        try:
+            with open(path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if "RegisterReflectionId" in line:
+                        match = reflect_regex.match(line)
+
+                        name = match.group(1)
+                        objectid = match.group(2)
+                        self.reflection_ids[objectid] = name
+        except FileNotFoundError:
+            pass
     
     def update_initialization(self, path, newpath):
         lines = []
@@ -166,26 +169,45 @@ class LuaWorkbench(object):
         
     def is_initialized(self):
         return os.path.exists(os.path.join(self.workdir, "EntityInitialise.lua"))
-    
-    def unpack_scripts(self, respath):
+
+    def unpack_scripts_archive(self, res):
         script_names = []
+
+        for script in res.scripts():
+            print("dumping", script.name)
+            script.dump_to_directory(self.tmp)
+            script_names.append(script.name)
+
+        for script_name in script_names:
+            print("decompiling", script_name)
+            compiled_file = os.path.join(self.tmp, script_name + ".luap")
+            decompiled_file = os.path.join(self.workdir, script_name + ".lua")
+            decompile_unluac(compiled_file, decompiled_file)
+
+    def unpack_new_scripts(self, res):
+        script_names = []
+
+        for script in res.scripts():
+            if not self.script_exists(script.name):
+                print("dumping", script.name)
+                script.dump_to_directory(self.tmp)
+                script_names.append(script.name)
+
+        for script_name in script_names:
+            print("decompiling", script_name)
+            compiled_file = os.path.join(self.tmp, script_name + ".luap")
+            decompiled_file = os.path.join(self.workdir, script_name + ".lua")
+            decompile_unluac(compiled_file, decompiled_file)
+
+    def unpack_scripts(self, respath):
         if respath.endswith(".gz"):
             with gzip.open(respath, "rb") as f:
                 res = bwarchivelib.BattalionArchive.from_file(f)
         else:
             with open(respath, "rb") as f:
                 res = bwarchivelib.BattalionArchive.from_file(f)
-                
-        for script in res.scripts():
-            print("dumping", script.name)
-            script.dump_to_directory(self.tmp)
-            script_names.append(script.name)
-        
-        for script_name in script_names:
-            print("decompiling", script_name)
-            compiled_file = os.path.join(self.tmp, script_name+".luap")
-            decompiled_file = os.path.join(self.workdir, script_name+".lua")
-            decompile_unluac(compiled_file, decompiled_file)
+
+        self.unpack_scripts_archive(res)
     
     def read_entity_initialization(self):
         self.entityinit.read_initialization(os.path.join(self.workdir, "EntityInitialise.lua"))
@@ -194,7 +216,7 @@ class LuaWorkbench(object):
         self.entityinit.update_initialization(os.path.join(self.workdir, "EntityInitialise.lua"),
                                               os.path.join(self.workdir, "EntityInitialise.lua"))
 
-    def repack_scripts(self, respath, newrespath, scripts=[], delete_rest=True):
+    def repack_scripts(self, res, scripts=[], delete_rest=True):
         script_sections = []
         for script_name in scripts+["EntityInitialise"]:
             print("compiling", script_name)
@@ -204,13 +226,6 @@ class LuaWorkbench(object):
             
             script_section = bwarchivelib.LuaScript.from_filepath(compiled_file)
             script_sections.append(script_section)
-        
-        if respath.endswith(".gz"):
-            with gzip.open(respath, "rb") as f:
-                res = bwarchivelib.BattalionArchive.from_file(f)
-        else:
-            with open(respath, "rb") as f:
-                res = bwarchivelib.BattalionArchive.from_file(f)
             
         if delete_rest:
             scripts = [x for x in res.scripts()]
@@ -221,17 +236,6 @@ class LuaWorkbench(object):
         for script in script_sections:
             print("adding", script.name)
             res.add_script(script)
-        
-        print("writing resource file")
-        tmp = BytesIO()
-        res.write(tmp)
-
-        if newrespath.endswith(".gz"):
-            with gzip.open(newrespath, "wb") as f:
-                f.write(tmp.getbuffer())
-        else:
-            with open(newrespath, "wb") as f:
-                f.write(tmp.getbuffer())
 
     def current_scripts(self):
         result = []

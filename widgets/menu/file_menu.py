@@ -235,12 +235,20 @@ class EditorFileMenu(QMenu):
                     level_data.resolve_pointers(preload_data)
                     preload_data.resolve_pointers(level_data)
 
+                    if levelpaths.resourcepath.endswith(".gz"):
+                        with gzip.open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
+                            resource_archive = BattalionArchive.from_file(g)
+
+                    else:
+                        with open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
+                            resource_archive = BattalionArchive.from_file(g)
+
                     del self.editor.lua_workbench
                     self.editor.lua_workbench = LuaWorkbench(filepath+"_lua")
                     if not self.editor.lua_workbench.is_initialized():
                         respath = os.path.join(base, levelpaths.resourcepath)
                         try:
-                            self.editor.lua_workbench.unpack_scripts(respath)
+                            self.editor.lua_workbench.unpack_scripts_archive(resource_archive)
                         except Exception as err:
                             open_error_dialog(str(err)+"\nPress OK to continue. Script decompilation will be skipped.",
                                               None)
@@ -253,12 +261,9 @@ class EditorFileMenu(QMenu):
                             self.editor.level_view.waterheight = obj.mpRenderParams.mWaterHeight
                     progressbar.set(30)
 
-                    if levelpaths.resourcepath.endswith(".gz"):
-                        with gzip.open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
-                            self.editor.level_view.reloadModels(g, partial(progressbar.callback, 30))
-                    else:
-                        with open(os.path.join(base, levelpaths.resourcepath), "rb") as g:
-                            self.editor.level_view.reloadModels(g, partial(progressbar.callback, 30))
+
+
+                    self.editor.level_view.reloadModels(resource_archive, partial(progressbar.callback, 30))
                     progressbar.set(60)
 
                     if levelpaths.terrainpath.endswith(".gz"):
@@ -273,6 +278,7 @@ class EditorFileMenu(QMenu):
                     self.level_paths = levelpaths
                     self.level_data = level_data
                     self.preload_data = preload_data
+                    self.resource_archive = resource_archive
                     self.editor.setup_level_file(level_data, preload_data, filepath)
                     self.current_gen_path = filepath
 
@@ -329,6 +335,7 @@ class EditorFileMenu(QMenu):
     @catch_exception_with_dialog
     def button_save_level(self, *args, **kwargs):
         try:
+            self.editor.menubar.plugin_menu.execute_event("before_save")
             self.editor.level_view.stop_redrawing()
             if self.level_paths is not None:
                 levelpaths = self.level_paths
@@ -355,6 +362,8 @@ class EditorFileMenu(QMenu):
 
                 self.editor.level_view.do_redraw(force=True)
                 self.editor.leveldatatreeview.updatenames()
+
+
 
                 progressbar.set(5)
                 for object in self.level_data.objects.values():
@@ -403,33 +412,12 @@ class EditorFileMenu(QMenu):
                         with open(pathnew, "wb") as f:
                             f.write(data)
 
-                    if levelpaths.resourcepath.endswith(".gz"):
-                        oldpath = levelpaths.resourcepath.removesuffix(".gz")
-                        pathold = os.path.join(base, oldpath)
-                        pathnew = os.path.join(base, levelpaths.resourcepath)
-
-                        with open(pathold, "rb") as f:
-                            data = f.read()
-                        with gzip.open(pathnew, "wb") as f:
-                            f.write(data)
-                    else:
-                        oldpath = levelpaths.resourcepath + ".gz"
-                        pathold = os.path.join(base, oldpath)
-                        pathnew = os.path.join(base, levelpaths.resourcepath)
-
-                        with gzip.open(pathold, "rb") as f:
-                            data = f.read()
-                        with open(pathnew, "wb") as f:
-                            f.write(data)
-
-
 
                 if (self.editor.editorconfig.getboolean("recompile_lua", fallback=True)
                     and self.editor.lua_workbench.is_initialized()):
                     try:
                         respath = os.path.join(base, levelpaths.resourcepath)
-                        self.editor.lua_workbench.repack_scripts(respath,
-                                                                 respath,
+                        self.editor.lua_workbench.repack_scripts(self.resource_archive,
                                                                  scripts=[x.mName for x in self.level_data.scripts.values()]
                                                                  )
                     except Exception as err:
@@ -470,11 +458,6 @@ class EditorFileMenu(QMenu):
                 if levelpaths.objectpath.endswith(".gz"):
                     with gzip.open(os.path.join(base, levelpaths.objectpath), "wb") as g:
                         g.write(tmp.getvalue())
-                    """if self.level_paths.objectfilepadding is not None:
-                        with open(os.path.join(base, levelpaths.objectpath), "r+b") as g:
-                            g.seek(0, 2)
-                            if g.tell() < self.level_paths.objectfilepadding:
-                                g.write(b"\x00"*(self.level_paths.objectfilepadding - g.tell()))"""
                 else:
                     with open(os.path.join(base, levelpaths.objectpath), "wb") as g:
                         g.write(tmp.getvalue())
@@ -496,11 +479,6 @@ class EditorFileMenu(QMenu):
                 if levelpaths.preloadpath.endswith(".gz"):
                     with gzip.open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
                         g.write(tmp2.getvalue())
-                    """if self.level_paths.preloadpadding is not None:
-                        with open(os.path.join(base, levelpaths.preloadpath), "ab") as g:
-                            g.seek(0, 2)
-                            if g.tell() < self.level_paths.preloadpadding:
-                                g.write(b"\x00"*(self.level_paths.preloadpadding - g.tell()))"""
                 else:
                     with open(os.path.join(base, levelpaths.preloadpath), "wb") as g:
                         g.write(tmp2.getvalue())
@@ -513,23 +491,29 @@ class EditorFileMenu(QMenu):
                                     f"({g.tell()} vs {self.level_paths.objectfilepadding})\n"
                                     "If you need padding, you have to update the padding to a higher value.\n"
                                     "If you are using save states, you have to restart the game and set a new savestate.",
-                                    self
-                                )
+                                    self)
 
-                if not levelpaths.resourcepath.endswith(".gz"):
+                if levelpaths.resourcepath.endswith(".gz"):
+                    self.resource_archive.set_additional_padding(0)
+                    out = BytesIO()
+                    self.resource_archive.write(out)
+
+                    with gzip.open(os.path.join(base, levelpaths.resourcepath), "wb") as f:
+                        f.write(out.getvalue())
+                else:
+                    self.resource_archive.set_additional_padding(0)
                     if levelpaths.respadding is not None:
-                        respath = os.path.join(base, levelpaths.resourcepath)
-                        with open(respath, "rb") as f:
-                            data = f.read()
+                        tmp = BytesIO()
+                        self.resource_archive.write(tmp)
+                        padding = levelpaths.respadding-len(tmp.getvalue())
+                        if padding > 0:
+                            self.resource_archive.set_additional_padding(padding)
 
-                        topad = levelpaths.respadding - len(data)
-                        if topad > 0:
-                            with open(respath, "rb") as f:
-                                arc = BattalionArchive.from_file(f)
-                            arc.set_additional_padding(topad)
+                    out = BytesIO()
+                    self.resource_archive.write(out)
 
-                            with open(respath, "wb") as f:
-                                arc.write(f)
+                    with open(os.path.join(base, levelpaths.resourcepath), "wb") as f:
+                        f.write(out.getvalue())
 
 
                 tmp = BytesIO()

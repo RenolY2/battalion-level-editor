@@ -14,30 +14,33 @@ class BWModelHandler(object):
         self.textures = None
 
     @classmethod
-    def from_file(cls, f, callback=None):
+    def from_archive(cls, bwarc, callback=None):
         bwmodels = cls()
-
-        bwarc = BattalionArchive.from_file(f) #BWArchive(f)
 
         bwmodels.textures = TextureArchive(bwarc)
         models = [x for x in bwarc.models()]
         for i, modeldata in enumerate(models):
-            name = modeldata.name#str(modeldata.res_name, encoding="ascii")
+            name = modeldata.name  # str(modeldata.res_name, encoding="ascii")
             print(name)
             if bwarc.textures.is_bw1:
                 model = BW1Model()
             else:
                 model = BW2Model()
-            #data = modeldata.entries[0]
-            #data.fileobj.seek(0)
-            #f = data.fileobj
+            # data = modeldata.entries[0]
+            # data.fileobj.seek(0)
+            # f = data.fileobj
             f = BytesIO(modeldata.data[8:])
             model.from_file(f)
             texmodel = model.make_textured_model(bwmodels.textures)
-            bwmodels.models[name] = texmodel#model
+            bwmodels.models[name] = texmodel  # model
             bwmodels.instancemodels[name] = BWModelV2.from_textured_bw_model(texmodel)
             if callback is not None: callback(len(models), i)
         return bwmodels
+
+    @classmethod
+    def from_file(cls, f, callback=None):
+        bwarc = BattalionArchive.from_file(f)  # BWArchive(f)
+        return cls.from_archive(bwarc, callback)
 
     def update_models(self, bwarc):
         self.textures.update_textures(bwarc)

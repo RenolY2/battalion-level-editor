@@ -373,15 +373,15 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self._dont_render = False
         self.do_redraw()
 
-    def reloadModels(self, f, callback=None):
+    def reloadModels(self, resource_archive, callback=None):
         self.makeCurrent()
         if self.bwmodelhandler is None:
             #with open("lib/bw/C1_OnPatrol_Level.res", "rb") as f:
-            self.bwmodelhandler = BWModelHandler.from_file(f, callback)
+            self.bwmodelhandler = BWModelHandler.from_archive(resource_archive, callback)
         else:
             del self.bwmodelhandler
             self.bwmodelhandler = None
-            self.bwmodelhandler = BWModelHandler.from_file(f, callback)
+            self.bwmodelhandler = BWModelHandler.from_archive(resource_archive, callback)
         self.doneCurrent()
 
     def update_models(self, res):
