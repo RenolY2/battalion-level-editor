@@ -58,10 +58,23 @@ class TextureArchive(object):
         self.result_queue = mp.Queue()
         self.texture_processor = mp.Process(target=process, args=(self.texture_queue, self.result_queue))
 
-    def update_textures(self, archive: "BattalionArchive"):
+    def clear_cache(self, textures=tuple()):
+        for texname in textures:
+            texname = texname.lower()
+            print("Clearing", texname)
+            if texname in self.cached_textures:
+                os.remove(os.path.join(self.cachefolder, texname+".png"))
+                del self.cached_textures[texname]
+                tex, ID = self._cached[texname]
+                tex.loaded = False
+            else:
+                print(texname, "not found")
+
+    def update_textures(self, archive: "BattalionArchive", force_update=[]):
+        force_update_lower = [x.lower() for x in force_update]
         for texture in archive.textures.textures:
             lower = texture.name.lower()
-            if lower not in self.textures:
+            if lower not in self.textures or lower in force_update_lower:
                 texture.data_ready = False
 
                 self.textures[texture.name.lower()] = texture
@@ -119,10 +132,12 @@ class TextureArchive(object):
             tex.generate_dummy(32, 32)
             tex.loaded = True
         else:
+            print("Loading", texname)
             if texname in self.cached_textures:
+                print("from cache")
                 tex = Texture.from_png(texname, os.path.join(self.cachefolder, texname+".png"))
             else:
-
+                print("from resource")
                 f = BytesIO(self.textures[texname].data)
                 f.seek(0)
 
@@ -132,6 +147,7 @@ class TextureArchive(object):
                     tex = BW2Texture.from_file(self.textures[texname].name, f, ignoremips=True)
 
                 tex.dump_to_file(os.path.join(self.cachefolder, texname+".png"))
+                self.cached_textures[texname] = True
 
             # Hack for mission 5.2: The cave uses a mostly transparent texture that has a rock texture
             # hidden in the transparent parts. Force the alpha to be fully opaque to render it correctly.
@@ -179,7 +195,11 @@ class TextureArchive(object):
             #tex, id = self._cached[texname]
             #if tex.success:
             #    tex.dump_to_file(str(texname.strip(b"\x00"), encoding="ascii")+".png")
-            return self._cached[texname]
+            tex, id = self._cached[texname]
+            if tex.loaded:
+                return self._cached[texname]
+            else:
+                return self.load_texture(texname)
         else:
             self.initialize_texture(texname)
             return self.load_texture(texname)
