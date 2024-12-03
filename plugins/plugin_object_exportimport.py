@@ -6,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from collections import UserDict
 
+
 from PyQt6.QtWidgets import QDialog, QMessageBox
 from collections import namedtuple
 
@@ -219,6 +220,27 @@ class Plugin(object):
                         texobj = texture_lookup[texname.lower()]
                         if texobj.id not in export.objects:
                             export.add_object_new(texobj)
+                    else:
+                        texresource = editor.file_menu.resource_archive.textures.get_texture(texname)
+                        if texresource is not None:
+                            print("Texture", texname, "is in res archive but not in xml! Recreating TextureResource.")
+                            xmltext = f"""
+                            <Object type="cTextureResource" id="550000000">
+                                <Attribute name="mName" type="cFxString8" elements="1">
+                                    <Item>PLACEHOLDER</Item>
+                                </Attribute>
+                            </Object>
+                            """
+                            texobj = BattalionObject.create_from_text(xmltext, editor.level_file, editor.preload_file)
+                            texobj.choose_unique_id(export, editor.preload_file)
+                            texobj.mName = texresource.name
+                            texobj.update_xml()
+
+                            export.add_object_new(texobj)
+
+
+
+
 
 
         # Doing a re-export to have a new set of objects we can modify without affecting
