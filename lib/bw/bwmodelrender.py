@@ -7,11 +7,12 @@ from lib.render.model_renderingv2 import BWModelV2
 from lib.lua.bwarchivelib import BattalionArchive
 from io import BytesIO
 
+
 class BWModelHandler(object):
     def __init__(self):
         self.models = {}
         self.instancemodels = {}
-        self.textures = None
+        self.textures: TextureArchive = None
 
     @classmethod
     def from_archive(cls, bwarc, callback=None):
@@ -42,12 +43,12 @@ class BWModelHandler(object):
         bwarc = BattalionArchive.from_file(f)  # BWArchive(f)
         return cls.from_archive(bwarc, callback)
 
-    def update_models(self, bwarc):
-        self.textures.update_textures(bwarc)
+    def update_models(self, bwarc, force_update_models=[], force_update_textures=[]):
+        self.textures.update_textures(bwarc, force_update_textures)
 
         for i, modeldata in enumerate(bwarc.models()):
             name = modeldata.name#str(modeldata.res_name, encoding="ascii")
-            if name not in self.models:
+            if name not in self.models or name in force_update_models:
                 print(name)
                 if bwarc.textures.is_bw1:
                     model = BW1Model()
