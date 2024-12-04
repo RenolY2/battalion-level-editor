@@ -12,7 +12,7 @@ PluginEntry = namedtuple("PluginEntry", ("module", "plugin"))
 pluginfolder = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
     "plugins")
-
+print(pluginfolder)
 
 class PluginMenu(Menu):
     def __init__(self, parent):

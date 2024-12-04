@@ -98,6 +98,11 @@ class TextureArchive(Section):
         write_uint32(f, end-(subarchive_size+4))
         f.seek(end)
 
+    def get_texture(self, texname):
+        for tex in self.textures:
+            if tex.name.lower() == texname.lower():
+                return tex
+        return None
 
 class TextureBW1(Section):
     def __init__(self, secname, texname, data):
