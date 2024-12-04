@@ -4,10 +4,12 @@ import shutil
 import random
 from PIL import Image, ImageOps
 
+from lib.bw.vectors import Vector3
 from lib.BattalionXMLLib import BattalionFilePaths
 
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
+import PyQt6.QtCore as QtCore
 from widgets.editor_widgets import open_error_dialog
 from widgets.menu.file_menu import PF2
 from typing import TYPE_CHECKING
@@ -30,14 +32,122 @@ def open_yesno_box(mainmsg, sidemsg):
     return result == QtWidgets.QMessageBox.StandardButton.Yes
 
 
+class LoadingBar(QtWidgets.QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        WIDTH = 200
+        HEIGHT = 50
+        self.setFixedWidth(WIDTH)
+        self.setFixedHeight(HEIGHT)
+
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(1000//60)
+        self.timer.timeout.connect(self.update_loadingbar)
+        self.timer.start()
+
+        self.progress = 0
+        self.starttime = time.time()
+
+        self.vertical_distance = 10
+        self.horizontal_distance = 10
+        self.loadingbar_width = WIDTH-self.horizontal_distance*2
+        self.loadingbar_height = HEIGHT-self.vertical_distance*2
+
+        self.bar_highlight = -20
+        self.last_time = None
+
+    def closeEvent(self, closeevent):
+        self.timer.stop()
+
+    def update_loadingbar(self):
+        self.update()
+
+        timepassed = (time.time()-self.starttime)*3
+        self.progress = timepassed/100.0
+        self.progress = min(self.progress, 1.0)
+
+        if self.last_time is None:
+            self.last_time = time.time()
+        else:
+            curr = time.time()
+            delta = curr-self.last_time
+            self.last_time = curr
+            self.bar_highlight += delta*50
+            if self.bar_highlight > self.loadingbar_width * self.progress+100:
+                self.bar_highlight = -20
+
+    def paintEvent(self, paintevent:QtGui.QPaintEvent):
+        painter = QtGui.QPainter(self)
+        bar_limit = int(self.loadingbar_width * self.progress)
+        painter.fillRect(self.horizontal_distance,
+                         self.vertical_distance,
+                         bar_limit,
+                         self.loadingbar_height,
+                         0x00FF00)
+
+        highlightcolor = Vector3(0xCF, 0xFF, 0xCF)
+        barcolor = Vector3(0x00, 0xFF, 0x00)
+
+        for x in range(0, self.loadingbar_width):
+            distance = ((x-self.bar_highlight)**2)/1000.0 #abs(x - self.bar_highlight)/20.0
+            if distance > 1:
+                distance = 1
+
+            color = highlightcolor*(1-distance) + barcolor*distance
+            pencolor = int(color.x)<<16 | int(color.y)<<8 | int(color.z)
+            painter.setPen(pencolor)
+            if x < bar_limit:
+                painter.drawLine(x+self.horizontal_distance,
+                                 self.vertical_distance,
+                                 x+self.horizontal_distance,
+                                 self.vertical_distance+self.loadingbar_height)
+
+
 class Plugin(object):
     def __init__(self):
         self.name = "Misc"
         self.actions = [#("ID Randomizer", self.randomize_ids),
                         ("Save State", self.save_state),
                         ("Load State", self.load_savestate),
-                        ("Dump PF2 to PNG", self.pf2dump)]
+                        ("Dump PF2 to PNG", self.pf2dump),
+                        ("Update Texture Cache for Selection", self.update_texture_cache)]
+                        #("Loading Bar Test", self.loading_bar)]
         print("I have been initialized")
+
+    def update_texture_cache(self, editor: "bw_editor.LevelEditor"):
+        selected = editor.level_view.selected
+
+        texture_lookup = {}
+        for objid, obj in editor.level_file.objects.items():
+            if obj.type == "cTextureResource":
+                texture_lookup[obj.mName.lower()] = obj
+
+        texlist = []
+        check = []
+
+        for obj in selected:
+            check.append(obj)
+            for dep in obj.get_dependencies():
+                if dep not in check:
+                    check.append(dep)
+
+        for obj in check:
+            if obj.type == "cNodeHierarchyResource":
+                modelname = obj.mName
+
+                textures = editor.level_view.bwmodelhandler.models[modelname].all_textures
+                for texname in textures:
+                    if texname.lower() in texture_lookup:
+                        texlist.append(texture_lookup[texname.lower()].mName)
+            if obj.type == "cTextureResource":
+                texlist.append(obj.mName)
+        print("clearing...", texlist)
+        editor.level_view.bwmodelhandler.textures.clear_cache(texlist)
+
+    def loading_bar(self, editor):
+        bar = LoadingBar(editor)
+        bar.show()
+        pass
 
     def pf2dump(self, editor):
         filepath, chosentype = QtWidgets.QFileDialog.getOpenFileName(

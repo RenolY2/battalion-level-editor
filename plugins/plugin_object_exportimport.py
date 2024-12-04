@@ -6,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from collections import UserDict
 
+
 from PyQt6.QtWidgets import QDialog, QMessageBox
 from collections import namedtuple
 
@@ -219,6 +220,27 @@ class Plugin(object):
                         texobj = texture_lookup[texname.lower()]
                         if texobj.id not in export.objects:
                             export.add_object_new(texobj)
+                    else:
+                        texresource = editor.file_menu.resource_archive.textures.get_texture(texname)
+                        if texresource is not None:
+                            print("Texture", texname, "is in res archive but not in xml! Recreating TextureResource.")
+                            xmltext = f"""
+                            <Object type="cTextureResource" id="550000000">
+                                <Attribute name="mName" type="cFxString8" elements="1">
+                                    <Item>PLACEHOLDER</Item>
+                                </Attribute>
+                            </Object>
+                            """
+                            texobj = BattalionObject.create_from_text(xmltext, editor.level_file, editor.preload_file)
+                            texobj.choose_unique_id(export, editor.preload_file)
+                            texobj.mName = texresource.name
+                            texobj.update_xml()
+
+                            export.add_object_new(texobj)
+
+
+
+
 
 
         # Doing a re-export to have a new set of objects we can modify without affecting
@@ -387,6 +409,7 @@ class Plugin(object):
             already_exist_count = 0
             to_be_added_count = 0
             resources_count = 0
+            resources_replaced_count = 0
 
             files = CaseInsensitiveDict()
 
@@ -394,11 +417,48 @@ class Plugin(object):
                 for fname in filenames:
                     files[fname] = os.path.join(dirpath, fname)
 
+            update_models = []
+            update_textures = []
+
             for obj in to_add:
                 assert not obj.is_preload(), "Preload Object Import not supported"
 
                 if obj.calc_hash_recursive() in hashed_objects:
                     print(obj.name, "has already been added")
+
+                    resource = None
+                    if obj.type == "cAnimationResource":
+                        resource = bwarchivelib.Animation.from_filepath(files[obj.mName + ".anim"])
+                    elif obj.type == "cTequilaEffectResource":
+                        resource = bwarchivelib.Effect.from_filepath(files[obj.mName + ".txt"])
+                    elif obj.type == "cNodeHierarchyResource":
+                        resource = bwarchivelib.Model.from_filepath(files[obj.mName + ".modl"])
+                        update_models.append(obj.mName)
+                    elif obj.type == "cGameScriptResource":
+                        resource = bwarchivelib.LuaScript.from_filepath(files[obj.mName + ".luap"])
+                    elif obj.type == "sSampleResource":
+                        resource = bwarchivelib.Sound.from_filepath(files[obj.mName + ".adp"])
+                    elif obj.type == "cTextureResource":
+                        if game == "bw2":
+                            resource = bwarchivelib.TextureBW2.from_filepath(files[obj.mName + ".texture"])
+                        else:
+                            resource = bwarchivelib.TextureBW1.from_filepath(files[obj.mName + ".texture"])
+                        update_textures.append(obj.mName)
+
+                    if resource is not None:
+                        resources_replaced_count += 1
+
+                        if isinstance(resource, bwarchivelib.LuaScript):
+                            res.delete_script(resource.name)
+                            res.add_script(resource)
+                        else:
+                            existing_res = res.get_resource(resource.secname, resource.name)
+                            if existing_res is not None:
+                                res.delete_resource(existing_res)
+
+
+                            res.add_resource(resource)
+
                 else:
                     print(obj.name, "will be added")
                     to_be_added_count += 1
@@ -434,19 +494,32 @@ class Plugin(object):
             editor.set_has_unsaved_changes(True)
             editor.leveldatatreeview.set_objects(editor.level_file, editor.preload_file,
                                                 remember_position=True)
-            editor.level_view.update_models(res)
+            editor.level_view.update_models(res, force_update_models=update_models, force_update_textures=update_textures)
 
-            if len(roots) > 0:
-                obj = roots[0]
-                if obj.getmatrix() is not None:
-                    editor.goto_object(obj)
+            if to_be_added_count > 0:
+                if len(roots) > 0:
+                    obj = roots[0]
+                    if obj.getmatrix() is not None:
+                        editor.goto_object(obj)
+
+            if len(update_textures) > 0:
+                editor.level_view.bwmodelhandler.textures.clear_cache(update_textures)
 
             editor.level_view.do_redraw(force=True)
 
             instructions = None
             if to_be_added_count == 0:
                 instructions = "Objects from this bundle probably already exist in this level!"
-            open_message_dialog(f"{to_be_added_count} new object(s) and {resources_count} new resources added for '{bundlename}'!",
+
+            if resources_replaced_count > 0:
+                if instructions is None:
+                    instructions = ""
+                else:
+                    instructions += "\n"
+
+                instructions += f"{resources_replaced_count} existing resource(s) have been replaced."
+
+            open_message_dialog(f"{to_be_added_count} new object(s) and {resources_count} new resource(s) added for '{bundlename}'!",
                                 instructiontext=instructions,
                                 parent=editor)
 
