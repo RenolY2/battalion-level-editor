@@ -443,9 +443,16 @@ class TexturedBWModel(TexturedModel):
         super().__init__(*args, **kwargs)
         self.all_textures = []
 
+        self.boundsphere = (0, 0, 0)
+        self.boundsphereradius = 0
+
     def render(self, texarchive, selected=False):
         for mesh in self.mesh_list:
             mesh.render(texarchive, selected)
+
+    def set_boundsphere(self, x, y, z, r):
+        self.boundsphere = (x,y,z)
+        self.boundsphereradius = r
 
 ALPHA = 0.8
 

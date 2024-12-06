@@ -101,6 +101,9 @@ class BWModelHandler(object):
 
         glPopMatrix()
 
+    def render_model_inplace(self, name):
+        model = self.models[name]
+        model.render(self.textures, None)
 
 
 if __name__ == "__main__":

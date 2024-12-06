@@ -197,6 +197,13 @@ class BW2Model(Model):
                         tex = texturename.strip(b"\x00").decode("ascii")
                         if tex not in model.all_textures:
                             model.all_textures.append(tex)
+        avgx = 0
+        avgy = 0
+        avgz = 0
+        count = 0
+        maxx = 0
+        maxy = 0
+        maxz = 0
 
         for node in self.nodes:
             if node.do_skip():
@@ -216,6 +223,18 @@ class BW2Model(Model):
             vertices = []
             for x, y, z in node.vertices:
                 newx, newy, newz, _ = mvmat.multiply_vec4(x * node.vscl, y * node.vscl, z * node.vscl, 1)
+                avgx += newx
+                avgy += newy
+                avgz += newz
+                count += 1
+
+                if abs(newx) > maxx:
+                    maxx = abs(newx)
+                if abs(newy) > maxy:
+                    maxy = abs(newy)
+                if abs(newz) > maxz:
+                    maxy = abs(newz)
+
                 vertices.append((newx, newy, newz))
                 #obj.write("v {0} {1} {2}\n".format(-newx, newy, newz))
 
@@ -284,8 +303,14 @@ class BW2Model(Model):
                                     texcoordindex = tex1
 
                                 currmesh.trilist.append((vertices[posindex], uvs[texcoordindex]))
+        center_x = avgx/count
+        center_y = avgy/count
+        center_z = avgz/count
+
+        radius = ((center_x-maxx)**2 + (center_y-maxy)**2 + (center_z-maxz)**2)**0.5
 
         model.mesh_list.extend(alltextures.values())
+        model.set_boundsphere(center_x, center_y, center_z, radius)
         return model
 
     def export_obj(self, outputpath, texturearchive):

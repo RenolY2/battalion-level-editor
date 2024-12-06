@@ -7,7 +7,7 @@ import os
 from timeit import default_timer
 from copy import deepcopy
 from io import TextIOWrapper, BytesIO, StringIO
-from math import sin, cos, atan2
+from math import sin, cos, atan2, pi
 import json
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtCore as QtCore
@@ -44,10 +44,10 @@ from PyQt6.QtWidgets import QTreeWidgetItem
 from lib.game_visualizer import Game
 
 from widgets.menu.file_menu import EditorFileMenu
-PIKMIN2GEN = "Generator files (defaultgen.txt;initgen.txt;plantsgen.txt;*.txt)"
+from widgets.graphics_widgets import UnitViewer
 
 
-def get_treeitem(root:QTreeWidgetItem, obj):
+def get_treeitem(root: QTreeWidgetItem, obj):
     for i in range(root.childCount()):
         child = root.child(i)
         if child.bound_to == obj:
@@ -64,6 +64,7 @@ class LevelEditor(QMainWindow):
         self.level_file = None
         self.installEventFilter(self)
         self.file_menu = EditorFileMenu(self)
+        self.mini_model_viewer = UnitViewer(self, self, angle=0)
         self.setup_ui()
         self.setCursor(Qt.CursorShape.ArrowCursor)
         self.lua_workbench: LuaWorkbench = None
@@ -117,6 +118,8 @@ class LevelEditor(QMainWindow):
         self.timer.setInterval(1000)
         self.timer.timeout.connect(self.read_entityinit_if_changed)
         self.timer.start()
+
+
 
     def get_editor_folder(self):
         return EDITOR_ROOT
@@ -352,7 +355,15 @@ class LevelEditor(QMainWindow):
         self.level_view = BolMapViewer(self.centralwidget)
 
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.horizontalLayout.addWidget(self.leveldatatreeview)
+        QSplitter
+        self.vertical_holder = QSplitter(self)
+        self.vertical_holder.setOrientation(Qt.Orientation.Vertical)
+        self.left_side = QVBoxLayout(self.vertical_holder)
+        self.vertical_holder.addWidget(self.leveldatatreeview)
+        self.vertical_holder.addWidget(self.mini_model_viewer)
+
+
+        self.horizontalLayout.addWidget(self.vertical_holder)# Widget(self.leveldatatreeview)
         self.horizontalLayout.addWidget(self.level_view)
         self.leveldatatreeview.resize(200, self.leveldatatreeview.height())
         spacerItem = QSpacerItem(10, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
@@ -410,9 +421,76 @@ class LevelEditor(QMainWindow):
         self.menubar.change_to_3dview_action.setChecked(True)
         self.statusbar.clearMessage()
 
+    def update_model_viewer(self):
+        temp_scene = []
+        count = 0
+        editor = self
+        midx, midy, midz = 0, 0, 0
+        self.mini_model_viewer.reset_scene()
+
+        if len(editor.level_view.selected) == 1:
+            obj = editor.level_view.selected[0]
+            self.mini_model_viewer.angle = pi/4.0
+            if obj.getmatrix() is None and obj.modelname is not None:
+                self.mini_model_viewer.set_scene_single_model(obj.modelname)
+            elif obj.type == "cNodeHierarchyResource":
+                self.mini_model_viewer.set_scene_single_model(obj.mName)
+
+        for obj in editor.level_view.selected:
+            obj
+            mtx = obj.getmatrix()
+            if mtx is not None:
+                selectedmodel = obj.modelname
+                height = obj.height
+                currmtx = mtx.mtx.copy()
+                currmtx[13] = obj.height
+                if selectedmodel is not None:
+                    temp_scene.append((selectedmodel, currmtx))
+                    midx += currmtx[12]
+                    midy += currmtx[13]
+                    midz += currmtx[14]
+                    count += 1
+
+        if count > 0:
+            avgx = midx / count
+            avgy = midy / count
+            avgz = midz / count
+
+            for model, mtx in temp_scene:
+                mtx[12] = mtx[12] - avgx
+                mtx[13] = mtx[13] - avgy
+                mtx[14] = mtx[14] - avgz
+                if count == 1:
+                    mtx[0] = 1.0
+                    mtx[1] = 0.0
+                    mtx[2] = 0.0
+                    mtx[3] = 0.0
+
+                    mtx[4] = 0.0
+                    mtx[5] = 1.0
+                    mtx[6] = 0.0
+                    mtx[7] = 0.0
+
+                    mtx[8] = 0.0
+                    mtx[9] = 0.0
+                    mtx[10] = 1.0
+                    mtx[11] = 0.0
+
+                self.mini_model_viewer.add_to_scene(model, mtx)
+
+            angle = pi / 4.0
+            if len(editor.level_view.selected) == 1:
+                obj = editor.level_view.selected[0]
+                if obj.type == "cTroop":
+                    angle = -pi * (3 / 4)
+            self.mini_model_viewer.angle = angle
+        self.mini_model_viewer.recalculate_camera()
+        self.mini_model_viewer.update()
+
     def connect_actions(self):
         self.level_view.select_update.connect(self.action_update_info)
         self.level_view.select_update.connect(self.select_from_3d_to_treeview)
+        self.level_view.select_update.connect(self.update_model_viewer)
         #self.pik_control.lineedit_coordinatex.textChanged.connect(self.create_field_edit_action("coordinatex"))
         #self.pik_control.lineedit_coordinatey.textChanged.connect(self.create_field_edit_action("coordinatey"))
         #self.pik_control.lineedit_coordinatez.textChanged.connect(self.create_field_edit_action("coordinatez"))
@@ -1242,6 +1320,7 @@ if __name__ == "__main__":
 
         args = parser.parse_args()
         os.environ['QT_ENABLE_HIGHDPI_SCALING'] = '0'
+        #QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True)
         app = QApplication(sys.argv)
 
         try:

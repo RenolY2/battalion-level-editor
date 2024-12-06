@@ -451,18 +451,21 @@ void main (void)
 
             self.mtxdirty = False
 
-    def bind(self, array, extradata):
+    def bind(self, array, extradata, render_one=False):
         if array is not None:
             self._count = len(array)//16
         if not self.program.compiled():
             self.program.compile()
 
-        if self.vao is None or self.mtxdirty:
+        if (self.vao is None or self.mtxdirty) and not render_one:
             self.build_mesh(array, extradata)
 
         self.program.bind()
 
         glBindVertexArray(self.vao)
+
+    def bind_single(self):
+        self.bind(None, None, render_one=True)
 
     def bind_colorid(self, extradata):
         if  not self.program_colorid.compiled():
@@ -788,6 +791,23 @@ class BWModelV2(ModelV2):
             self.mtxbuffer.load_data(array)
 
             self.mtxdirty = False
+
+    def render(self, texarchive, mtx):
+        glUniformMatrix4fv(self.mtxloc, 1, False, mtx)
+        #glUniformMatrix4fv(self.mtxloc, 1, False, mtx)
+        for texname, meshdata in zip(self.texnames, self.mesh_list):
+            if texname is not None:
+                result = texarchive.get_texture(texname.lower())
+                if result is not None:
+                    glEnable(GL_TEXTURE_2D)
+                    glBindTexture(GL_TEXTURE_2D, result[1])
+                else:
+                    glDisable(GL_TEXTURE_2D)
+            else:
+                glDisable(GL_TEXTURE_2D)
+
+            offset, vertexcount = meshdata
+            glDrawArrays(GL_TRIANGLES, offset, vertexcount)
 
     def instancedrender(self, texarchive):
         #glUniformMatrix4fv(self.mtxloc, 1, False, mtx)
