@@ -776,6 +776,43 @@ class BattalionObject(object):
             else:
                 self._modelname = result.mpModel.mName
 
+        elif self.type == "cGroundVehicleBase":
+            model = self.mpModel
+            self._modelname = model.mName
+        elif self.type == "sAirVehicleBase":
+            model = self.model
+            self._modelname = model.mName
+        elif self.type == "sTroopBase":
+            model = self.mBAN_Model
+            self._modelname = model.mName
+        elif self.type == "sWeaponBase":
+            if self.BulletType is not None:
+                model = self.BulletType.mModel
+                if model is not None:
+                    self._modelname = model.mName
+        elif self.type == "sProjectileBase":
+            model = self.mModel
+            if model is not None:
+                self._modelname = model.mName
+        elif self.type == "sDestroyBase":
+            model = self.Model
+            if model is not None:
+                self._modelname = model.mName
+        elif self.type == "sPickupBase":
+            model = self.mModel
+            if model is not None:
+                self._modelname = model.mName
+        elif self.type == "cBuildingImpBase":
+            model = self.mpModel
+            if model is not None:
+                self._modelname = model.mName
+        elif self.type == "sSceneryClusterBase":
+            model = self.Element[0]
+            if model is not None:
+                self._modelname = model.mName
+
+
+
     def update_xml(self):
         for attr_node in self._node:
             if attr_node.tag in ("Pointer", "Resource"):
