@@ -982,13 +982,14 @@ class BattalionObject(object):
                 locktosurface = True
 
         height = bwterrain.check_height(currmtx[12], currmtx[14])
+
         if height is None:
-            if waterheight is not None:
+            if waterheight is not None and not sticktofloor:  # StickToFloor: Water height is ignored
                 height = waterheight + 0.2  # Avoid z-fighting in some cases
             else:
                 height = 0
         else:
-            if waterheight is not None and height < waterheight:
+            if waterheight is not None and height < waterheight and not sticktofloor:
                 height = waterheight + 0.2  # Avoid z-fighting in some cases
 
         if locktosurface:
