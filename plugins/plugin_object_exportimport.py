@@ -371,8 +371,12 @@ class Plugin(object):
 
             hashed_objects = {}
             for id, obj in editor.level_file.objects.items():
-                hash = obj.calc_hash_recursive()
-                hashed_objects[hash] = obj
+                if obj.type == "cSeatBase":
+                    # Do not reuse existing seatbases
+                    continue
+                else:
+                    hash = obj.calc_hash_recursive()
+                    hashed_objects[hash] = obj
 
             reference_remap = {}
             for id, obj in bundle.objects.items():
