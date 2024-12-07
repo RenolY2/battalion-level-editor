@@ -5,7 +5,7 @@ import PyQt6.QtWidgets as QtWidgets
 from io import BytesIO
 from pathlib import Path
 from collections import UserDict
-
+import traceback
 
 from PyQt6.QtWidgets import QDialog, QMessageBox
 from collections import namedtuple
@@ -14,6 +14,7 @@ import lib.lua.bwarchivelib as bwarchivelib
 from lib.lua.bwarchivelib import BattalionArchive
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
 from widgets.editor_widgets import open_error_dialog, open_message_dialog
+from widgets.graphics_widgets import UnitViewer
 from plugins.plugin_padding import YesNoQuestionDialog
 
 from typing import TYPE_CHECKING
@@ -27,7 +28,6 @@ class CaseInsensitiveDict(UserDict):
 
     def __getitem__(self, item):
         return super().__getitem__(item.lower())
-
 
 
 def replace_references(obj, replacement_map):
@@ -338,6 +338,12 @@ class Plugin(object):
                 Path(respath).mkdir(parents=True, exist_ok=True)
                 print(respath)
                 resource.dump_to_directory(respath)
+
+        try:
+            preview = UnitViewer.screenshot_objects(selected, editor)
+            preview.save(os.path.join(bundle_path, "preview.png"))
+        except Exception as err:
+            traceback.print_exc()
 
         open_message_dialog(f"{len(re_export.objects)} XML object(s) and {resource_count} resource(s) have been exported for '{bundle_name}'!",
                             parent=editor)
