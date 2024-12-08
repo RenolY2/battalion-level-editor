@@ -719,7 +719,12 @@ class BattalionObject(object):
                     print("{0}-{1} has no defined unit sprite".format(self.type, self.id))
                     x,y = 15, 15
                 else:
-                    x,y = BWICONS[icon.lower()]
+                    if icon.lower() in BWICONS:
+                        x,y = BWICONS[icon.lower()]
+                    else:
+                        print("{0}-{1} has unknown unit sprite".format(self.type, self.id))
+                        x, y = 15, 15
+
                 self._iconoffset = (x,y)
             elif self.type == "cPickupReflected":
                 healthtype = self.mBase.mType
@@ -810,6 +815,10 @@ class BattalionObject(object):
             model = self.Element[0]
             if model is not None:
                 self._modelname = model.mName
+        elif self.type == "cObjectiveMarkerBase":
+            model = self.mModel
+            if model is not None:
+                return model.mName
 
 
 
