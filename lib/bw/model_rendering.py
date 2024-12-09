@@ -303,6 +303,9 @@ class BW2Model(Model):
                                     texcoordindex = tex1
 
                                 currmesh.trilist.append((vertices[posindex], uvs[texcoordindex]))
+        if count == 0:
+            count = 1
+
         center_x = avgx/count
         center_y = avgy/count
         center_z = avgz/count
