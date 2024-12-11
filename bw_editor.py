@@ -1006,12 +1006,10 @@ class LevelEditor(QMainWindow):
         self.set_has_unsaved_changes(True)
         self.level_view.do_redraw()
 
-    def action_delete_objects(self):
-        tobedeleted = []
-
-        self.level_file.delete_objects(self.level_view.selected)
-        self.preload_file.delete_objects(self.level_view.selected)
-        for obj in self.level_view.selected:
+    def delete_objects(self, objects):
+        self.level_file.delete_objects(objects)
+        self.preload_file.delete_objects(objects)
+        for obj in objects:
             obj.delete()
 
         self.level_view.selected = []
@@ -1021,9 +1019,12 @@ class LevelEditor(QMainWindow):
         self.pik_control.reset_info()
         self.leveldatatreeview.set_objects(self.level_file, self.preload_file, remember_position=True)
         self.level_view.gizmo.hidden = True
-        #self.pikmin_gen_view.update()
+        # self.pikmin_gen_view.update()
         self.level_view.do_redraw(force=True)
         self.set_has_unsaved_changes(True)
+
+    def action_delete_objects(self):
+        self.delete_objects(self.level_view.selected)
 
     @catch_exception
     def action_undo(self):
@@ -1320,7 +1321,7 @@ if __name__ == "__main__":
 
         args = parser.parse_args()
         os.environ['QT_ENABLE_HIGHDPI_SCALING'] = '0'
-        #QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True)
+        QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts, True)
         app = QApplication(sys.argv)
 
         try:
