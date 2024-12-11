@@ -117,12 +117,216 @@ class ExportSettings(QDialog):
         self.reject()
 
 
+class DeleteSettings(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.setWindowTitle("Delete Objects")
+        self.delete_passengers = QtWidgets.QCheckBox(self, text="Delete Passengers")
+        self.delete_mpscript = QtWidgets.QCheckBox(self, text="Delete Script")
+        self.delete_objects_of_base = QtWidgets.QCheckBox(self, text="Delete Object's Base And Other Instances Of Object")
+        self.remove_initialisation_entry = QtWidgets.QCheckBox(self, text="Remove From EntityInitialise")
+
+        self.text = QtWidgets.QLabel("This will delete the selected objects and also remove the dependencies and resources if those aren't used by other objects. If object bases are selected, all instances of the object base will also be deleted.")
+        self.text.setWordWrap(True)
+        self.layout.addWidget(self.text)
+        self.layout.addWidget(self.delete_passengers)
+        self.layout.addWidget(self.delete_mpscript)
+        self.layout.addWidget(self.delete_objects_of_base)
+        #self.delete_objects_of_base.setToolTip("If only objects are selected, this will also mark the object's bases for deletion.")
+        self.layout.addWidget(self.remove_initialisation_entry)
+        self.remove_initialisation_entry.setChecked(True)
+
+        self.ok = QtWidgets.QPushButton(self, text="OK")
+        self.cancel = QtWidgets.QPushButton(self, text="Cancel")
+
+        self.buttons = QtWidgets.QHBoxLayout(self)
+        self.buttons.addWidget(self.ok)
+        self.buttons.addWidget(self.cancel)
+        self.layout.addLayout(self.buttons)
+
+        self.ok.pressed.connect(self.confirm)
+        self.cancel.pressed.connect(self.deny)
+
+    def confirm(self):
+        self.accept()
+
+    def deny(self):
+        self.reject()
+
+
+def get_all_parents(objid, parents, end_ids=None):
+    if end_ids is None:
+        end_ids = set()
+
+    if objid not in parents:
+        return []
+
+    all_parents = []
+    to_visit = [x for x in parents[objid]]
+    visited = set()
+
+    while to_visit:
+        parent = to_visit.pop(0)
+        if parent not in visited and parent not in end_ids:
+            all_parents.append(parent)
+            visited.add(parent)
+            if parent in parents:
+                to_visit.extend(parents[parent])
+
+    return all_parents
+
+
 class Plugin(object):
     def __init__(self):
         self.name = "Object Export/Import"
         self.actions = [("Quick Export", self.exportobject),
-                        ("Quick Import", self.importobject)]
+                        ("Quick Import", self.importobject),
+                        ("Remove Objects and Assets", self.remove_selected_object)]
         print("I have been initialized")
+
+    def remove_selected_object(self, editor: "bw_editor.LevelEditor"):
+        deleted = set()
+        parent = {}
+
+        texture_lookup = {}
+        for objid, obj in editor.level_file.objects.items():
+            if obj.type == "cTextureResource":
+                texture_lookup[obj.mName.lower()] = obj
+
+        for objid, obj in editor.level_file.objects.items():
+            for ref in obj.references:
+                if ref.id not in parent:
+                    parent[ref.id] = []
+
+                parent[ref.id].append(obj.id)
+
+            if obj.type == "cNodeHierarchyResource":
+                textures = editor.level_view.bwmodelhandler.models[obj.mName].all_textures
+                for texname in textures:
+                    texobj = texture_lookup.get(texname.lower(), None)
+                    if texobj is not None:
+                        if texobj.id not in parent:
+                            parent[texobj.id] = []
+
+                        parent[texobj.id].append(obj.id)
+        dialog = DeleteSettings()
+        a = dialog.exec()
+        if not a:
+            return
+
+        skip = []
+        if not dialog.delete_passengers.isChecked():
+            skip.append("mPassenger")
+
+        if not dialog.delete_mpscript.isChecked():
+            skip.append("mpScript")
+
+        deletion_candidates = []
+        deletion_candidates.extend(editor.level_view.selected)
+
+        if dialog.delete_objects_of_base.isChecked():
+            for obj in deletion_candidates:
+                if hasattr(obj, "mBase") and obj.mBase is not None:
+                    deletion_candidates.append(obj.mBase)
+
+        bases = set()
+        for obj in deletion_candidates:
+            bases.add(obj.id)
+
+        for objid, obj in editor.level_file.objects.items():
+            if hasattr(obj, "mBase") and obj.mBase is not None:
+                if obj.mBase.id in bases:
+                    deletion_candidates.append(obj)
+
+        for obj in editor.level_view.selected:
+            deleted.add(obj.id)
+            for obj_dep in obj.get_dependencies(skip=skip):
+                if obj_dep not in deletion_candidates:
+                    deletion_candidates.append(obj_dep)
+
+        for candidate in deletion_candidates:
+            if candidate.id in deleted:
+                pass  # Already guaranteed to be deleted
+            else:
+                parents = parent.get(candidate.id, None)
+                if parents is not None:
+                    to_be_deleted = True
+                    for parentid in get_all_parents(candidate.id, parent, deleted):
+                        obj = editor.level_file.objects[parentid]
+                        if obj not in deletion_candidates:
+                            to_be_deleted = False
+                    if to_be_deleted:
+                        deleted.add(candidate.id)
+                else:
+                    deleted.add(candidate.id)
+
+
+
+        to_be_deleted = []
+        res = editor.file_menu.resource_archive
+        for objid in deleted:
+            obj = editor.level_file.objects[objid]
+            to_be_deleted.append(obj)
+
+            if obj.type == "cAnimationResource":
+                resource = res.get_resource(b"MINA", obj.mName)
+            elif obj.type == "cTequilaEffectResource":
+                resource = res.get_resource(b"FEQT", obj.mName)
+            elif obj.type == "cNodeHierarchyResource":
+                resource = res.get_resource(b"LDOM", obj.mName)
+            elif obj.type == "cGameScriptResource":
+                resource = res.get_script(obj.mName)
+            elif obj.type == "sSampleResource":
+                resource = res.get_resource(b"HPSD", obj.mName)
+            elif obj.type == "cTextureResource":
+                resource = res.get_resource(b"DXTG", obj.mName)
+                if resource is None:
+                    resource = res.get_resource(b"TXET", obj.mName)
+
+
+        lua_deletions, resources = 0, 0
+
+        if dialog.remove_initialisation_entry:
+            for objid in deleted:
+                if objid in editor.lua_workbench.entityinit.reflection_ids:
+                    print("deleting entityinit entry for", objid)
+                    editor.lua_workbench.entityinit.delete_name(objid)
+                    lua_deletions += 1
+
+
+        for obj in to_be_deleted:
+            resource = None
+            if obj.type == "cAnimationResource":
+                resource = res.get_resource(b"MINA", obj.mName)
+            elif obj.type == "cTequilaEffectResource":
+                resource = res.get_resource(b"FEQT", obj.mName)
+            elif obj.type == "cNodeHierarchyResource":
+                resource = res.get_resource(b"LDOM", obj.mName)
+            elif obj.type == "cGameScriptResource":
+                resource = res.get_script(obj.mName)
+            elif obj.type == "sSampleResource":
+                resource = res.get_resource(b"HPSD", obj.mName)
+            elif obj.type == "cTextureResource":
+                resource = res.get_resource(b"DXTG", obj.mName)
+                if resource is None:
+                    resource = res.get_resource(b"TXET", obj.mName)
+
+            if resource is not None:
+                pass
+                print("deleting resource", resource)
+                res.delete_resource(resource)
+                resources += 1
+        for obj in to_be_deleted:
+            print("deleting", obj.name)
+        editor.delete_objects(to_be_deleted)
+        editor.set_has_unsaved_changes(True)
+        open_message_dialog("Operation successful!",
+                            f"Removed {len(to_be_deleted)} object(s), {resources} resource(s) and {lua_deletions} EntityInitialise entries", None)
+
+
+
+
 
     def initiate_object_folder(self, editor):
         try:
