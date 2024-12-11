@@ -94,7 +94,11 @@ class EntityInitialization(object):
             return self.reflection_ids[id]
     
     def set_name(self, id, name):
-        self.reflection_ids[id] = name 
+        self.reflection_ids[id] = name
+
+    def delete_name(self, id):
+        if id in self.reflection_ids:
+            del self.reflection_ids[id]
         
         
 class LuaWorkbench(object):
