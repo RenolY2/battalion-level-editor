@@ -141,7 +141,8 @@ class Plugin(object):
                 delete.append(obj)
 
         if len(delete) > 0:
-            result = open_yesno_box(f"{len(delete)} XML entries for resources that no longer exist found!",
+            result = open_yesno_box(f"{len(delete)} XML entries for resources that no longer exist in resource archive found.\n"
+                                    "They can interfere with the editor's Object Import functionality!",
                            "Do you want to delete them?")
 
             if result:
