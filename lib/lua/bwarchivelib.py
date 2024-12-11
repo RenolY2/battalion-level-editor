@@ -513,6 +513,13 @@ class BattalionArchive(object):
             if sec.secname == b"PRCS" and sec.name == script_name:
                 self.sections.pop(i)
                 break
+
+    def get_script(self, script_name):
+        for i in range(len(self.sections)):
+            sec = self.sections[i]
+            if sec.secname == b"PRCS" and sec.name == script_name:
+                return self.sections[i]
+        return None
     
     def iter_sections(self, secname):
         for sec in self.sections:
