@@ -693,19 +693,23 @@ class BattalionObject(object):
         if hasattr(self, "mBase") and self.mBase is not None:
             if hasattr(self.mBase, "mpModel"):
                 model = self.mBase.mpModel
-                self._modelname = model.mName
+                if model is not None:
+                    self._modelname = model.mName
             elif hasattr(self.mBase, "model"):
                 # modelname = object.mBase.model.mName
                 model = self.mBase.model
-                self._modelname = model.mName
+                if model is not None:
+                    self._modelname = model.mName
             elif hasattr(self.mBase, "Model"):
                 # modelname = object.mBase.model.mName
                 model = self.mBase.Model
-                self._modelname = model.mName
+                if model is not None:
+                    self._modelname = model.mName
             elif hasattr(self.mBase, "mBAN_Model"):
                 # modelname = object.mBase.mBAN_Model.mName
                 model = self.mBase.mBAN_Model
-                self._modelname = model.mName
+                if model is not None:
+                    self._modelname = model.mName
             elif self.type == "cSceneryCluster":
                 model = self.mBase.Element[0]
                 if model is not None:
@@ -783,13 +787,16 @@ class BattalionObject(object):
 
         elif self.type == "cGroundVehicleBase":
             model = self.mpModel
-            self._modelname = model.mName
+            if model is not None:
+                self._modelname = model.mName
         elif self.type == "sAirVehicleBase":
             model = self.model
-            self._modelname = model.mName
+            if model is not None:
+                self._modelname = model.mName
         elif self.type == "sTroopBase":
             model = self.mBAN_Model
-            self._modelname = model.mName
+            if model is not None:
+                self._modelname = model.mName
         elif self.type == "sWeaponBase":
             if self.BulletType is not None:
                 model = self.BulletType.mModel
@@ -819,8 +826,6 @@ class BattalionObject(object):
             model = self.mModel
             if model is not None:
                 return model.mName
-
-
 
     def update_xml(self):
         for attr_node in self._node:
