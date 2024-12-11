@@ -53,6 +53,21 @@ def open_message_dialog(message, instructiontext=None, parent=None):
     messagebox.exec()
 
 
+def open_yesno_box(mainmsg, sidemsg):
+    msgbox = QtWidgets.QMessageBox()
+    msgbox.setText(
+        mainmsg)
+    msgbox.setInformativeText(sidemsg)
+    msgbox.setStandardButtons(
+        QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+    msgbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+    msgbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+    msgbox.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
+    msgbox.setWindowTitle("Warning")
+    result = msgbox.exec()
+    return result == QtWidgets.QMessageBox.StandardButton.Yes
+
+
 def catch_exception(func):
     def handle(*args, **kwargs):
         try:
