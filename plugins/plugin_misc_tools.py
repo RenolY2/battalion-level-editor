@@ -110,9 +110,43 @@ class Plugin(object):
                         ("Save State", self.save_state),
                         ("Load State", self.load_savestate),
                         ("Dump PF2 to PNG", self.pf2dump),
-                        ("Update Texture Cache for Selection", self.update_texture_cache)]
+                        ("Update Texture Cache for Selection", self.update_texture_cache),
+                        ("Clean Up Invalid Resources", self.clean_up)]
                         #("Loading Bar Test", self.loading_bar)]
         print("I have been initialized")
+
+    def clean_up(self, editor: "bw_editor.LevelEditor"):
+        res = editor.file_menu.resource_archive
+
+        delete = []
+
+        for objid, obj in editor.level_file.objects.items():
+            if obj.type == "cAnimationResource":
+                resource = res.get_resource(b"MINA", obj.mName)
+            elif obj.type == "cTequilaEffectResource":
+                resource = res.get_resource(b"FEQT", obj.mName)
+            elif obj.type == "cNodeHierarchyResource":
+                resource = res.get_resource(b"LDOM", obj.mName)
+            elif obj.type == "cGameScriptResource":
+                resource = res.get_script(obj.mName)
+            elif obj.type == "sSampleResource":
+                resource = res.get_resource(b"HPSD", obj.mName)
+            elif obj.type == "cTextureResource":
+                resource = res.get_resource(b"DXTG", obj.mName)
+                if resource is None:
+                    resource = res.get_resource(b"TXET", obj.mName)
+
+            if resource is None:
+                print("A resource has a XML entry but doesn't exist in the res!", obj.name)
+                delete.append(obj)
+
+        if len(delete) > 0:
+            result = open_yesno_box(f"{len(delete)} XML entries for resources that no longer exist found!",
+                           "Do you want to delete them?")
+
+            if result:
+                print("deleting...")
+                editor.delete_objects(delete)
 
     def update_texture_cache(self, editor: "bw_editor.LevelEditor"):
         selected = editor.level_view.selected
