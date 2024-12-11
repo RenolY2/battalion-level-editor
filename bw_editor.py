@@ -30,6 +30,7 @@ from widgets.editor_widgets import AddPikObjectWindow
 from widgets.tree_view import LevelDataTreeView
 import widgets.tree_view as tree_view
 from configuration import read_config, make_default_config, save_cfg
+from widgets.editor_widgets import open_yesno_box
 
 import bw_widgets # as mkddwidgets
 from widgets.side_widget import PikminSideWidget
@@ -1024,7 +1025,20 @@ class LevelEditor(QMainWindow):
         self.set_has_unsaved_changes(True)
 
     def action_delete_objects(self):
-        self.delete_objects(self.level_view.selected)
+        objcount = len(self.level_view.selected)
+        if objcount == 0:
+            pass
+        elif objcount > 0:
+            if objcount == 1:
+                text = "1 object selected."
+                description = "Do you want to delete it?"
+            else:
+                text = f"{objcount} objects selected."
+                description = "Do you want to delete them?"
+
+            result = open_yesno_box(text, description)
+            if result:
+                self.delete_objects(self.level_view.selected)
 
     @catch_exception
     def action_undo(self):
