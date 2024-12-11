@@ -10,7 +10,7 @@ from lib.BattalionXMLLib import BattalionFilePaths
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
-from widgets.editor_widgets import open_error_dialog
+from widgets.editor_widgets import open_error_dialog, open_message_dialog
 from widgets.menu.file_menu import PF2
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -148,6 +148,10 @@ class Plugin(object):
             if result:
                 print("deleting...")
                 editor.delete_objects(delete)
+                open_message_dialog("Done!", "")
+        else:
+            open_message_dialog("No XML entries for resources that don't exist in the resource archive found.",
+                                "No clean-up necessary.")
 
     def update_texture_cache(self, editor: "bw_editor.LevelEditor"):
         selected = editor.level_view.selected
