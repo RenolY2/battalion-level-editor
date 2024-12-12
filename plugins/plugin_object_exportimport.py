@@ -293,6 +293,7 @@ class Plugin(object):
                     print("deleting entityinit entry for", objid)
                     editor.lua_workbench.entityinit.delete_name(objid)
                     lua_deletions += 1
+            editor.lua_workbench.write_entity_initialization()
 
 
         for obj in to_be_deleted:
