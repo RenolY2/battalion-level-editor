@@ -14,6 +14,7 @@ pluginfolder = os.path.join(
     "plugins")
 print(pluginfolder)
 
+
 class PluginMenu(Menu):
     def __init__(self, parent):
         super().__init__(parent, "Plugins")
@@ -108,7 +109,7 @@ class PluginMenu(Menu):
             self.plugin_update_time(pluginname)
 
     def load_plugins(self):
-        for pluginfile in os.listdir("plugins/"):
+        for pluginfile in os.listdir(pluginfolder):
             if pluginfile.startswith("plugin") and pluginfile.endswith(".py"):
                 pluginname = pluginfile[:-3]
                 if not self.is_loaded(pluginname):
