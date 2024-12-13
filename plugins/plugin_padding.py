@@ -4,7 +4,7 @@ from io import BytesIO
 from PyQt6 import QtWidgets, QtGui
 from collections import namedtuple
 
-from widgets.editor_widgets import open_error_dialog, YesNoQuestionDialog, MessageDialog
+from widgets.editor_widgets import open_error_dialog, YesNoQuestionDialog, MessageDialog, open_message_dialog
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -29,7 +29,46 @@ class Plugin(object):
         self.actions = [("Set Preload XML Padding", self.pad_preload),
                         ("Set Level XML Padding", self.pad_object),
                         ("Set Resource Padding", self.pad_res),
-                        ("Toggle gzip Compression", self.toggle_gzip)]
+                        ("Toggle gzip Compression", self.toggle_gzip),
+                        ("Show Padding/gzip Status", self.show_status)]
+
+    def show_status(self, editor: "bw_editor.LevelEditor"):
+        level_pad = editor.file_menu.level_paths.objectfilepadding
+        preload_pad = editor.file_menu.level_paths.preloadpadding
+        res_padding = editor.file_menu.level_paths.respadding
+        gzip = editor.file_menu.level_paths.objectpath.endswith(".gz")
+
+        tmp = BytesIO()
+        editor.level_file.write(tmp)
+        level_size = len(tmp.getbuffer())
+        level_notice = ""
+        if level_pad is not None:
+            if level_size > level_pad:
+                level_notice = ", padding update necessary"
+            level_pad = f"{round(level_pad/1024, 2)} KiB"
+
+        tmp = BytesIO()
+        editor.preload_file.write(tmp)
+        preload_size = len(tmp.getbuffer())
+        preload_notice = ""
+        if preload_pad is not None:
+            if preload_size > preload_pad:
+                preload_notice = ", padding update necessary"
+            preload_pad = f"{round(preload_pad/1024, 2)} KiB"
+
+        tmp = BytesIO()
+        editor.file_menu.resource_archive.write(tmp)
+        res_size = len(tmp.getvalue())
+        res_notice = ""
+        if res_padding is not None:
+            if res_size > res_padding:
+                res_notice = ", padding update necessary"
+            res_padding = f"{round(res_padding/1024, 2)} KiB"
+
+        open_message_dialog(f"Level Padding: {level_pad} (current size: {round(level_size/1024, 2)} KiB{level_notice})\n"
+                            f"Preload Padding: {preload_pad} (current size: {round(preload_size/1024, 2)} KiB{preload_notice})\n"
+                            f"Resource Archive Padding: {res_padding} (current size: {round(res_size/1024, 2)} KiB{res_notice})\n"
+                            f"gzip Compression: {gzip}")
 
     def toggle_gzip(self, editor: "bw_editor.LevelEditor", confirm=False):
         if not editor.level_file.bw2:
