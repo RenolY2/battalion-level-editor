@@ -406,10 +406,11 @@ class Plugin(object):
                 editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname))
 
             else:
-                open_message_dialog("Level is different from currently loaded level!",
-                                    f"{levelname} (save state) ")
+                open_message_dialog("Save state is from a different level!",
+                                    f"{levelname} (save state) vs {os.path.basename(editor.file_menu.current_path)} (current)")
                 print("Level mismatch!")
         else:
+            open_message_dialog("Chosen folder does not seem to be a save state!")
             print("Not a savestate!")
 
 
