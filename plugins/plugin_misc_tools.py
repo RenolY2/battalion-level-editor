@@ -13,6 +13,7 @@ import PyQt6.QtCore as QtCore
 from widgets.editor_widgets import open_error_dialog, open_message_dialog
 from widgets.menu.file_menu import PF2
 from typing import TYPE_CHECKING
+from configuration import read_config, make_default_config, save_cfg
 if TYPE_CHECKING:
     import bw_editor
 
@@ -114,6 +115,7 @@ class Plugin(object):
                         ("Clean Up Invalid Resources", self.clean_up)]
                         #("Loading Bar Test", self.loading_bar)]
         print("I have been initialized")
+        self.is_doing_manual_savestate = False
 
     def clean_up(self, editor: "bw_editor.LevelEditor"):
         res = editor.file_menu.resource_archive
@@ -253,6 +255,73 @@ class Plugin(object):
                 obj.update_xml()
             print("done")
 
+    def before_save(self, editor):
+        if not self.is_doing_manual_savestate:
+            self.auto_save(editor)
+
+    def get_autosaves(self):
+        autosaves = []
+        for entry in os.listdir("savestates"):
+            path = os.path.join("savestates", entry)
+
+            if entry.startswith("Autosave_"):
+                assert os.path.isdir(path)
+
+                autosaves.append(entry)
+
+        return autosaves
+
+    def auto_save(self, editor: "bw_editor.LevelEditor"):
+        try:
+            os.mkdir("savestates")
+        except FileExistsError:
+            pass
+
+        AUTOSAVECOUNT = editor.configuration["editor"].getint("max_autosaves", fallback=None)
+        if AUTOSAVECOUNT is None:
+            editor.configuration["editor"]["max_autosaves"] = "5"
+            AUTOSAVECOUNT = 5
+            save_cfg(editor.configuration)
+
+        base = os.path.dirname(editor.file_menu.current_path)
+        fname = os.path.basename(editor.file_menu.current_path)
+        savestatename = "Autosave_{0}_savestate_{1}".format(fname[:-4], int(time.time()))
+        print(savestatename)
+        savestatepath = os.path.join("savestates", savestatename)
+        os.mkdir(savestatepath)
+        with open(editor.file_menu.current_path) as f:
+            levelpaths = BattalionFilePaths(f)
+
+        for path in (levelpaths.terrainpath,
+                     levelpaths.resourcepath,
+                     levelpaths.objectpath,
+                     levelpaths.preloadpath):
+            shutil.copy(os.path.join(base, path),
+                        os.path.join(savestatepath, path))
+
+        pf2path = fname[:-4] + ".pf2"
+        try:
+            shutil.copy(os.path.join(base, pf2path),
+                        os.path.join(savestatepath,pf2path))
+        except FileNotFoundError:
+            pass
+        print("Saved autosave to", savestatepath)
+        autosaves = self.get_autosaves()
+
+        print("Autosave count:", AUTOSAVECOUNT)
+        if len(autosaves) > AUTOSAVECOUNT:
+            autosaves_date = []
+            for save in autosaves:
+                rest, date = save.rsplit("_", 1)
+
+                autosaves_date.append((int(date), save))
+
+            autosaves_date.sort(key=lambda x: x[0])
+            oldest_date, autosave = autosaves_date[0]
+
+            print("deleting oldest autosave", autosave)
+            shutil.rmtree(os.path.join("savestates", autosave))
+
     def save_state(self, editor: "bw_editor.LevelEditor"):
         try:
             os.mkdir("savestates")
@@ -268,7 +337,11 @@ class Plugin(object):
         savestatepath = os.path.join("savestates", savestatename)
         os.mkdir(savestatepath)
         pf2path = fname[:-4]+".pf2"
+
+        # Avoid autosave when doing manual savestate
+        self.is_doing_manual_savestate = True
         editor.file_menu.button_save_level()
+        self.is_doing_manual_savestate = False
 
         for path in (levelpaths.terrainpath,
                      levelpaths.resourcepath,
@@ -290,6 +363,8 @@ class Plugin(object):
 
         savestatename = os.path.basename(savestatepath)
         if "_savestate_" in savestatename:
+            if savestatename.startswith("Autosave_"):
+                savestatename = savestatename.removeprefix("Autosave_")
             levelname, time = savestatename.split("_savestate_")
 
             if levelname in editor.file_menu.current_path:
@@ -306,11 +381,10 @@ class Plugin(object):
                              levelpaths.preloadpath):
                     if not os.path.exists(os.path.join(
                         savestatepath, path
-                        )):
+                            )):
                         open_error_dialog("Savestate was created with a different compression setting compared to current level!"
                                           "Cannot load.", editor)
                         return
-
 
                 for path in (levelpaths.terrainpath,
                              levelpaths.resourcepath,
@@ -332,6 +406,8 @@ class Plugin(object):
                 editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname))
 
             else:
+                open_message_dialog("Level is different from currently loaded level!",
+                                    f"{levelname} (save state) ")
                 print("Level mismatch!")
         else:
             print("Not a savestate!")
