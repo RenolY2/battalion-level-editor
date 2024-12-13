@@ -47,7 +47,7 @@ class Plugin(object):
                 print(string_path)
                 self.strings_editor.load_path(string_path)
 
-    def before_save(self):
+    def before_save(self, editor):
         if self.strings_editor is not None and self.strings_editor.isVisible():
             self.strings_editor.button_save_strings()
 
