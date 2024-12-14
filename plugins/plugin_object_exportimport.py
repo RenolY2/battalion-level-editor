@@ -501,13 +501,7 @@ class Plugin(object):
             re_export.write(f)
 
         base = os.path.dirname(editor.file_menu.current_path)
-        respath = os.path.join(base, editor.file_menu.level_paths.resourcepath)
-        if respath.endswith(".gz"):
-            with gzip.open(respath, "rb") as f:
-                res = BattalionArchive.from_file(f)
-        else:
-            with open(respath, "rb") as f:
-                res = BattalionArchive.from_file(f)
+        res = editor.file_menu.resource_archive
 
         resource_count = 0
 
