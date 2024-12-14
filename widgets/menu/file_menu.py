@@ -25,8 +25,9 @@ import gzip
 from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect, QObject
 from io import BytesIO
 from lib.lua.luaworkshop import LuaWorkbench
-
+from configuration import save_cfg
 from typing import TYPE_CHECKING
+from widgets.menu.menu import Menu
 if TYPE_CHECKING:
     import bw_editor
     from lib.bw_terrain import BWTerrainV2
@@ -150,6 +151,7 @@ class EditorFileMenu(QMenu):
         save_file_shortcut.activated.connect(self.button_save_level)
 
         self.file_load_action = QAction("Load", self)
+        self.file_load_recent_menu = Menu(self, "Load Recent")
         self.save_file_action = QAction("Save", self)
         self.save_file_as_action = QAction("Save As", self)
         self.save_file_action.setShortcut("Ctrl+S")
@@ -164,10 +166,61 @@ class EditorFileMenu(QMenu):
         self.save_file_copy_as_action.triggered.connect(self.button_save_level_copy_as)
 
         self.addAction(self.file_load_action)
+        self.addAction(self.file_load_recent_menu.menuAction())
         self.addAction(self.save_file_action)
         #self.addAction(self.save_file_as_action)
         #self.addAction(self.save_file_copy_as_action)
         self.is_loading = False
+
+
+        self.MAX_RECENT_FILES = 10
+
+        if "recent_files" not in self.editor.configuration:
+            self.editor.configuration.add_section("recent_files")
+            for i in range(self.MAX_RECENT_FILES):
+                self.editor.configuration["recent_files"][f"last_{i}"] = ""
+            save_cfg(self.editor.configuration)
+
+        files = self.get_recent_files()
+        for i, file in enumerate(files):
+            self.file_load_recent_menu.add_action(file,
+                                                  func=partial(self.load_specific_recent_file, file))
+
+    def load_specific_recent_file(self, file):
+        self.button_load_level(fpathoverride=file)
+
+    def get_recent_files(self):
+        files = []
+        if "recent_files" in self.editor.configuration:
+            for i in range(self.MAX_RECENT_FILES):
+                filepath = self.editor.configuration["recent_files"].get(f"last_{i}", fallback=None)
+                if filepath is not None and filepath.strip():
+                    files.append(filepath)
+
+        return files
+
+    def add_recent_file(self, filepath):
+        files = self.get_recent_files()
+        if filepath in files:
+            index = files.index(filepath)
+            files.pop(index)
+
+        files.insert(0, filepath)
+        if len(files) > self.MAX_RECENT_FILES:
+            files.pop(-1)
+            assert len(files) <= self.MAX_RECENT_FILES
+
+        del self.editor.configuration["recent_files"]
+        self.editor.configuration.add_section("recent_files")
+
+        for i in range(len(files)):
+            self.editor.configuration["recent_files"][f"last_{i}"] = files[i]
+
+        self.file_load_recent_menu.clear_actions()
+        for i, file in enumerate(files):
+            self.file_load_recent_menu.add_action(file,
+                                                  func=partial(self.load_specific_recent_file, file))
+        save_cfg(self.editor.configuration)
 
     def updatestatus(self, text, progress):
         self.editor.statusbar.showMessage("{1}: {0}%".format(progress, text))
@@ -297,21 +350,8 @@ class EditorFileMenu(QMenu):
                     self.editor.setCursor(QtGui.QCursor(Qt.CursorShape.ArrowCursor))
                     cursor = QtGui.QCursor()
                     cursor.setShape(Qt.CursorShape.ArrowCursor)
-                    pos = cursor.pos()
-                    """widgets = []
-                    widget_at = QApplication.widgetAt(pos)
 
-                    while widget_at:
-                        widgets.append(widget_at)
-
-                        # Make widget invisible to further enquiries
-                        widget_at.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
-                        widget_at = QApplication.widgetAt(pos)
-
-                    # Restore attribute
-                    for widget in widgets:
-                        widget.setCursor(cursor)
-                        widget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)"""
+                    self.add_recent_file(filepath)
 
                     self.editor.read_entityinit_and_update()
 
