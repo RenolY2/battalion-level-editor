@@ -207,7 +207,7 @@ class LevelEditor(QMainWindow):
         self.history.reset()
         self.object_to_be_added = None
         self.level_view.reset(keep_collision=True)
-
+        self.mini_model_viewer.reset_scene()
 
         self.pik_control.close_all_windows()
         self.current_coordinates = None
@@ -227,6 +227,7 @@ class LevelEditor(QMainWindow):
         self.current_gen_path = None
         self.pik_control.reset_info()
         self.pik_control.button_add_object.setChecked(False)
+
         #self.pik_control.button_move_object.setChecked(False)
         self._window_title = ""
         self._user_made_change = False
