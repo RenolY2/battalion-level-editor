@@ -62,6 +62,14 @@ EDITOR_ROOT = os.path.dirname(__file__)
 class LevelEditor(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        try:
+            self.configuration = read_config()
+            print("Config file loaded")
+        except FileNotFoundError as e:
+            print("No config file found, creating default config...")
+            self.configuration = make_default_config()
+
         self.level_file = None
         self.installEventFilter(self)
         self.file_menu = EditorFileMenu(self)
@@ -70,12 +78,7 @@ class LevelEditor(QMainWindow):
         self.setCursor(Qt.CursorShape.ArrowCursor)
         self.lua_workbench: LuaWorkbench = None
 
-        try:
-            self.configuration = read_config()
-            print("Config file loaded")
-        except FileNotFoundError as e:
-            print("No config file found, creating default config...")
-            self.configuration = make_default_config()
+
 
         self.level_view.level_file = self.level_file
         self.level_view.set_editorconfig(self.configuration["editor"])
