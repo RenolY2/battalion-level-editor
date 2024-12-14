@@ -99,7 +99,7 @@ class PikminSideWidget(QWidget):
         self.add_window = None
 
     def close_all_windows(self):
-        for id, window in self.edit_windows.items():
+        for id, window in list(self.edit_windows.items()):
             window.close()
 
         self.edit_windows = {}
