@@ -953,12 +953,21 @@ class LevelEditor(QMainWindow):
         #obj.set_rotation((None, round(angle, 6), None))
         if self.dolphin.do_visualize():
             for obj in self.level_view.selected:
-                if obj.mtxoverride is not None and deltarotation.y != 0:
-                    BWMatrix.static_rotate_y(obj.mtxoverride, deltarotation.y)
+                if obj.mtxoverride is not None:
+                    if deltarotation.x != 0:
+                        BWMatrix.static_rotate_x(obj.mtxoverride, deltarotation.x)
+                    if deltarotation.y != 0:
+                        BWMatrix.static_rotate_y(obj.mtxoverride, deltarotation.y)
+                    if deltarotation.z != 0:
+                        BWMatrix.static_rotate_z(obj.mtxoverride, deltarotation.z)
         else:
             for mtx in self.level_view.selected_positions:
+                if deltarotation.x != 0:
+                    BWMatrix.static_rotate_x(mtx.mtx, deltarotation.x)
                 if deltarotation.y != 0:
                     mtx.rotate_y(deltarotation.y)
+                if deltarotation.z != 0:
+                    BWMatrix.static_rotate_z(mtx.mtx, deltarotation.z)
 
         #if self.rotation_mode.isChecked():
         if True:

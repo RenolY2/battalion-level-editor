@@ -12,6 +12,7 @@ from widgets.editor_widgets import BWObjectEditWindow, AddBWObjectWindow, open_e
 from lib.BattalionXMLLib import BattalionObject
 import typing
 from typing import TYPE_CHECKING
+from lib.bw_types import BWMatrix
 if TYPE_CHECKING:
     import bw_editor
 
@@ -61,6 +62,10 @@ class PikminSideWidget(QWidget):
         self.button_add_object.setCheckable(True)
         self.button_clone_object.pressed.connect(self.clone_object)
 
+        self.button_set_level = QtWidgets.QPushButton("Reset Vertical Rotation")
+        self.button_set_level.setToolTip("If object has been rotated along th")
+        self.button_set_level.pressed.connect(self.action_clear_vertical_rotation)
+
         self.verticalLayout.addWidget(self.button_add_object)
         self.verticalLayout.addWidget(self.button_remove_object)
         #self.verticalLayout.addWidget(self.button_ground_object)
@@ -68,6 +73,7 @@ class PikminSideWidget(QWidget):
         self.verticalLayout.addWidget(self.button_clone_object)
         self.verticalLayout.addWidget(QtWidgets.QSplitter(self))
         self.verticalLayout.addWidget(self.button_set_spawnmatrix)
+        self.verticalLayout.addWidget(self.button_set_level)
         self.verticalLayout.addStretch(20)
 
         self.name_label = QLabel(parent)
@@ -97,6 +103,19 @@ class PikminSideWidget(QWidget):
 
         self.reset_info()
         self.add_window = None
+
+    def action_clear_vertical_rotation(self):
+        if self.parent.dolphin.do_visualize():
+            for obj in self.parent.level_view.selected:
+                if obj.mtxoverride is not None:
+                    BWMatrix.vertical_reset(obj.mtxoverride)
+        else:
+            for mtx in self.parent.level_view.selected_positions:
+                BWMatrix.vertical_reset(mtx.mtx)
+
+        self.parent.level_view.do_redraw(forceselected=True)
+        self.parent.set_has_unsaved_changes(True)
+        self.parent.pik_control.update_info()
 
     def close_all_windows(self):
         for id, window in list(self.edit_windows.items()):

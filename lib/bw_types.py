@@ -51,6 +51,59 @@ class BWMatrix(object):
         flatten = newmtx.flatten("F")
         mtx[0:15] = flatten[0:15]
 
+    @staticmethod
+    def static_rotate_x(mtx, deltax):
+        mymtx = mtx.reshape((4, 4), order="F")
+        rotmtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
+            1.0, 0.0, 0.0, 0.0,
+            0.0, cos(deltax), -sin(deltax), 0.0,
+            0.0, sin(deltax), cos(deltax), 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]))
+        newmtx = mymtx.dot(rotmtx)
+        flatten = newmtx.flatten("F")
+        mtx[0:15] = flatten[0:15]
+
+    @staticmethod
+    def static_rotate_z(mtx, deltaz):
+        mymtx = mtx.reshape((4, 4), order="F")
+        rotmtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
+            cos(deltaz), sin(deltaz), 0.0, 0.0,
+            -sin(deltaz), cos(deltaz), 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]))
+        newmtx = mymtx.dot(rotmtx)
+        flatten = newmtx.flatten("F")
+        mtx[0:15] = flatten[0:15]
+
+    @staticmethod
+    def vertical_reset(mtx):
+        mymtx = mtx.reshape((4, 4), order="F")
+        print(mymtx)
+        cosval = mymtx[0][0]
+        sinval = mymtx[0][2]
+        mymtx[0][1] = 0
+
+        length = (cosval**2 + sinval**2)**0.5
+        if length > 0:
+            cosval = cosval/length
+            sinval = sinval/length
+
+        mymtx[0][0] = cosval
+        mymtx[0][2] = sinval
+
+        mymtx[1][0] = 0
+        mymtx[1][1] = 1
+        mymtx[1][2] = 0
+
+        mymtx[2][0] = -sinval
+        mymtx[2][1] = 0
+        mymtx[2][2] = cosval
+
+        flatten = mymtx.flatten("F")
+        mtx[0:15] = flatten[0:15]
+
     @property
     def x(self):
         return self.mtx[12]
