@@ -395,16 +395,24 @@ class EditorFileMenu(QMenu):
                         self.editor.pik_control.save_object_data(id, mass_save=True)
                     except Exception as err:
                         self.editor.pik_control.activate_window(id)
-                        open_error_dialog("Error while saving object {0}: \n{1}\nFix the error or close the object's edit window, then try saving again.".format(id, str(err)), None)
+                        if id in self.editor.level_file.objects:
+                            objname = self.editor.level_file.objects[id].name
+                        elif id in self.editor.preload_file.objects:
+                            objname = self.editor.preload_file.objects[id].name
+                        else:
+                            objname = id
+
+                        open_error_dialog(
+                            "Error while saving object {0}: \n{1}\nFix the error or close the object's edit window, then try saving again.".format(
+                                objname, str(err)), None)
                         self.editor.level_view.do_redraw(force=True)
                         self.editor.leveldatatreeview.updatenames()
+                        loadingbar.force_close()
                         return
 
 
                 self.editor.level_view.do_redraw(force=True)
                 self.editor.leveldatatreeview.updatenames()
-
-
 
                 progressbar.set(5)
                 for object in self.level_data.objects.values():
@@ -476,6 +484,7 @@ class EditorFileMenu(QMenu):
                         result = msgbox.exec()
 
                         if result == QtWidgets.QMessageBox.StandardButton.No:
+                            loadingbar.force_close()
                             return
 
                 progressbar.set(25)
