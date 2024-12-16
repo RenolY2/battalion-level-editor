@@ -12,10 +12,37 @@ import re
 currpath = __file__
 currdir = os.path.dirname(currpath)
 
-
+JAVA_JRE_DIR = os.path.join(currdir, "jdk-21.0.5+11-jre")
 LUAC_PATH = os.path.join(currdir, "luac5.0.2.exe")
 LUADEC_PATH = os.path.join(currdir, "LuaDec.exe")
 UNLUAC_PATH = os.path.join(currdir, "unluac.jar")
+
+# On Windows, try to use included java runtime
+if platform.system() == "Windows":
+    if os.path.exists(JAVA_JRE_DIR):
+        JAVA = os.path.join(JAVA_JRE_DIR, "bin", "java.exe")
+    else:
+        JAVA = "java"
+else:
+    JAVA = "java"
+
+
+def java_version():
+    cmd = [JAVA, "-version"]
+    print("Checking java version...")
+    try:
+        result = subprocess.run(cmd, capture_output=True)
+    except FileNotFoundError:
+        print("Java not found")
+    else:
+        print(
+            str(result.stdout,
+                encoding="ascii",
+                errors="backslashreplace"))
+        print(
+            str(result.stderr,
+                encoding="ascii",
+                errors="backslashreplace"))
 
 
 def decompile_luadec(path, out):
@@ -26,14 +53,18 @@ def decompile_luadec(path, out):
 
 def decompile_unluac(path, out):
     with open(out, "wb") as f:
-        cmd = ["java", "-jar", UNLUAC_PATH, path]
+        cmd = [JAVA, "-jar", UNLUAC_PATH, path]
         try:
             result = subprocess.run(cmd, stdout=f)
         except FileNotFoundError:
-            raise RuntimeError("Couldn't execute command:\n {0}\nDo you have Java installed?".format(str(" ".join(cmd))))
+            raise RuntimeError("Couldn't execute command:\n {0}\nDo you have Java installed? (Recommended: Java 23/JDK 23, not Java 8!)".format(str(" ".join(cmd))))
     
     if result.returncode != 0:
-        raise RuntimeError("A decompiler error happened!\n{0}".format(str(result)))
+        print(
+            str(result.stderr,
+                encoding="ascii",
+                errors="backslashreplace"))
+        raise RuntimeError("A decompiler error happened!\n{0}\nDo you have the correct version of Java installed? (Java 23/JDK 23, not Java 8!)".format(str(result)))
 
 
 def compile_lua(path, out):
@@ -112,6 +143,8 @@ class LuaWorkbench(object):
         self.setup_workdir()
         
         self.last_file_change = {}
+
+        java_version()
 
     def reset(self):
         self.entityinit.reset()
