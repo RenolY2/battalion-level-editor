@@ -58,12 +58,13 @@ def decompile_unluac(path, out):
             result = subprocess.run(cmd, stdout=f)
         except FileNotFoundError:
             raise RuntimeError("Couldn't execute command:\n {0}\nDo you have Java installed? (Recommended: Java 23/JDK 23, not Java 8!)".format(str(" ".join(cmd))))
-    
+
     if result.returncode != 0:
-        print(
-            str(result.stderr,
-                encoding="ascii",
-                errors="backslashreplace"))
+        if result.stderr is not None:
+            print(
+                str(result.stderr,
+                    encoding="ascii",
+                    errors="backslashreplace"))
         raise RuntimeError("A decompiler error happened!\n{0}\nDo you have the correct version of Java installed? (Java 23/JDK 23, not Java 8!)".format(str(result)))
 
 
