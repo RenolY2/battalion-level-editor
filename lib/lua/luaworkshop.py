@@ -275,6 +275,14 @@ class LuaWorkbench(object):
             print("adding", script.name)
             res.add_script(script)
 
+    def get_lua_script_paths(self):
+        result = []
+        for fname in os.listdir(self.workdir):
+            if fname.endswith(".lua"):
+                lua_path = os.path.join(self.workdir, fname)
+                result.append(lua_path)
+        return result
+
     def current_scripts(self):
         result = []
         for fname in os.listdir(self.workdir):
