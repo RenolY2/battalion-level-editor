@@ -106,6 +106,44 @@ def open_error_dialog(errormsg, self):
     errorbox.setFixedSize(500, 200)
 
 
+class GizmoWidget(QtWidgets.QWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.widgetlayout = QtWidgets.QVBoxLayout(self)
+        self.translationbutton = QtWidgets.QToolButton(self)
+        self.rotationbutton = QtWidgets.QToolButton(self)
+        self.cubebutton = QtWidgets.QToolButton(self)
+
+        self.translationbutton.setCheckable(True)
+        self.rotationbutton.setCheckable(True)
+        self.cubebutton.setCheckable(True)
+
+
+        translationicon = QtGui.QPixmap("resources/moveicon.png")
+        rotationicon = QtGui.QPixmap("resources/rotation.png")
+        cubeicon = QtGui.QPixmap("resources/cube.png")
+        self.icon = QtGui.QIcon(translationicon)
+        self.rotationicon = QtGui.QIcon(rotationicon)
+        self.cubeicon = QtGui.QIcon(cubeicon)
+
+        self.translationbutton.setIcon(self.icon)
+        self.rotationbutton.setIcon(self.rotationicon)
+        self.cubebutton.setIcon(self.cubeicon)
+        #size = QtCore.QSize(48, 48)
+        #self.translationbutton.setIconSize(size)
+        self.widgetlayout.addWidget(self.translationbutton)
+        self.widgetlayout.addWidget(self.rotationbutton)
+        self.widgetlayout.addWidget(self.cubebutton)
+
+        self.translationbutton.setToolTip("Show/Hide Object Movement Gizmo\nHotkey: T")
+        self.translationbutton.setShortcut("T")
+
+        self.rotationbutton.setToolTip("Show/Hide Rotation Gizmo\nHotkey: R")
+        self.rotationbutton.setShortcut("R")
+        self.cubebutton.setToolTip("Show/Hide Object Cubes")
+
+
 class HelpWindow(QtWidgets.QMdiSubWindow):
     closing = pyqtSignal()
 

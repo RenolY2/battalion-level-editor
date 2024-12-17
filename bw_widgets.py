@@ -40,6 +40,7 @@ from lib.bw_terrain import BWTerrainV2
 from lib.bw.bwmodelrender import BWModelHandler
 from lib.graphics import Graphics
 from widgets.filter_view import FilterViewMenu
+from widgets.editor_widgets import GizmoWidget
 
 MOUSE_MODE_NONE = 0
 MOUSE_MODE_MOVEWP = 1
@@ -359,6 +360,26 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.framecountercounter = 0
 
         self._keep_redrawing = True
+
+        self.gizmo_visibility_widget = GizmoWidget(self)
+        self.translation_visible = True
+        self.rotation_visible = True
+        self.cubes_visible = True
+        self.gizmo_visibility_widget.translationbutton.pressed.connect(self.toggle_translation_gizmo)
+        self.gizmo_visibility_widget.rotationbutton.pressed.connect(self.toggle_rotation_gizmo)
+        self.gizmo_visibility_widget.cubebutton.pressed.connect(self.toggle_cube_visibility)
+
+    def toggle_translation_gizmo(self):
+        self.translation_visible = not self.translation_visible
+        self.do_redraw(force=True)
+
+    def toggle_rotation_gizmo(self):
+        self.rotation_visible = not self.rotation_visible
+        self.do_redraw(force=True)
+
+    def toggle_cube_visibility(self):
+        self.cubes_visible = not self.cubes_visible
+        self.do_redraw(force=True)
 
     def stop_redrawing(self):
         self._keep_redrawing = False
@@ -884,7 +905,10 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             print("received selection request", do_gizmo)
 
             if clickwidth == 1 and clickheight == 1:
-                self.gizmo.render_collision_check(gizmo_scale, is3d=self.mode == MODE_3D)
+                self.gizmo.render_collision_check(gizmo_scale,
+                                                  is3d=self.mode == MODE_3D,
+                                                  translation_visible=self.translation_visible,
+                                                  rotation_visible=self.rotation_visible)
                 pixels = glReadPixels(click_x, click_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
                 self.selectdebug.record_view("Gizmo", int(click_x), int(click_y))
                 #print(pixels)
@@ -1149,7 +1173,10 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             glEnable(GL_ALPHA_TEST)
             glDisable(GL_BLEND)
 
-        self.gizmo.render_scaled(gizmo_scale, is3d=self.mode == MODE_3D)
+        self.gizmo.render_scaled(gizmo_scale,
+                                 is3d=self.mode == MODE_3D,
+                                 translation_visible=self.translation_visible,
+                                 rotation_visible=self.rotation_visible)
         glDisable(GL_DEPTH_TEST)
         if self.selectionbox_start is not None and self.selectionbox_end is not None:
             #print("drawing box")
