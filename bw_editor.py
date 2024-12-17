@@ -1377,6 +1377,8 @@ if __name__ == "__main__":
                 palette.setColor(group, QPalette.ColorRole.Highlight, QColor(42, 130, 218))
                 palette.setColor(group, QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
 
+            app.setStyleSheet("QToolTip { color: #000000; background-color: #FFFFFF; border: 0px; }")
+
             # This disables a weird white outline used when e.g. a menu element was disabled
             # Example: "Apply Live Positions to Selected"
             palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Light, QColor(35, 35, 35))
