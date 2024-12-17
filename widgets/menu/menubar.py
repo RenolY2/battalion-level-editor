@@ -11,6 +11,10 @@ from widgets.search_widget import SearchWidget
 from widgets.editor_widgets import open_error_dialog
 from typing import TYPE_CHECKING
 from lib.game_visualizer import DebugInfoWIndow
+from widgets.editor_widgets import open_message_dialog, open_yesno_box
+from configuration import save_cfg
+from widgets.lua_search_widgets import LuaFindWindow
+
 if TYPE_CHECKING:
     import bw_editor
 
@@ -22,6 +26,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
         self.search_window = None
         self.debug_window = None
+        self.lua_find_menu = None
 
         self.visibility_menu = FilterViewMenu(self)
         self.visibility_menu.filter_update.connect(self.editor.update_render)
@@ -61,6 +66,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         #self.choose_bco_area = QtWidgets.QAction("Highlight Collision Area (BCO)")
 
         self.dolphin_menu = Menu(self, "Dolphin (Experimental)")
+        self.start_game_action = self.dolphin_menu.add_action("Start Game in Dolphin",
+                                                              self.run_game)
         self.show_debug_info_action = self.dolphin_menu.add_action("Show Freelist Info",
                                                                    self.open_debug_window)
         self.hook_game_action = self.dolphin_menu.add_action("Enable Live Edit",
@@ -77,6 +84,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                                                                 self.apply_live_positions)
 
         self.lua_menu = Menu(self, "Lua")
+        self.lua_open_find_action = self.lua_menu.add_action("Open Lua Script Search",
+                                                             self.lua_open_find)
         self.lua_open_entity_init_action = self.lua_menu.add_action("Open EntityInitialise",
                                                                     self.lua_open_entity_initialise)
         self.lua_open_workdir_action = self.lua_menu.add_action("Open Lua Script Folder",
@@ -98,6 +107,49 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
 
         self.last_obj_select_pos = 0
+
+    def lua_open_find(self):
+        self.lua_find_menu = LuaFindWindow(None, self.editor.lua_workbench)
+        self.lua_find_menu.show()
+
+    def run_game(self):
+        dolphin_path = self.editor.configuration["editor"].get("dolphin", fallback=None)
+        if dolphin_path is None:
+            open_message_dialog("Dolphin not found, please choose location of Dolphin's executable.")
+            filepath, chosentype = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Choose Dolphin",
+                "",
+                "Dolphin executable (Dolphin.exe);;All files (*)",
+                None)
+
+            if filepath:
+                self.editor.configuration["editor"]["dolphin"] = filepath
+                save_cfg(self.editor.configuration)
+                dolphin_path = filepath
+
+        if dolphin_path is not None:
+            data_folder = os.path.dirname(os.path.dirname(self.editor.file_menu.current_path))
+            game_base_folder = os.path.dirname(os.path.dirname(data_folder))
+            game_executable = os.path.join(game_base_folder, "sys", "main.dol")
+            print(data_folder)
+            print(game_base_folder)
+            print(dolphin_path)
+            print(game_executable)
+            try:
+                subprocess.Popen([dolphin_path, game_executable])
+            except FileNotFoundError:
+                if open_yesno_box("Dolphin not found.\nDo you want to choose a new location for Dolphin?"):
+                    filepath, chosentype = QtWidgets.QFileDialog.getOpenFileName(
+                        self, "Choose Dolphin",
+                        "",
+                        "Dolphin executable (Dolphin.exe);;All files (*)",
+                        None)
+                    if filepath:
+                        self.editor.configuration["editor"]["dolphin"] = filepath
+                        save_cfg(self.editor.configuration)
+                        open_message_dialog("New Dolphin location chosen. Use 'Start Game in Dolphin' again.")
+        else:
+            open_error_dialog("No Dolphin path chosen, can't start Dolphin.")
 
     def lua_reload_scripts(self):
         msgbox = QtWidgets.QMessageBox()
