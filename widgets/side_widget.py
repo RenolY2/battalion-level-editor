@@ -7,6 +7,7 @@ import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtCore as QtCore
 from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
 from PyQt6.QtCore import Qt
+import PyQt6.QtGui as QtGui
 from widgets.data_editor import choose_data_editor
 from widgets.editor_widgets import BWObjectEditWindow, AddBWObjectWindow, open_error_dialog
 from lib.BattalionXMLLib import BattalionObject
@@ -74,7 +75,7 @@ class PikminSideWidget(QWidget):
         self.verticalLayout.addWidget(QtWidgets.QSplitter(self))
         self.verticalLayout.addWidget(self.button_set_spawnmatrix)
         self.verticalLayout.addWidget(self.button_set_level)
-        self.verticalLayout.addStretch(20)
+        self.verticalLayout.addStretch()
 
         self.name_label = QLabel(parent)
         self.name_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -89,11 +90,27 @@ class PikminSideWidget(QWidget):
         #self.verticalLayout.addWidget(self.identifier_label)
 
         #self.verticalLayout.addStretch(10)
-        self.comment_label = QLabel(parent)
+        self.scroll_area = QtWidgets.QScrollArea(self)
+        self.scroll_area.setWidgetResizable(True)
+        policy = self.scroll_area.sizePolicy()
+        policy.setVerticalPolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding)
+
+        self.scroll_area.setSizePolicy(policy)
+        self.scroll_area_content = QtWidgets.QWidget(self.scroll_area)
+
+        self.scroll_layout = QVBoxLayout(self.scroll_area_content)
+        self.scroll_area_content.setLayout(self.scroll_layout)
+        self.comment_label = QLabel(self.scroll_area_content)
         self.comment_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.comment_label.setWordWrap(True)
         self.comment_label.setFont(font)
-        self.verticalLayout.addWidget(self.comment_label)
+
+
+        #self.scroll_area.setWidget(self.comment_label)
+        self.scroll_layout.addWidget(self.comment_label)
+        self.scroll_layout.addStretch()
+        self.scroll_area.setWidget(self.scroll_area_content)
+        self.verticalLayout.addWidget(self.scroll_area)
         #self.verticalLayout.addStretch(500)
 
         self.objectlist = []
@@ -103,6 +120,10 @@ class PikminSideWidget(QWidget):
 
         self.reset_info()
         self.add_window = None
+
+    def set_comment_label(self, text):
+        self.comment_label.setText(text)
+
 
     def action_clear_vertical_rotation(self):
         if self.parent.dolphin.do_visualize():
@@ -403,7 +424,7 @@ class PikminSideWidget(QWidget):
     def reset_info(self, info="None selected"):
         self.name_label.setText(info)
         #self.identifier_label.setText("")
-        self.comment_label.setText("")
+        self.set_comment_label("")
 
         if self.object_data_edit is not None:
             self.object_data_edit.deleteLater()
@@ -444,9 +465,9 @@ class PikminSideWidget(QWidget):
             self.object_data_edit.emit_3d_update.connect(update3d)
 
         self.objectlist = []
-        self.comment_label.setText("")
+        self.set_comment_label("")
         if obj.lua_name:
-            self.comment_label.setText("Lua name:\n{}".format(obj.lua_name))
+            self.set_comment_label("Lua name:\n{}".format(obj.lua_name))
 
     def set_objectlist(self, objs):
         self.objectlist = []
@@ -493,6 +514,6 @@ class PikminSideWidget(QWidget):
             elif rest > 1:
                 text += "\nAnd {0} more objects".format(rest)
 
-        self.comment_label.setText(text)
+        self.set_comment_label(text)
 
 
