@@ -443,9 +443,16 @@ class PikminSideWidget(QWidget):
                                     ", ".join(usedby)))
         else:
             if obj.customname is not None:
-                self.name_label.setText("Selected: \n{} ({}, {})".format(obj.type, obj.customname, obj.id))
+                text = "Selected: \n{} ({}, {})".format(obj.type, obj.customname, obj.id)
             else:
-                self.name_label.setText("Selected: \n{} ({})".format(obj.type, obj.id))
+                text = "Selected: \n{} ({})".format(obj.type, obj.id)
+
+            if hasattr(obj, "mBase") and obj.mBase is not None:
+                text += f"\nBase: {obj.mBase.name}"
+                if obj.modelname is not None:
+                    text += f"\nModel: {obj.modelname}"
+
+            self.name_label.setText(text)
 
 
 
