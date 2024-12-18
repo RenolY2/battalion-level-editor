@@ -316,7 +316,6 @@ class Graphics(object):
             for mtx, x, z, modelname in self.models_scene:
                 rw.bwmodelhandler.rendermodel(modelname, mtx, rw.bwterrain, 0)
 
-
         for meshname in self.scene.renderedmodels:
             if meshname in self.scene.modelinstances:
                 mtxlist = self.scene.modelinstances[meshname]
@@ -340,7 +339,7 @@ class Graphics(object):
 
         drawn = 0
         for objtype, model in self.scene.model.items():
-            if not visible(objtype, obj=None):
+            if not visible(objtype, obj=None) or not rw.cubes_visible:
                 continue
 
             mtx, extradata = self.scene.objects[objtype]
@@ -397,7 +396,8 @@ class Graphics(object):
         #zoomuniform =
         facuniform = rw.models.billboard.program.getuniformlocation("scalefactor")
         glUniform1f(facuniform, zoomscale)
-        rw.models.billboard.instancedrender()
+        if rw.cubes_visible:
+            rw.models.billboard.instancedrender()
         rw.models.billboard.unbind()
         glActiveTexture(GL_TEXTURE0)
         glDisable(GL_TEXTURE_2D)
