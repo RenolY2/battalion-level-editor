@@ -1,11 +1,12 @@
 import json
 import numpy
-from math import sin, cos
+from math import sin, cos, pi
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from lib.vectors import Vector3
 from lib.render.model_renderingv2 import LineDrawing
 from typing import TYPE_CHECKING
+from lib.bw_types import BWMatrix
 if TYPE_CHECKING:
     from bw_widgets import BolMapViewer
     from widgets.filter_view import FilterViewMenu
@@ -239,7 +240,8 @@ class Graphics(object):
                         currmtx[13] = height
 
                     obj.height = currmtx[13]
-
+                if obj.type == "cTroop":
+                    BWMatrix.static_rotate_y(currmtx, pi)
                 mtx.append(currmtx)
 
                 if obj.type in ("cMapZone", "cCoastZone", "cDamageZone", "cNogoHintZone"):
