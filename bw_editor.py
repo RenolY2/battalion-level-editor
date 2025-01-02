@@ -10,7 +10,7 @@ from io import TextIOWrapper, BytesIO, StringIO
 from math import sin, cos, atan2, pi
 import json
 import PyQt6.QtWidgets as QtWidgets
-import PyQt6.QtCore as QtCore 
+import PyQt6.QtCore as QtCore
 from PyQt6.QtCore import Qt
 
 from PyQt6.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter,
