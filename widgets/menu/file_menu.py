@@ -186,6 +186,16 @@ class EditorFileMenu(QMenu):
             self.file_load_recent_menu.add_action(file,
                                                   func=partial(self.load_specific_recent_file, file))
 
+    def get_strings_path(self, language):
+        string_file = self.level_paths.stringpaths[language]
+
+        base = self.current_path
+        data_path = os.path.dirname(os.path.dirname(base))
+
+        string_path = os.path.join(data_path, "Strings", string_file)
+
+        return string_path
+
     def load_specific_recent_file(self, file):
         self.button_load_level(fpathoverride=file)
 

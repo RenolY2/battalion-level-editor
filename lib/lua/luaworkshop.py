@@ -275,10 +275,13 @@ class LuaWorkbench(object):
             print("adding", script.name)
             res.add_script(script)
 
+    def get_lua_script_path(self, script_name):
+        return os.path.join(self.workdir, script_name+".lua")
+
     def get_lua_script_paths(self):
         result = []
         for fname in os.listdir(self.workdir):
-            if fname.endswith(".lua"):
+            if fname.endswith(".lua") and fname.lower() != "__lua_context__.lua":
                 lua_path = os.path.join(self.workdir, fname)
                 result.append(lua_path)
         return result
@@ -286,9 +289,9 @@ class LuaWorkbench(object):
     def current_scripts(self):
         result = []
         for fname in os.listdir(self.workdir):
-            if fname.endswith(".lua"):  
+            if fname.endswith(".lua") and fname.lower() != "__lua_context__.lua":
                 result.append(fname.replace(".lua", ""))
-        return result 
+        return result
 
     def set_workdir(self, workdir):
         self.workdir = workdir
