@@ -7,3 +7,7 @@ object_templates/pikmin3/*
 lib/examples/*
 dist/*
 lib/temp/*
+texture_cache/*
+log.txt
+editor_log.txt
+editor_config.ini
