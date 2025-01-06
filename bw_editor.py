@@ -123,7 +123,11 @@ class LevelEditor(QMainWindow):
         self.timer.timeout.connect(self.read_entityinit_if_changed)
         self.timer.start()
 
-
+    def get_selected_obj(self):
+        if len(self.level_view.selected) == 1:
+            return self.level_view.selected[0]
+        else:
+            return None
 
     def get_editor_folder(self):
         return EDITOR_ROOT
