@@ -69,11 +69,13 @@ class ExportSettings(QDialog):
                                          QtWidgets.QLineEdit)
         self.include_passengers = QtWidgets.QCheckBox(self, text="Include Passengers")
         self.include_mpscript = QtWidgets.QCheckBox(self, text="Include MpScript")
+        self.include_startwaypoint = QtWidgets.QCheckBox(self, text="Include Start Waypoint")
         self.clear_instance_flags = QtWidgets.QCheckBox(self, text="Clear Instance Flags")
 
         self.layout.addWidget(self.name_widget)
         self.layout.addWidget(self.include_passengers)
         self.layout.addWidget(self.include_mpscript)
+        self.layout.addWidget(self.include_startwaypoint)
         self.layout.addWidget(self.clear_instance_flags)
 
         self.ok = QtWidgets.QPushButton(self, text="OK")
@@ -380,6 +382,7 @@ class Plugin(object):
         include_passenger = dialog.include_passengers.isChecked()
         include_mpscript = dialog.include_mpscript.isChecked()
         reset_instance_flags = dialog.clear_instance_flags.isChecked()
+        include_startwaypoint = dialog.include_startwaypoint.isChecked()
         bundle_name = dialog.get_name()
 
         bundle_path = os.path.join(basepath, bundle_name)
@@ -389,6 +392,8 @@ class Plugin(object):
             skip.append("mPassenger")
         if not include_mpscript:
             skip.append("mpScript")
+        if not include_startwaypoint:
+            skip.append("mStartWaypoint")
 
         selected = editor.level_view.selected
         export = BattalionLevelFile()
@@ -473,6 +478,14 @@ class Plugin(object):
                     for i in range(len(obj.mPassenger)):
                         print("skipping passenger", obj.name, obj.mPassenger[i])
                         obj.mPassenger[i] = None
+
+            if not include_startwaypoint:
+                if hasattr(obj, "mStartWaypoint"):
+                    noderesults = obj._node.find("Pointer[@name='mStartWaypoint']")
+                    for node in noderesults:
+                        node.text = "0"
+
+                    obj.mStartWaypoint = None
 
             if not include_mpscript:
                 if hasattr(obj, "mpScript"):
