@@ -551,7 +551,7 @@ class Plugin(object):
                     Path(respath).mkdir(parents=True, exist_ok=True)
                     print(respath)
                     resource.dump_to_directory(respath)
-            raise RuntimeError("TEST")
+                    
             try:
                 preview = UnitViewer.screenshot_objects(selected, editor)
                 preview.save(os.path.join(bundle_path, "preview.png"))
