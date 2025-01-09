@@ -385,180 +385,189 @@ class Plugin(object):
         include_startwaypoint = dialog.include_startwaypoint.isChecked()
         bundle_name = dialog.get_name()
 
-        bundle_path = os.path.join(basepath, bundle_name)
-        print(include_passenger, include_mpscript)
-        skip = []
-        if not include_passenger:
-            skip.append("mPassenger")
-        if not include_mpscript:
-            skip.append("mpScript")
-        if not include_startwaypoint:
-            skip.append("mStartWaypoint")
-
-        selected = editor.level_view.selected
-        export = BattalionLevelFile()
-        to_be_exported = []
-        selected_ids = []
-
-        for obj in selected:
-            obj: BattalionObject
-
-            for dep in obj.get_dependencies(skip=skip):
-                if dep not in to_be_exported:
-                    to_be_exported.append(dep)
-
-            if obj not in to_be_exported:
-                to_be_exported.append(obj)
-                selected_ids.append(obj.id)
-
-        for obj in to_be_exported:
-            export.add_object_new(obj)
-
-        texture_lookup = {}
-        for objid, obj in editor.level_file.objects.items():
-            if obj.type == "cTextureResource":
-                texture_lookup[obj.mName.lower()] = obj
-
-        additional_textures = []
-        for obj in to_be_exported:
-            if obj.type == "cNodeHierarchyResource":
-                modelname = obj.mName
-
-                textures = editor.level_view.bwmodelhandler.models[modelname].all_textures
-                for texname in textures:
-                    if texname.lower() in texture_lookup:
-                        texobj = texture_lookup[texname.lower()]
-                        if texobj.id not in export.objects:
-                            export.add_object_new(texobj)
-                    else:
-                        texresource = editor.file_menu.resource_archive.textures.get_texture(texname)
-                        if texresource is not None:
-                            print("Texture", texname, "is in res archive but not in xml! Recreating TextureResource.")
-                            xmltext = f"""
-                            <Object type="cTextureResource" id="550000000">
-                                <Attribute name="mName" type="cFxString8" elements="1">
-                                    <Item>PLACEHOLDER</Item>
-                                </Attribute>
-                            </Object>
-                            """
-                            texobj = BattalionObject.create_from_text(xmltext, editor.level_file, editor.preload_file)
-                            texobj.choose_unique_id(export, editor.preload_file)
-                            texobj.mName = texresource.name
-                            texobj.update_xml()
-
-                            export.add_object_new(texobj)
-
-
-
-
-
-
-        # Doing a re-export to have a new set of objects we can modify without affecting
-        # the objects in the editor
-        tmp = BytesIO()
-        export.write(tmp)
-        tmp.seek(0)
-
-        re_export = BattalionLevelFile(tmp)
-
-        for objid, obj in re_export.objects.items():
-            if obj.id in selected_ids:
-                obj._node.attrib["isroot"] = "1"
-            else:
-                if "isroot" in obj._node.attrib:
-                    del obj._node.attrib["isroot"]
-
+        try:
+            bundle_path = os.path.join(basepath, bundle_name)
+            print(include_passenger, include_mpscript)
+            skip = []
             if not include_passenger:
-                if hasattr(obj, "mPassenger"):
-                    print("skipping passenger", obj.name, obj.mPassenger)
-                    passengernode = obj._node.find("Pointer[@name='mPassenger']")
-                    for node in passengernode:
-                        node.text = "0"
-
-                    for i in range(len(obj.mPassenger)):
-                        print("skipping passenger", obj.name, obj.mPassenger[i])
-                        obj.mPassenger[i] = None
-
-            if not include_startwaypoint:
-                if hasattr(obj, "mStartWaypoint"):
-                    noderesults = obj._node.find("Pointer[@name='mStartWaypoint']")
-                    for node in noderesults:
-                        node.text = "0"
-
-                    obj.mStartWaypoint = None
-
+                skip.append("mPassenger")
             if not include_mpscript:
-                if hasattr(obj, "mpScript"):
-                    scriptnode = obj._node.find("Resource[@name='mpScript']")
-                    for node in scriptnode:
-                        node.text = "0"
+                skip.append("mpScript")
+            if not include_startwaypoint:
+                skip.append("mStartWaypoint")
 
-                    obj.mpScript = None
+            selected = editor.level_view.selected
+            export = BattalionLevelFile()
+            to_be_exported = []
+            selected_ids = []
 
-            if reset_instance_flags:
-                if hasattr(obj, "mUnitInstanceFlags"):
-                    obj.mUnitInstanceFlags = 0
+            for obj in selected:
+                obj: BattalionObject
 
-        re_export.resolve_pointers(other=None)
-        for objid, obj in re_export.objects.items():
-            obj.update_xml()
+                for dep in obj.get_dependencies(skip=skip):
+                    if dep not in to_be_exported:
+                        to_be_exported.append(dep)
+
+                if obj not in to_be_exported:
+                    to_be_exported.append(obj)
+                    selected_ids.append(obj.id)
+
+            for obj in to_be_exported:
+                export.add_object_new(obj)
+
+            texture_lookup = {}
+            for objid, obj in editor.level_file.objects.items():
+                if obj.type == "cTextureResource":
+                    texture_lookup[obj.mName.lower()] = obj
+
+            additional_textures = []
+            for obj in to_be_exported:
+                if obj.type == "cNodeHierarchyResource":
+                    modelname = obj.mName
+
+                    textures = editor.level_view.bwmodelhandler.models[modelname].all_textures
+                    for texname in textures:
+                        if texname.lower() in texture_lookup:
+                            texobj = texture_lookup[texname.lower()]
+                            if texobj.id not in export.objects:
+                                export.add_object_new(texobj)
+                        else:
+                            texresource = editor.file_menu.resource_archive.textures.get_texture(texname)
+                            if texresource is not None:
+                                print("Texture", texname, "is in res archive but not in xml! Recreating TextureResource.")
+                                xmltext = f"""
+                                <Object type="cTextureResource" id="550000000">
+                                    <Attribute name="mName" type="cFxString8" elements="1">
+                                        <Item>PLACEHOLDER</Item>
+                                    </Attribute>
+                                </Object>
+                                """
+                                texobj = BattalionObject.create_from_text(xmltext, editor.level_file, editor.preload_file)
+                                texobj.choose_unique_id(export, editor.preload_file)
+                                texobj.mName = texresource.name
+                                texobj.update_xml()
+
+                                export.add_object_new(texobj)
 
 
 
-        try:
-            os.mkdir(bundle_path)
-        except:
-            pass
 
-        with open(os.path.join(bundle_path, "bundle.xml"), "wb") as f:
-            re_export.write(f)
 
-        base = os.path.dirname(editor.file_menu.current_path)
-        res = editor.file_menu.resource_archive
 
-        resource_count = 0
+            # Doing a re-export to have a new set of objects we can modify without affecting
+            # the objects in the editor
+            tmp = BytesIO()
+            export.write(tmp)
+            tmp.seek(0)
 
-        for objid, obj in re_export.objects.items():
-            resource = False
-            respath = None
+            re_export = BattalionLevelFile(tmp)
 
-            if obj.type == "cAnimationResource":
-                resource = res.get_resource(b"MINA", obj.mName)
-                respath = os.path.join(bundle_path, "Animations")
-            elif obj.type == "cTequilaEffectResource":
-                resource = res.get_resource(b"FEQT", obj.mName)
-                respath = os.path.join(bundle_path, "SpecialEffects")
-            elif obj.type == "cNodeHierarchyResource":
-                resource = res.get_resource(b"LDOM", obj.mName)
-                respath = os.path.join(bundle_path, "Models")
-            elif obj.type == "cGameScriptResource":
-                resource = res.get_resource(b"PRCS", obj.mName)
-                respath = os.path.join(bundle_path, "Scripts")
-            elif obj.type == "sSampleResource":
-                resource = res.get_resource(b"HPSD", obj.mName)
-                respath = os.path.join(bundle_path, "Sounds")
-            elif obj.type == "cTextureResource":
-                resource = res.get_resource(b"DXTG", obj.mName)
-                if resource is None:
-                    resource = res.get_resource(b"TXET", obj.mName)
+            for objid, obj in re_export.objects.items():
+                if obj.id in selected_ids:
+                    obj._node.attrib["isroot"] = "1"
+                else:
+                    if "isroot" in obj._node.attrib:
+                        del obj._node.attrib["isroot"]
 
-                respath = os.path.join(bundle_path, "Textures")
+                if not include_passenger:
+                    if hasattr(obj, "mPassenger"):
+                        print("skipping passenger", obj.name, obj.mPassenger)
+                        passengernode = obj._node.find("Pointer[@name='mPassenger']")
+                        for node in passengernode:
+                            node.text = "0"
 
-            if resource is not False:
-                print(obj.type, obj.mName)
-                resource_count += 1
-                Path(respath).mkdir(parents=True, exist_ok=True)
-                print(respath)
-                resource.dump_to_directory(respath)
+                        for i in range(len(obj.mPassenger)):
+                            print("skipping passenger", obj.name, obj.mPassenger[i])
+                            obj.mPassenger[i] = None
 
-        try:
-            preview = UnitViewer.screenshot_objects(selected, editor)
-            preview.save(os.path.join(bundle_path, "preview.png"))
+                if not include_startwaypoint:
+                    if hasattr(obj, "mStartWaypoint"):
+                        noderesults = obj._node.find("Pointer[@name='mStartWaypoint']")
+                        for node in noderesults:
+                            node.text = "0"
+
+                        obj.mStartWaypoint = None
+
+                if not include_mpscript:
+                    if hasattr(obj, "mpScript"):
+                        scriptnode = obj._node.find("Resource[@name='mpScript']")
+                        for node in scriptnode:
+                            node.text = "0"
+
+                        obj.mpScript = None
+
+                if reset_instance_flags:
+                    if hasattr(obj, "mUnitInstanceFlags"):
+                        obj.mUnitInstanceFlags = 0
+
+            re_export.resolve_pointers(other=None)
+            for objid, obj in re_export.objects.items():
+                obj.update_xml()
+
+
+
+            try:
+                os.mkdir(bundle_path)
+            except:
+                pass
+
+            with open(os.path.join(bundle_path, "bundle.xml"), "wb") as f:
+                re_export.write(f)
+
+            base = os.path.dirname(editor.file_menu.current_path)
+            res = editor.file_menu.resource_archive
+
+            resource_count = 0
+
+            for objid, obj in re_export.objects.items():
+                resource = False
+                respath = None
+
+                if obj.type == "cAnimationResource":
+                    resource = res.get_resource(b"MINA", obj.mName)
+                    respath = os.path.join(bundle_path, "Animations")
+                elif obj.type == "cTequilaEffectResource":
+                    resource = res.get_resource(b"FEQT", obj.mName)
+                    respath = os.path.join(bundle_path, "SpecialEffects")
+                elif obj.type == "cNodeHierarchyResource":
+                    resource = res.get_resource(b"LDOM", obj.mName)
+                    respath = os.path.join(bundle_path, "Models")
+                elif obj.type == "cGameScriptResource":
+                    resource = res.get_resource(b"PRCS", obj.mName)
+                    respath = os.path.join(bundle_path, "Scripts")
+                elif obj.type == "sSampleResource":
+                    resource = res.get_resource(b"HPSD", obj.mName)
+                    respath = os.path.join(bundle_path, "Sounds")
+                elif obj.type == "cTextureResource":
+                    resource = res.get_resource(b"DXTG", obj.mName)
+                    if resource is None:
+                        resource = res.get_resource(b"TXET", obj.mName)
+
+                    respath = os.path.join(bundle_path, "Textures")
+
+                if resource is not False:
+                    print(obj.type, obj.mName)
+                    resource_count += 1
+                    Path(respath).mkdir(parents=True, exist_ok=True)
+                    print(respath)
+                    resource.dump_to_directory(respath)
+            raise RuntimeError("TEST")
+            try:
+                preview = UnitViewer.screenshot_objects(selected, editor)
+                preview.save(os.path.join(bundle_path, "preview.png"))
+            except Exception as err:
+                traceback.print_exc()
+                open_error_dialog(f"Wasn't able to create a preview render: \n{str(err)}\nCheck console log for more details.", None)
+
+            open_message_dialog(f"{len(re_export.objects)} XML object(s) and {resource_count} resource(s) have been exported for '{bundle_name}'!",
+                                parent=editor)
+
         except Exception as err:
             traceback.print_exc()
-
-        open_message_dialog(f"{len(re_export.objects)} XML object(s) and {resource_count} resource(s) have been exported for '{bundle_name}'!",
-                            parent=editor)
+            errormsg = (f"An error appeared during object export: \n"
+                        f"{str(err)}\n"
+                        f"Check console log for more details.\nThe exported object '{bundle_name}' might be incomplete.")
+            open_error_dialog(errormsg, None)
 
     def importobject(self, editor: "bw_editor.LevelEditor"):
         self.initiate_object_folder(editor)
