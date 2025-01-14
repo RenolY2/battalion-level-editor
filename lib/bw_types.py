@@ -1,5 +1,11 @@
 from math import sin, cos
-from lib.vectors import Matrix4x4, Vector4, Vector3
+import math
+
+if __name__ == "__main__":
+    from vectors import Matrix4x4, Vector4, Vector3
+else:
+    from lib.vectors import Matrix4x4, Vector4, Vector3
+
 from numpy import array, float32, shape, reshape, ndarray
 TYPES = []
 
@@ -39,7 +45,7 @@ class BWMatrix(object):
         self.mtx[0:15] = flatten[0:15]
 
     @staticmethod
-    def static_rotate_y(mtx, deltay):
+    def static_rotate_y(mtx, deltay, flip=False):
         mymtx = mtx.reshape((4, 4), order="F")
         rotmtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
             cos(deltay), 0.0, -sin(deltay), 0.0,
@@ -47,12 +53,15 @@ class BWMatrix(object):
             sin(deltay), 0.0, cos(deltay), 0.0,
             0.0, 0.0, 0.0, 1.0
         ]))
-        newmtx = mymtx.dot(rotmtx)
+        if flip:
+            newmtx = rotmtx.dot(mymtx)
+        else:
+            newmtx = mymtx.dot(rotmtx)
         flatten = newmtx.flatten("F")
         mtx[0:15] = flatten[0:15]
 
     @staticmethod
-    def static_rotate_x(mtx, deltax):
+    def static_rotate_x(mtx, deltax, flip=False):
         mymtx = mtx.reshape((4, 4), order="F")
         rotmtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
             1.0, 0.0, 0.0, 0.0,
@@ -60,12 +69,15 @@ class BWMatrix(object):
             0.0, sin(deltax), cos(deltax), 0.0,
             0.0, 0.0, 0.0, 1.0
         ]))
-        newmtx = mymtx.dot(rotmtx)
+        if flip:
+            newmtx = rotmtx.dot(mymtx)
+        else:
+            newmtx = mymtx.dot(rotmtx)
         flatten = newmtx.flatten("F")
         mtx[0:15] = flatten[0:15]
 
     @staticmethod
-    def static_rotate_z(mtx, deltaz):
+    def static_rotate_z(mtx, deltaz, flip=False):
         mymtx = mtx.reshape((4, 4), order="F")
         rotmtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
             cos(deltaz), sin(deltaz), 0.0, 0.0,
@@ -73,7 +85,10 @@ class BWMatrix(object):
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0
         ]))
-        newmtx = mymtx.dot(rotmtx)
+        if flip:
+            newmtx = rotmtx.dot(mymtx)
+        else:
+            newmtx = mymtx.dot(rotmtx)
         flatten = newmtx.flatten("F")
         mtx[0:15] = flatten[0:15]
 
@@ -117,7 +132,6 @@ class BWMatrix(object):
         return self.mtx[14]
 
 
-
 def boolean_from(bool):
     if bool == "eFalse":
         return False
@@ -152,6 +166,13 @@ def vector4_from(vec_text):
     return mtx
 
 
+def vector2_from(vec_text):
+    vals = vec_text.split(",")
+    x, z = float(vals[0]), float(vals[1])
+    mtx = Vector4(x, 0, z, 0)
+    return mtx
+
+
 def decrshift(val, shift):
     return val//(10**shift)
 
@@ -180,6 +201,10 @@ def vector4_to(vec):
                                     floatformat(vec.y),
                                     floatformat(vec.z),
                                     floatformat(vec.w))
+
+
+def vector2_to(vec):
+    return "{0},{1}".format(vec.x, vec.z)
 
 
 def vector4_to_u8(vec):
@@ -213,7 +238,8 @@ CONVERTERS_FROM = {
     "sUInt8": int,
     "sUInt16": int,
     "sUInt32": int,
-    "sU8Color": vector4_from
+    "sU8Color": vector4_from,
+    "sVectorXZ": vector2_from
 }
 
 CONVERTERS_TO = {
@@ -223,7 +249,8 @@ CONVERTERS_TO = {
     "sMatrix4x4": matrix4x4_to,
     "cMatrix4x4": matrix4x4_to,
     "sVector4": vector4_to,
-    "sU8Color": vector4_to_u8
+    "sU8Color": vector4_to_u8,
+    "sVectorXZ": vector2_to
 }
 
 
@@ -250,8 +277,135 @@ def convert_to(valuetype, value):
 def get_types():
     return TYPES
 
+def calc_length(x, y, z):
+    return (x**2 + y**2 + z**2) ** 0.5
+
+
+def decompose(BWMatrix):
+    mtx = BWMatrix.mtx.copy().reshape((4, 4), order="F")
+
+    scale_x = calc_length(mtx[0][0], mtx[1][0], mtx[2][0])
+    scale_y = calc_length(mtx[0][1], mtx[1][1], mtx[2][1])
+    scale_z = calc_length(mtx[0][2], mtx[1][2], mtx[2][2])
+
+    for i in range(3):
+        mtx[i][0] = mtx[i][0]/scale_x
+
+    for i in range(3):
+        mtx[i][1] = mtx[i][1]/scale_y
+
+    for i in range(3):
+        mtx[i][2] = mtx[i][2]/scale_z
+
+    translation_x = mtx[0][3]
+    mtx[0][3] = 0
+    translation_y = mtx[1][3]
+    mtx[1][3] = 0
+    translation_z = mtx[2][3]
+    mtx[2][3] = 0
+
+    if mtx[0][2] < 1:
+        if mtx[0][2] > -1:
+            print("A")
+            theta_Y = math.asin(mtx[0][2])
+            theta_X = math.atan2(-mtx[1][2], mtx[2][2])
+            theta_Z = math.atan2(-mtx[0][1], mtx[0][0])
+        else:
+            print("B")
+            theta_Y = -math.pi/2
+            theta_X = -math.atan2(mtx[1][0], mtx[1][1])
+            theta_Z = 0
+    else:
+        print("C")
+        theta_Y = +math.pi / 2
+        theta_X = math.atan2(mtx[1][0], mtx[1][1])
+        theta_Z = 0
+
+    return (translation_x, translation_y, translation_z,
+            scale_x, scale_y, scale_z,
+            math.degrees(theta_X), math.degrees(theta_Y), math.degrees(theta_Z))
+
+
+def recompose(translation_x, translation_y, translation_z,
+              scale_x, scale_y, scale_z,
+              theta_X, theta_Y, theta_Z):
+
+    newscalemtx = [scale_x, 0, 0, 0,
+                   0, scale_y, 0, 0,
+                   0, 0, scale_z, 0,
+                   0, 0, 0, 1]
+
+    bwmtx = BWMatrix(*newscalemtx)
+    bwmtx.static_rotate_x(bwmtx.mtx, -math.radians(theta_X))
+    bwmtx.static_rotate_y(bwmtx.mtx, math.radians(theta_Y))
+    bwmtx.static_rotate_z(bwmtx.mtx, math.radians(theta_Z))
+    bwmtx.mtx[12] = translation_x
+    bwmtx.mtx[13] = translation_y
+    bwmtx.mtx[14] = translation_z
+
+    return bwmtx
 
 if __name__ == "__main__":
-    mtx = BWMatrix([1,0,0,0, 0,1,0,0, 0,0,1,0, 1,0,0,0])
-    print(mtx.mtx)
-    print(shape(mtx.mtx))
+    mtx = BWMatrix(*[0.806464,0.000000,0.591284,0.000000, 0.000000,1.000000,0.000000,0.000000, -0.591284,0.000000,0.806464,0.000000, 287.851013,0.000000,120.974998,1.000000])
+    mtx2 = BWMatrix(*[0.029796,0.352339,0.935398,0.000000, 0.222080,0.910090,-0.349881,0.000000, -0.974573,0.218158,-0.051131,0.000000, 287.851013,0.000000,120.974998,1.000000])
+    #mtx2 = BWMatrix(1.387810,-0.417808,1.378194,0.000000, 0.000000,1.913982,0.580236,0.000000, -1.440133,-0.402628,1.328122,0.000000, 287.851013,0.000000,120.974998,1.000000)
+    """
+    mymtx = mtx2.mtx.reshape((4, 4), order="F")
+    original = mtx2.mtx.reshape((4, 4), order="F")
+    print(mymtx)
+    scale_x = calc_length(mymtx[0][0], mymtx[1][0], mymtx[2][0])
+    scale_y = calc_length(mymtx[0][1], mymtx[1][1], mymtx[2][1])
+    scale_z = calc_length(mymtx[0][2], mymtx[1][2], mymtx[2][2])
+
+    for i in range(3):
+        mymtx[i][0] = mymtx[i][0]/scale_x
+
+    for i in range(3):
+        mymtx[i][1] = mymtx[i][1]/scale_y
+
+    for i in range(3):
+        mymtx[i][2] = mymtx[i][2]/scale_z
+
+    #print(mymtx)
+    translation_x = mymtx[0][3]; mymtx[0][3]=0
+    translation_y = mymtx[1][3]; mymtx[1][3]=0
+    translation_z = mymtx[2][3]; mymtx[2][3]=0
+    #print(mymtx)
+
+    if mymtx[0][2] < 1:
+        if mymtx[0][2] > -1:
+            print("A")
+            theta_Y = math.asin(mymtx[0][2])
+            theta_X = math.atan2(-mymtx[1][2], mymtx[2][2])
+            theta_Z = math.atan2(-mymtx[0][1], mymtx[0][0])
+        else:
+            print("B")
+            theta_Y = -math.pi/2
+            theta_X = -math.atan2(mymtx[1][0], mymtx[1][1])
+            theta_Z = 0
+    else:
+        print("C")
+        theta_Y = +math.pi / 2
+        theta_X = math.atan2(mymtx[1][0], mymtx[1][1])
+        theta_Z = 0
+
+    print(scale_x, scale_y, scale_z)
+    print(math.degrees(theta_X), math.degrees(theta_Y), math.degrees(theta_Z))
+
+    newscalemtx = [scale_x, 0, 0, 0,
+                    0, scale_y, 0, 0,
+                    0, 0, scale_z, 0,
+                    0, 0, 0, 1]
+
+    bwmtx = BWMatrix(*newscalemtx)
+    bwmtx.static_rotate_x(bwmtx.mtx, -theta_X)
+    bwmtx.static_rotate_y(bwmtx.mtx, theta_Y)
+    bwmtx.static_rotate_z(bwmtx.mtx, theta_Z)
+    print("===")
+    #print(original)
+    print(bwmtx.mtx.reshape((4, 4), order="F"))"""
+    print(mtx2.mtx)
+    decomp = decompose(mtx2)
+    print(decomp)
+    newmtx = recompose(*decomp)
+    print(newmtx.mtx)
