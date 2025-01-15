@@ -124,7 +124,15 @@ class EntityInitialization(object):
             return ""
         else:
             return self.reflection_ids[id]
-    
+
+    def name_usages(self, name):
+        results = []
+        for key, value in self.reflection_ids.items():
+            if value == name:
+                results.append(key)
+
+        return results
+
     def set_name(self, id, name):
         self.reflection_ids[id] = name
 
