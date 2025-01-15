@@ -53,6 +53,8 @@ class Scene(object):
         self.lines = LineDrawing()
         self.not_startpoint = {}
 
+        self.is_empty = {}
+
     def add_matrix(self, modelname, mtx):
         if modelname not in self.modelinstances:
             self.renderedmodels.append(modelname)
@@ -65,6 +67,8 @@ class Scene(object):
         self.wireframeboxes = []
         self.wireframecylinders = []
         self.lines.reset_lines()
+        for type in self.is_empty:
+            self.is_empty[type] = True
 
     def reset(self):
         for key in list(self.objects.keys()):
@@ -77,6 +81,10 @@ class Scene(object):
     def set_model(self, type, model):
         self.objects[type] = None
         self.model[type] = model
+        self.is_empty[type] = True
+
+    def set_not_empty(self, type):
+        self.is_empty[type] = False
 
 
 class Graphics(object):
@@ -208,6 +216,8 @@ class Graphics(object):
         if self.render_everything_once:
             vismenu.visibility_override = True
 
+
+
         empty = False
         #self.set_dirty()
         if self.is_dirty():
@@ -228,8 +238,10 @@ class Graphics(object):
 
                 if obj.type in self.scene.objects:
                     mtx, extradata = self.scene.objects[obj.type]
+                    self.scene.set_not_empty(obj.type)
                 else:
                     mtx, extradata = default_matrices, default_extradata
+                    self.scene.set_not_empty("generic")
 
                 if rw.dolphin.do_visualize() and obj.mtxoverride is not None:
                     currmtx = obj.mtxoverride.copy()
@@ -329,10 +341,11 @@ class Graphics(object):
                 mtx, extradata = None, None
 
             #if len(mtx) > 0:
-            model = self.rw.bwmodelhandler.instancemodels[meshname]
-            model.bind(mtx, numpy.array([], dtype=numpy.uint8))
-            model.instancedrender(self.rw.bwmodelhandler.textures)
-            model.unbind()
+            if meshname in self.rw.bwmodelhandler.instancemodels:
+                model = self.rw.bwmodelhandler.instancemodels[meshname]
+                model.bind(mtx, numpy.array([], dtype=numpy.uint8))
+                model.instancedrender(self.rw.bwmodelhandler.textures)
+                model.unbind()
 
         if self.rw.is_topdown():
             glClear(GL_DEPTH_BUFFER_BIT)
@@ -342,6 +355,8 @@ class Graphics(object):
         drawn = 0
         for objtype, model in self.scene.model.items():
             if not visible(objtype, obj=None) or not rw.cubes_visible:
+                continue
+            if self.scene.is_empty[objtype]:
                 continue
 
             mtx, extradata = self.scene.objects[objtype]
