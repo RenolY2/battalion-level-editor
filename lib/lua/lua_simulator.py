@@ -12,7 +12,7 @@ else:
 
 DO_NOT_REPLACE = [
     "EndFrame", "UpdateMusic", "WaitFor", "DebugOut", "RegisterReflectionId", "Kill",
-    "GetTime"
+    "GetTime", "GetFramesPerSecond"
 ]
 
 
@@ -81,6 +81,8 @@ class LuaSimulator(object):
         self.runtime.globals().SetDefaultReturn = self.set_default_return
         self.runtime.globals().SetReturn = self.add_argument_return
         self.runtime.globals().Kill = self.kill_script
+        self.runtime.globals().GetFramesPerSecond = self.get_frames_per_second
+
 
         self.debug = False
         self.debug_call = False
@@ -135,6 +137,9 @@ class LuaSimulator(object):
         self.default_return = {}
         self.argument_return_override = Tree()
 
+    def get_frames_per_second(self):
+        return 30.0
+
     def kill_script(self, id):
         try:
             id = int(id)
@@ -183,6 +188,88 @@ class LuaSimulator(object):
         return result
 
     def set_constants(self):
+        self.runtime.globals().CARD = {
+            "NONE": 0,
+            "CardFull": 1,
+            "NoSpace": 2,
+            "NoData": 3,
+            "AskFormat": 4,
+            "LoadFailed": 5,
+            "SaveFailed": 6,
+            "LoadOK": 7,
+            "SaveOK": 8,
+            "AskOverwrite": 9,
+            "FormatFailed": 10,
+            "Damaged": 11,
+            "CRCError": 12,
+            "NotSupported": 13,
+            "NoMemoryCard": 14,
+            "NoFiles": 15,
+            "FormatOK": 16,
+            "DeleteOK": 17,
+            "AskDelete": 0x12,
+            "Corrupt": 19,
+            "Unformatted": 20,
+            "WrongDevice": 21,
+            "DifferentFile": 22,
+            "FileOK": 23,
+            "CardOK": 24,
+            "DifferentCard": 25,
+            "NoPrevious": 26,
+            "CRCRecoverable": 27
+        }
+
+        self.runtime.globals().GAMESTATUS = {
+            "NONE": 0,
+            "PLAY": 1,
+            "QUIT": 2,
+            "LOSE": 3,
+            "WIN": 4,
+            "MISSIONS": 5,
+            "UNITS": 6,
+            "GALLERY": 7
+        }
+
+        self.runtime.globals().LEVELSTATUS = {
+            "NEW": 0,
+            "NEXT": 1,
+            "DONE": 2,
+            "LOCKED": 3
+        }
+
+        self.runtime.globals().VIDEO = {
+            "OFF": 0,
+            "ONCE": 1,
+            "LOOPED": 2
+        }
+
+        self.runtime.globals().GUI = {
+            "GUI": 0,
+            "PAGE": 1,
+            "GADGET": 2,
+            "FLAT": 3,
+            "RECT": 4,
+            "SPRITE": 5,
+            "BUTTON": 6,
+            "TEXTBOX": 7
+        }
+
+        self.runtime.globals().JUSTIFY = {
+            "LEFT": 0,
+            "CENTRE": 1,
+            "RIGHT": 2,
+            "FULL1": 3,
+            "FULL2": 4
+        }
+
+        self.runtime.globals().GRADE = {
+            "NONE": 0,
+            "C": 1,
+            "B": 2,
+            "A": 3,
+            "S": 4
+        }
+
         constants = {}
         constants["ID_NONE"] = 0
         constants["PAUSESCR_LTRIGGER"] = 1
@@ -737,7 +824,11 @@ class LuaSimulator(object):
     def debug_out(self, *args):
         values = [str(x) for x in args]
         if self.prepend_routine_name_to_print:
-            out = self.current_routine+": "+" ".join(values)
+            if self.current_routine is None:
+                routine = "MAIN"
+            else:
+                routine = self.current_routine
+            out = routine+": "+" ".join(values)
         else:
             out = " ".join(values)
         print(out)
