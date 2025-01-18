@@ -11,3 +11,4 @@ texture_cache/*
 log.txt
 editor_log.txt
 editor_config.ini
+savestates/*
