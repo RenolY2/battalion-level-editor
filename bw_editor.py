@@ -123,7 +123,11 @@ class LevelEditor(QMainWindow):
         self.timer.timeout.connect(self.read_entityinit_if_changed)
         self.timer.start()
 
-
+    def get_selected_obj(self):
+        if len(self.level_view.selected) == 1:
+            return self.level_view.selected[0]
+        else:
+            return None
 
     def get_editor_folder(self):
         return EDITOR_ROOT
@@ -496,6 +500,7 @@ class LevelEditor(QMainWindow):
         self.level_view.select_update.connect(self.action_update_info)
         self.level_view.select_update.connect(self.select_from_3d_to_treeview)
         self.level_view.select_update.connect(self.update_model_viewer)
+        self.level_view.select_update.connect(lambda: self.menubar.plugin_menu.execute_event("select_update", self))
         #self.pik_control.lineedit_coordinatex.textChanged.connect(self.create_field_edit_action("coordinatex"))
         #self.pik_control.lineedit_coordinatey.textChanged.connect(self.create_field_edit_action("coordinatey"))
         #self.pik_control.lineedit_coordinatez.textChanged.connect(self.create_field_edit_action("coordinatez"))

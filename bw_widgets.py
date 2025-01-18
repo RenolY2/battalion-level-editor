@@ -704,7 +704,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.MOVE_LEFT = left
         self.MOVE_RIGHT = right
 
-    def do_redraw(self, force=False, forcelight=False, forceselected=False, forcespecific=[]):
+    def do_redraw(self, force=False, forcelight=False, forceselected=False, forcespecific=[], forcelightdirty=False):
         self._frame_invalid = True
         if forcelight:
             self._lastrendertime = 0
@@ -713,6 +713,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             self.graphics.set_dirty()
             self._lastrendertime = 0
             self.update()
+        elif forcelightdirty:
+            self.graphics.set_dirty()
+            self._lastrendertime = 0
         elif forceselected or forcespecific:
             modelnames = set()
             if forceselected:

@@ -1023,6 +1023,10 @@ class BattalionObject(object):
         self.update_xml()
         return etree.tostring(self._node, encoding="unicode", short_empty_elements=False)
 
+    def fields(self) -> typing.Iterable[typing.Tuple[str, str, str, int]]:
+        for attr_node in self._node:
+            yield attr_node.tag, attr_node.attrib["name"], attr_node.attrib["type"], int(attr_node.attrib["elements"])
+
     def calc_hash(self):
         hash = hashlib.new("md5")
         result = []
