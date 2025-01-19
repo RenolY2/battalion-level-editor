@@ -318,6 +318,10 @@ class BattalionLevelFile(object):
         if self.bw2:
             print("Detected XML as BW2")
 
+    @property
+    def category(self):
+        return self._categories
+
     def delete_objects(self, objects):
         for obj in objects:
             assert not obj.deleted
@@ -382,6 +386,9 @@ class BattalionLevelFile(object):
             assert bwobject.getmatrix() is not None
 
         if bwobject.type in self._categories:
+            self._categories[bwobject.type][bwobject.id] = bwobject
+        else:
+            self._categories[bwobject.type] = {}
             self._categories[bwobject.type][bwobject.id] = bwobject
 
     def write(self, f):
@@ -720,7 +727,7 @@ class BattalionObject(object):
                 try:
                     icon = self.mBase.mUnitSprite.mBase.texture.mName
                 except Exception as err:
-                    print("{0}-{1} has no defined unit sprite".format(self.type, self.id))
+                    #print("{0}-{1} has no defined unit sprite".format(self.type, self.id))
                     x,y = 15, 15
                 else:
                     if icon.lower() in BWICONS:
@@ -825,7 +832,7 @@ class BattalionObject(object):
         elif self.type == "cObjectiveMarkerBase":
             model = self.mModel
             if model is not None:
-                return model.mName
+                self._modelname = model.mName
 
     def update_xml(self):
         for attr_node in self._node:
@@ -896,6 +903,9 @@ class BattalionObject(object):
         else:
             return None
 
+    def set_custom_name(self, customname):
+        self._node.attrib["customName"] = customname
+
     @property
     def id(self):
         if self.deleted:
@@ -926,11 +936,13 @@ class BattalionObject(object):
                 return "{0}({1})".format(self.mpScript.mName, self.id)
             elif hasattr(base, "mName") and base.mName != "":
                 return "{0}({1})".format(self.mName, self.id)
+            elif self.modelname is not None:
+                modelname = self.modelname
             #elif self.type ==
 
             if self._custom_name:
                 if modelname:
-                    return "{0}({2},{1})".format(self._custom_name, self.id, modelname)
+                    return "{0}({2},{1})".format(modelname, self._custom_name, self.id)
                 else:
                     return "{0}({1})".format(self._custom_name, self.id)
             else:
@@ -938,6 +950,7 @@ class BattalionObject(object):
                     return "{0}({2},{1})".format(self.type, self.id, modelname)
                 else:
                     return "{0}({1})".format(self.type, self.id)
+
         except Exception as err:
             print("Error on", self.id, self.type, err)
             return "{0}({1})".format(self.type, self.id)
