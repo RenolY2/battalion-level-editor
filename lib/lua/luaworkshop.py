@@ -6,8 +6,10 @@ import sys
 from io import BytesIO
 
 import lib.lua.bwarchivelib as bwarchivelib
+from widgets.editor_widgets import open_yesno_box
 import gzip
 import re
+from hashlib import sha1
 
 currpath = __file__
 currdir = os.path.dirname(currpath)
@@ -16,6 +18,7 @@ JAVA_JRE_DIR = os.path.join(currdir, "jdk-21.0.5+11-jre")
 LUAC_PATH = os.path.join(currdir, "luac5.0.2.exe")
 LUADEC_PATH = os.path.join(currdir, "LuaDec.exe")
 UNLUAC_PATH = os.path.join(currdir, "unluac.jar")
+DECOMP_FIX_FOLDER = os.path.join(currdir, "lua_decomp_fixes")
 
 # On Windows, try to use included java runtime
 if platform.system() == "Windows":
@@ -25,6 +28,23 @@ if platform.system() == "Windows":
         JAVA = "java"
 else:
     JAVA = "java"
+
+
+def calc_script_hash(path):
+    with open(path, "rb") as f:
+        data = f.read()
+        return sha1(data).digest()
+
+
+DECOMP_FIXES = {}
+script_fixes = os.listdir(DECOMP_FIX_FOLDER)
+for filename in script_fixes:
+    if "FIX_"+filename in script_fixes:
+        orig_file = os.path.join(DECOMP_FIX_FOLDER, filename)
+        fix_file = os.path.join(DECOMP_FIX_FOLDER, "FIX_"+filename)
+        hash = calc_script_hash(os.path.join(DECOMP_FIX_FOLDER, filename))
+        with open(fix_file, "rb") as f:
+            DECOMP_FIXES[hash] = f.read()
 
 
 def java_version():
@@ -219,6 +239,8 @@ class LuaWorkbench(object):
     def unpack_scripts_archive(self, res):
         script_names = []
 
+        files_to_be_fixed = []
+
         for script in res.scripts():
             print("dumping", script.name)
             script.dump_to_directory(self.tmp)
@@ -229,6 +251,19 @@ class LuaWorkbench(object):
             compiled_file = os.path.join(self.tmp, script_name + ".luap")
             decompiled_file = os.path.join(self.workdir, script_name + ".lua")
             decompile_unluac(compiled_file, decompiled_file)
+            hash = calc_script_hash(decompiled_file)
+            if hash in DECOMP_FIXES:
+                files_to_be_fixed.append((decompiled_file, DECOMP_FIXES[hash]))
+
+        if len(files_to_be_fixed) > 0:
+            result = open_yesno_box("The following files are known to have been decompiled incorrectly:\n"
+                                    +", ".join(os.path.basename(x[0]) for x in files_to_be_fixed),
+                            "Do you want to replace them with fixed versions?", yes_default=True)
+
+            if result:
+                for fname, fix in files_to_be_fixed:
+                    with open(fname, "wb") as f:
+                        f.write(fix)
 
     def unpack_new_scripts(self, res):
         script_names = []

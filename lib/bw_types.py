@@ -229,6 +229,7 @@ CONVERTERS_FROM = {
     "sFloat32": float,
     "eBoolean": boolean_from,
     "cFxString8": string_from,
+    "cFxString16": string_from,
     "sMatrix4x4": matrix4x4_from,
     "cMatrix4x4": matrix4x4_from,
     "sVector4": vector4_from,
@@ -239,7 +240,8 @@ CONVERTERS_FROM = {
     "sUInt16": int,
     "sUInt32": int,
     "sU8Color": vector4_from,
-    "sVectorXZ": vector2_from
+    "sVectorXZ": vector2_from,
+    "cU8Color": vector4_from
 }
 
 CONVERTERS_TO = {
@@ -250,7 +252,8 @@ CONVERTERS_TO = {
     "cMatrix4x4": matrix4x4_to,
     "sVector4": vector4_to,
     "sU8Color": vector4_to_u8,
-    "sVectorXZ": vector2_to
+    "sVectorXZ": vector2_to,
+    "cU8Color": vector4_to_u8
 }
 
 
