@@ -2008,16 +2008,16 @@ class ReferenceEdit(QtWidgets.QWidget):
         self.set_value = set_value
         self.type = type
 
-        line_1_holder = QtWidgets.QWidget(self)
-        line_2_holder = QtWidgets.QWidget(self)
+        #line_1_holder = QtWidgets.QWidget(self)
+        #line_2_holder = QtWidgets.QWidget(self)
         line_1 = QtWidgets.QHBoxLayout(self)
-        line_2 = QtWidgets.QHBoxLayout(self)
-        line_1_holder.setLayout(line_1)
-        line_2_holder.setLayout(line_2)
+        #line_2 = QtWidgets.QHBoxLayout(self)
+        #line_1_holder.setLayout(line_1)
+        #line_2_holder.setLayout(line_2)
 
         self.gridlayout = QtWidgets.QGridLayout(self)
-        line_1.setContentsMargins(0, 0, 0, 0)
-        line_2.setContentsMargins(0, 0, 0, 0)
+        #line_1.setContentsMargins(0, 0, 0, 0)
+        #line_2.setContentsMargins(0, 0, 0, 0)
 
         self.object_combo_box = StrongFocusComboBox(self)
         self.object_combo_box.setMaxVisibleItems(20)
@@ -2026,14 +2026,15 @@ class ReferenceEdit(QtWidgets.QWidget):
         self.goto_button = QtWidgets.QPushButton("Goto/Select", self)
         self.object_combo_box.currentIndexChanged.connect(self.change_object)
 
+        self.object_combo_box.setMinimumWidth(200)
         line_1.addWidget(self.object_combo_box)
         line_1.addWidget(self.edit_button)
-        line_2.addWidget(self.set_to_selected_button)
-        line_2.addWidget(self.goto_button)
+        line_1.addWidget(self.set_to_selected_button)
+        line_1.addWidget(self.goto_button)
 
-        self.gridlayout.addWidget(line_1_holder, 0, 0)
-        self.gridlayout.addWidget(line_2_holder, 1, 0)
-        self.setLayout(self.gridlayout)
+        #self.gridlayout.addWidget(line_1_holder, 0, 0)
+        #self.gridlayout.addWidget(line_2_holder, 1, 0)
+        self.setLayout(line_1)
 
     def update_value(self, item_cache=None):
         self.object_combo_box.blockSignals(True)
