@@ -12,7 +12,8 @@ else:
 
 DO_NOT_REPLACE = [
     "EndFrame", "UpdateMusic", "WaitFor", "DebugOut", "RegisterReflectionId", "Kill",
-    "GetTime", "GetFramesPerSecond"
+    "GetTime", "GetFramesPerSecond", "OpenPage", "UpdatePage", "RenderPage", "ClosePage",
+    "cos", "sin"
 ]
 
 
@@ -70,7 +71,7 @@ class LuaSimulator(object):
     def __init__(self, output_hook, is_bw1):
         self.funcs = {}
 
-        self.runtime = lua.LuaRuntime()
+        self.runtime = lua.LuaRuntime(unpack_returned_tuples=True)
         self.context = ""
 
         self.output_hook = output_hook
@@ -86,6 +87,15 @@ class LuaSimulator(object):
 
         self.debug = False
         self.debug_call = False
+
+        self.runtime.execute(f"""
+                                function cos(x)
+                                    return math.cos(x)
+                                end
+                                function sin(x)
+                                    return math.cos(x)
+                                end
+""")
 
         self.runtime.execute(f"""
                         function EndFrame()
@@ -108,6 +118,37 @@ class LuaSimulator(object):
                             function GetTime()
                                 return os.time()
                             end""")
+
+        self.runtime.execute(f"""
+                            function OpenPage(table)
+                                for i=1, #table.open do
+                                    DebugOut("OPEN", i)
+                                    v = table.open[i]
+                                    v()
+                                end
+                            end
+                            function UpdatePage(table)
+                                for i=1, #table.update do
+                                    DebugOut("UPDATE", i)
+                                    v = table.update[i]
+                                    v()
+                                end
+                            end
+                            function RenderPage(table)
+                                for i=1, #table.render do
+                                    DebugOut("RENDER", i)
+                                    v = table.render[i]
+                                    v()
+                                end
+                            end
+                            function ClosePage(table)
+                                for i=1, #table.close do
+                                    DebugOut("CLOSE", i)
+                                    v = table.close[i]
+                                    v()
+                                end
+                            end
+        """)
 
         if is_bw1:
             self.runtime.globals().constant = self.set_constants()
