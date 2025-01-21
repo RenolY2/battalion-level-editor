@@ -53,14 +53,17 @@ def open_message_dialog(message, instructiontext=None, parent=None):
     messagebox.exec()
 
 
-def open_yesno_box(mainmsg, sidemsg):
+def open_yesno_box(mainmsg, sidemsg, yes_default=False):
     msgbox = QtWidgets.QMessageBox()
     msgbox.setText(
         mainmsg)
     msgbox.setInformativeText(sidemsg)
     msgbox.setStandardButtons(
         QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
-    msgbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+    if yes_default:
+        msgbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Yes)
+    else:
+        msgbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
     msgbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
     msgbox.setWindowIcon(QtGui.QIcon('resources/icon.ico'))
     msgbox.setWindowTitle("Warning")
