@@ -10,16 +10,81 @@ import lib.lua.lua_simulator as lua_simulator
 from importlib import reload
 
 from plugins.strings_editor.strings import BWLanguageFile
+from lib.bw.texture import TextureArchive
 
 if TYPE_CHECKING:
     import bw_editor
 
 
+class BWGuiHandler(object):
+    def __init__(self, level, textures):
+        self.level = level
+        self.textures: TextureArchive = textures
+        #self.bwgui = QtWidgets.QMainWindow()
+        #self.bwgui.resize(640, 480)
+        #self.bwgui.show()
+        self.sprite_depths = {}
+
+    def register_functions(self, lua_sim: lua_simulator.LuaSimulator):
+        lua_sim.set_function("GetPersistentData", self.GetPersistentData)
+        lua_sim.set_function("GetStoredMissionData", self.GetStoredMissionData)
+        lua_sim.set_function("GetMissionData", self.GetMissionData)
+        lua_sim.set_function("IsBonusDone", self.IsBonusDone)
+        lua_sim.set_function("rint", self.rint)
+        lua_sim.set_function("GetSprite", self.GetSprite)
+
+    def GetPersistentData(self):
+        return 0, 1, 1
+
+    def GetStoredMissionData(self, i):
+        return 0, 0, 0, 0
+
+    def GetMissionData(self):
+        return 0, 0, 0, 0
+
+    def IsBonusDone(self, i):
+        return True
+
+    def rint(self, x):
+        return round(x)
+
+    def GetSprite(self, spriteid):
+        sprite = self.level.objects[str(spriteid)]
+        return spriteid
+
+    def ZDepthSprite(self, sprite, depth):
+        self.sprite_depths[sprite] = depth
+
+    def OpenSprite(self, spritesetup):
+        sprite = spritesetup[0]
+        size = spritesetup[1]
+        unk = spritesetup[2]
+        rotfunc = spritesetup[3]
+        colorfunc = spritesetup[4]
+
+    def OpenFlat(self, flat):
+        name = flat[0]
+        coord1 = flat[1]
+        size = flat[2]
+        coord2 = flat[3]
+        size2 = flat[4]
+        colorfunc = flat[5]
+
+    def QuadraticBezier(self, x1, y1, x2, y2, gap, unk, dest):
+        dest[1] = 0
+        dest[2] = 0
+
+
 class BWHandler(object):
     def __init__(self, print):
         self.level = None
+        self.resources = None
         self.strings: BWLanguageFile = None
         self.print = print
+        self.guihandler = None
+
+    def set_gui_handler(self, handler: BWGuiHandler):
+        self.guihandler = handler
 
     def set_messages(self, path):
         with open(path, "rb") as f:
@@ -32,6 +97,9 @@ class BWHandler(object):
 
     def register_functions(self, lua_sim: lua_simulator.LuaSimulator):
         lua_sim.set_function("PhoneMessage", self.phone_message)
+
+        if self.guihandler is not None:
+            self.guihandler.register_functions(lua_sim)
 
 
 class LuaSimulatorWorker(QtCore.QThread):
@@ -187,6 +255,7 @@ class Plugin(object):
         self.lua_sim = None
         self.lua_sim_thread = None
         self.bw_handler = None
+        self.guihandler = None
 
         self.orig_globals = None
 
@@ -251,6 +320,8 @@ class Plugin(object):
             if scripts or init_scripts:
 
                 self.bw_handler = BWHandler(None)
+                self.guihandler = BWGuiHandler(editor.level_file, editor.level_view.bwmodelhandler.textures)
+                self.bw_handler.set_gui_handler(self.guihandler)
                 stringpath = editor.file_menu.get_strings_path("English")
 
                 try:
