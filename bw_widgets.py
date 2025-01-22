@@ -1002,7 +1002,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                             if value != 0:
                                 index = (value >> 4) & 0xFFFF
                                 misc = value & 0xFF
-                                if not 0 < index < len(objlist):
+                                if not 0 <= index < len(objlist):
                                     print("Selection failure, index", index, "vs", len(objlist), "objects")
                                     selectionfail = True
                                     break
