@@ -1,3 +1,4 @@
+import io
 import os
 import gzip
 import shutil
@@ -422,7 +423,25 @@ class Plugin(object):
 
             additional_textures = []
             for obj in to_be_exported:
-                if obj.type == "cNodeHierarchyResource":
+                if obj.type == "cTequilaEffectResource":
+                    resource = editor.file_menu.resource_archive.get_resource(b"FEQT", obj.mName)
+                    effects_file = io.StringIO(str(resource.data, encoding="ascii"))
+                    for line in effects_file:
+                        line = line.strip()
+                        result = line.split(" ", maxsplit=2)
+                        if len(result) == 2:
+                            command, arg = result
+                            arg: str
+                            if command == "Texture":
+                                texname = arg.removesuffix(".ace")
+                                texobj = texture_lookup.get(texname.lower())
+                                if texobj is not None:
+                                    if texobj.id not in export.objects:
+                                        export.add_object_new(texobj)
+                                else:
+                                    print("Warning: Special Effect", obj.mName,"references non-existing texture", texname)
+
+                elif obj.type == "cNodeHierarchyResource":
                     modelname = obj.mName
 
                     textures = editor.level_view.bwmodelhandler.models[modelname].all_textures
