@@ -7,6 +7,7 @@ import PyQt6.QtCore as QtCore
 
 from itertools import chain
 
+import typing
 from typing import TYPE_CHECKING
 from widgets.graphics_widgets import UnitViewer
 from widgets.tree_view import ObjectGroup, NamedItem
@@ -1596,6 +1597,32 @@ def make_labeled_widget(parent, text, widget: QtWidgets.QWidget):
     return labelwidget
 
 
+class DecimalInputNormal(QtWidgets.QLineEdit):
+    changed = QtCore.pyqtSignal()
+
+    def __init__(self, parent, get_value, set_value, min=-math.inf, max=math.inf):
+        super().__init__(parent)
+        self.get_value = get_value
+        self.set_value = set_value
+
+        self.min = None
+        self.max = None
+
+        self.setValidator(QtGui.QDoubleValidator(min, max, 6, self))
+        self.textChanged.connect(self.changed_value)
+
+    def update_value(self):
+        val = self.get_value()
+        self.blockSignals(True)
+        self.setText(str(val))
+        self.blockSignals(False)
+
+    def changed_value(self, value):
+        val = float(value)
+        self.set_value(val)
+        self.changed.emit()
+
+
 class DecimalInput(QtWidgets.QLineEdit):
     changed = QtCore.pyqtSignal()
 
@@ -1609,6 +1636,48 @@ class DecimalInput(QtWidgets.QLineEdit):
 
         self.setValidator(QtGui.QDoubleValidator(min, max, 6, self))
         self.textChanged.connect(self.changed_value)
+
+        self.start_x = None
+        self.setCursor(QtCore.Qt.CursorShape.SizeHorCursor)
+        self.scaling_factor = 1
+        self.scale_down = False
+        self.currvalue = None
+
+    def keyPressEvent(self, a0: typing.Optional[QtGui.QKeyEvent]) -> None:
+        super().keyPressEvent(a0)
+        event: QtGui.QKeyEvent = a0
+
+        if event.key() == QtCore.Qt.Key.Key_Shift:
+            self.scale_down = True
+
+    def keyReleaseEvent(self, a0: typing.Optional[QtGui.QKeyEvent]) -> None:
+        super().keyReleaseEvent(a0)
+        event: QtGui.QKeyEvent = a0
+
+        if event.key() == QtCore.Qt.Key.Key_Shift:
+            self.scale_down = False
+
+    def mousePressEvent(self, a0: typing.Optional[QtGui.QMouseEvent]) -> None:
+        super().mousePressEvent(a0)
+
+        event: QtGui.QMouseEvent = a0
+        self.currvalue = self.get_value()
+        self.start_x = event.pos().x()
+
+    def mouseMoveEvent(self, a0: typing.Optional[QtGui.QMouseEvent]) -> None:
+        if self.start_x is not None:
+            event: QtGui.QMouseEvent = a0
+            diff = event.pos().x() - self.start_x
+
+            if self.scale_down:
+                value = round(self.currvalue + diff*self.scaling_factor*0.01, 6)
+            else:
+                value = round(self.currvalue + diff * self.scaling_factor, 6)
+            self.setText(str(value))
+
+    def mouseReleaseEvent(self, a0: typing.Optional[QtGui.QMouseEvent]) -> None:
+        self.start_x = None
+        self.scale_down = False
 
     def update_value(self):
         val = self.get_value()
