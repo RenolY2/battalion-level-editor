@@ -417,11 +417,17 @@ class Plugin(object):
                 export.add_object_new(obj)
 
             texture_lookup = {}
+            mesh_lookup = {}
             for objid, obj in editor.level_file.objects.items():
                 if obj.type == "cTextureResource":
                     texture_lookup[obj.mName.lower()] = obj
+                elif obj.type == "cNodeHierarchyResource":
+                    mesh_lookup[obj.mName.lower()] = obj
 
-            additional_textures = []
+            additional_meshes = []
+
+            # Scan special effects for texture and mesh references which
+            # we will add to the list of objects/assets to be exported
             for obj in to_be_exported:
                 if obj.type == "cTequilaEffectResource":
                     resource = editor.file_menu.resource_archive.get_resource(b"FEQT", obj.mName)
@@ -441,7 +447,21 @@ class Plugin(object):
                                 else:
                                     print("Warning: Special Effect", obj.mName,"references non-existing texture", texname)
 
-                elif obj.type == "cNodeHierarchyResource":
+                            elif command == "Mesh":
+                                modelname, _ = arg.rsplit(".", maxsplit=2)
+                                modelobj = mesh_lookup.get(modelname.lower())
+                                if modelobj is not None:
+                                    if modelobj not in to_be_exported and modelobj.id not in export.objects:
+                                        additional_meshes.append(modelobj)
+                                        export.add_object_new(modelobj)
+                                else:
+                                    print("Warning: Special Effect", obj.mName,"references non-existing mesh", modelname)
+
+            to_be_exported.extend(additional_meshes)
+
+            additional_textures = []
+            for obj in to_be_exported:
+                if obj.type == "cNodeHierarchyResource":
                     modelname = obj.mName
 
                     textures = editor.level_view.bwmodelhandler.models[modelname].all_textures
