@@ -418,11 +418,16 @@ class Plugin(object):
 
             texture_lookup = {}
             mesh_lookup = {}
+            destroy_lookup = {}
             for objid, obj in editor.level_file.objects.items():
                 if obj.type == "cTextureResource":
                     texture_lookup[obj.mName.lower()] = obj
                 elif obj.type == "cNodeHierarchyResource":
                     mesh_lookup[obj.mName.lower()] = obj
+                elif obj.type == "cDestroyableObject":
+                    if obj.mBase is not None and obj.mBase.Model is not None:
+                        modelname = obj.mBase.Model.mName
+                        destroy_lookup[modelname] = obj
 
             additional_meshes = []
 
@@ -454,6 +459,16 @@ class Plugin(object):
                                     if modelobj not in to_be_exported and modelobj.id not in export.objects:
                                         additional_meshes.append(modelobj)
                                         export.add_object_new(modelobj)
+
+                                        # Add in the place holder destroyable objects
+                                        destroy_obj = destroy_lookup[modelname]
+                                        if destroy_obj not in to_be_exported:
+                                            export.add_object_new(destroy_obj)
+
+                                        for dep in destroy_obj.get_dependencies(skip=skip):
+                                            if dep not in to_be_exported:
+                                                export.add_object_new(dep)
+
                                 else:
                                     print("Warning: Special Effect", obj.mName,"references non-existing mesh", modelname)
 
