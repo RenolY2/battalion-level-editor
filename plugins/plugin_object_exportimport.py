@@ -464,6 +464,7 @@ class Plugin(object):
                                         destroy_obj = destroy_lookup[modelname]
                                         if destroy_obj not in to_be_exported:
                                             export.add_object_new(destroy_obj)
+                                            selected_ids.append(destroy_obj.id)
 
                                         for dep in destroy_obj.get_dependencies(skip=skip):
                                             if dep not in to_be_exported:
