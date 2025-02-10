@@ -261,7 +261,7 @@ class EditorFileMenu(QMenu):
             else:
                 func_open = open
 
-            self.editor.menubar.plugin_menu.execute_event("before_load")
+            self.editor.plugin_handler.execute_event("before_load")
 
             with func_open(filepath, "rb") as f:
                 try:
@@ -368,7 +368,7 @@ class EditorFileMenu(QMenu):
                     QApplication.processEvents()
                     self.editor.level_view.start_redrawing()
 
-                    self.editor.menubar.plugin_menu.execute_event("after_load")
+                    self.editor.plugin_handler.execute_event("after_load")
                     loadingbar.force_close()
 
                 except Exception as error:
@@ -386,7 +386,7 @@ class EditorFileMenu(QMenu):
     def button_save_level(self, *args, **kwargs):
         try:
             loadingbar = None
-            self.editor.menubar.plugin_menu.execute_event("before_save", self.editor)
+            self.editor.plugin_handler.execute_event("before_save", self.editor)
             self.editor.level_view.stop_redrawing()
             if self.level_paths is not None:
                 levelpaths = self.level_paths

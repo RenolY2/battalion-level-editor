@@ -31,6 +31,7 @@ from widgets.tree_view import LevelDataTreeView
 import widgets.tree_view as tree_view
 from configuration import read_config, make_default_config, save_cfg
 from widgets.editor_widgets import open_yesno_box
+from widgets.menu.plugin import PluginHandler
 
 import bw_widgets # as mkddwidgets
 from widgets.side_widget import PikminSideWidget
@@ -71,6 +72,7 @@ class LevelEditor(QMainWindow):
             self.configuration = make_default_config()
 
         self.level_file = None
+        self.plugin_handler = PluginHandler()
         self.installEventFilter(self)
         self.file_menu = EditorFileMenu(self)
         self.mini_model_viewer = UnitViewer(self, self, angle=0)
@@ -78,7 +80,8 @@ class LevelEditor(QMainWindow):
         self.setCursor(Qt.CursorShape.ArrowCursor)
         self.lua_workbench: LuaWorkbench = None
 
-
+        self.plugin_handler.load_plugins()
+        self.plugin_handler.add_menu_actions(self)
 
         self.level_view.level_file = self.level_file
         self.level_view.set_editorconfig(self.configuration["editor"])
@@ -500,7 +503,7 @@ class LevelEditor(QMainWindow):
         self.level_view.select_update.connect(self.action_update_info)
         self.level_view.select_update.connect(self.select_from_3d_to_treeview)
         self.level_view.select_update.connect(self.update_model_viewer)
-        self.level_view.select_update.connect(lambda: self.menubar.plugin_menu.execute_event("select_update", self))
+        self.level_view.select_update.connect(lambda: self.plugin_handler.execute_event("select_update", self))
         #self.pik_control.lineedit_coordinatex.textChanged.connect(self.create_field_edit_action("coordinatex"))
         #self.pik_control.lineedit_coordinatey.textChanged.connect(self.create_field_edit_action("coordinatey"))
         #self.pik_control.lineedit_coordinatez.textChanged.connect(self.create_field_edit_action("coordinatez"))

@@ -1,6 +1,10 @@
 import importlib
 import os
 import traceback
+import typing
+if typing.TYPE_CHECKING:
+    from bw_editor import LevelEditor
+
 from functools import partial
 
 from collections import namedtuple
@@ -14,49 +18,43 @@ pluginfolder = os.path.join(
     "plugins")
 
 
-class PluginMenu(Menu):
-    def __init__(self, parent):
-        super().__init__(parent, "Plugins")
-        self.parent = parent
-
+class PluginHandler(object):
+    def __init__(self):
         self.plugins = {}
         self.plugin_folder_last_changed = os.stat(pluginfolder).st_mtime
 
-        self.menus = []
+        self.plugin_menu: PluginMenu = None
+        self.plugin_sidewidget = None
 
         self.timer = QTimer()
         self.timer.setInterval(1000)
         self.timer.timeout.connect(self.hot_reload)
         self.timer.start()
 
-    def add_menu_actions(self):
-        for pluginname, pluginentry in self.plugins.items():
-            menu = Menu(self, pluginentry.plugin.name)
-            for action in pluginentry.plugin.actions:
-                name, func = action[:2]
-                if len(action) == 3:
-                    shortcut = action[2]
-                else:
-                    shortcut = None 
-                menu.add_action(name, func=partial(func, self.parent.editor), shortcut=shortcut)
-            self.menus.append(menu)
+        self.events = {}
+        self.add_event("select_update", "LevelEditor")
+        self.add_event("before_save", "LevelEditor")
+        self.add_event("before_load")
+        self.add_event("after_load")
 
-        for menu in self.menus:
-            self.addMenu(menu)
+    def add_event(self, event_name, *args):
+        self.events[event_name] = args
 
-    def clear_menu_actions(self):
-        for menu in self.menus:
-            menu.deleteLater()
+    def create_plugin_menu(self, parent):
+        self.plugin_menu = PluginMenu(parent)
+        return self.plugin_menu
 
-        self.menus = []
+    def create_plugin_sidewidget(self, parent):
+        #TODO: Create sidewidget
+        return self.plugin_sidewidget
 
     def hot_reload(self):
-        if self.plugin_folder_changed():
+        if self.plugin_folder_changed() and self.plugin_menu is not None:
             self.reload_changed_plugins()
             self.plugin_folder_update_time()
 
-            self.clear_menu_actions()
-            self.add_menu_actions()
+            self.plugin_menu.clear_menu_actions()
+            self.plugin_menu.add_menu_actions()
 
     def plugin_folder_update_time(self):
         self.plugin_folder_last_changed = os.stat(pluginfolder).st_mtime
@@ -115,6 +113,8 @@ class PluginMenu(Menu):
                     self.load_plugin(pluginname)
 
     def execute_event(self, eventname, *args, **kwargs):
+        if eventname not in self.events:
+            raise RuntimeError("Unknown event {}".format(eventname))
         for pluginname, entry in self.plugins.items():
             if hasattr(entry.plugin, eventname):
                 try:
@@ -122,6 +122,44 @@ class PluginMenu(Menu):
                     func(*args, **kwargs)
                 except:
                     traceback.print_exc()
+
+    def add_menu_actions(self, editor):
+        self.plugin_menu.add_menu_actions(self.plugins, editor)
+
+    def clear_menu_actions(self):
+        self.plugin_menu.clear_menu_actions()
+
+
+class PluginMenu(Menu):
+    def __init__(self, parent):
+        super().__init__(parent, "Plugins")
+        self.parent = parent
+        self.menus = []
+
+    def add_menu_actions(self, plugins, editor):
+        for pluginname, pluginentry in plugins.items():
+            menu = Menu(self, pluginentry.plugin.name)
+            for action in pluginentry.plugin.actions:
+                name, func = action[:2]
+                if len(action) == 3:
+                    shortcut = action[2]
+                else:
+                    shortcut = None 
+                menu.add_action(name, func=partial(func, editor), shortcut=shortcut)
+            self.menus.append(menu)
+
+        for menu in self.menus:
+            self.addMenu(menu)
+
+    def clear_menu_actions(self):
+        for menu in self.menus:
+            menu.deleteLater()
+
+        self.menus = []
+
+
+
+
 
 
 if __name__ == "__main__":
