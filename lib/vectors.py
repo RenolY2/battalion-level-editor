@@ -179,11 +179,26 @@ class Triangle(object):
         return self.normal.dot(vec) == 0
 
 
+# p1 p2
+# p3 p4
+class Quad(object):
+    def __init__(self, p1, p2, p3, p4):
+        self.tri1 = Triangle(p1, p2, p3)
+        self.tri2 = Triangle(p2, p4, p3)
+
+
 class Line(object):
     def __init__(self, origin, direction):
         self.origin = origin
         self.direction = direction
         self.direction.normalize()
+
+    def collide_quad(self, quad: Quad):
+        result = self.collide(quad.tri1)
+        if result is None:
+            result = self.collide(quad.tri2)
+
+        return result
 
     def collide(self, tri: Triangle):
         normal = tri.normal
