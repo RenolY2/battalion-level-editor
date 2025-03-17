@@ -6,9 +6,11 @@ layout(location = 0) in vec4 vert;
 layout(location = 2) in vec4 color;
 layout(location = 3) in vec2 texCoord1;
 layout(location = 4) in vec2 texCoord2;
+layout(location = 5) in vec2 overlayCoord;
 
 out vec2 fragTexCoord1;
 out vec2 fragTexCoord2;
+out vec2 fragOverlayCoord;
 out vec4 fragColor;
 
 void main(void)
@@ -16,6 +18,7 @@ void main(void)
     // Pass the tex coord straight through to the fragment shader
     fragTexCoord1 = texCoord1;
     fragTexCoord2 = texCoord2;
+    fragOverlayCoord = overlayCoord;
     fragColor = color;
 
    gl_Position = gl_ModelViewProjectionMatrix* vert;
@@ -26,11 +29,13 @@ fragshader = """
 #version 330
 in vec2 fragTexCoord1; //this is the texture coord
 in vec2 fragTexCoord2; 
+in vec2 fragOverlayCoord;
 in vec4 fragColor;
 
 out vec4 finalColor; //this is the output color of the pixel
 uniform sampler2D tex;
 uniform sampler2D tex2;
+uniform sampler2D overlayTex;
 
 //uniform vec3 light;// = vec3(0.0, 1.0, 0.0);
 //vec4 ambient = vec4(0.1, 0.1, 0.1, 1.0);
@@ -46,9 +51,10 @@ void main (void)
 {
     vec4 texcolor2 = texture(tex2, fragTexCoord2);
     vec4 texcolor = texture(tex, fragTexCoord1);
+    vec4 overlaycolor = texture(overlayTex, fragOverlayCoord);
     float a = fragColor.a * texcolor2.a;
     vec4 color = a*texcolor2 + (1-a)*texcolor;
-    finalColor = color*vec4(fragColor.rgb, 1)*3;
+    finalColor = color*vec4(fragColor.rgb, 1)*3*overlaycolor;
 }
 """
 
