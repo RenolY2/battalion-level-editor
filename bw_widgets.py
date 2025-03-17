@@ -41,6 +41,11 @@ from lib.bw.bwmodelrender import BWModelHandler
 from lib.graphics import Graphics
 from widgets.filter_view import FilterViewMenu
 from widgets.editor_widgets import GizmoWidget
+from plugins.plugin_pfd_research import OpenGLTexture
+
+import typing
+if typing.TYPE_CHECKING:
+    from widgets.menu.plugin import PluginHandler
 
 MOUSE_MODE_NONE = 0
 MOUSE_MODE_MOVEWP = 1
@@ -205,10 +210,11 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
     rotate_current = pyqtSignal(Vector3)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, plugin_handler: "PluginHandler", *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.bwmodelhandler = BWModelHandler()
+        self.plugin_handler: PluginHandler = plugin_handler
         self._zoom_factor = 80
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
@@ -340,6 +346,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.arrow = None
         self.minimap = Minimap(Vector3(-1000.0, 0.0, -1000.0), Vector3(1000.0, 0.0, 1000.0), 0,
                                None)
+        self.overlay_texture = OpenGLTexture.create_dummy(512, 512, mag_filter=GL_NEAREST)
         self.bwterrain = None
         self.terrainmap = None
         self._lasthit = []
@@ -412,6 +419,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         if self.bwmodelhandler is None:
             return
 
+        self.overlay_texture.init()
         self.bwterrain = BWTerrainV2(f)
         self.makeCurrent()
 
@@ -425,6 +433,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             if callback is not None: callback(len(self.bwterrain.materials), i)
 
         self.terrainmap = []
+
         glColor4f(0.0, 0.0, 0.0, 1.0)
         for meshindex, meshes in self.bwterrain.meshes.items():
             mesh = glGenLists(1)
@@ -436,28 +445,81 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                     glVertexAttrib4f(2, vtx.color.r, vtx.color.g, vtx.color.b, vtx.color.a)
                     glVertexAttrib2f(3, vtx.uv1.x, vtx.uv1.y)
                     glVertexAttrib2f(4, vtx.uv2.x, vtx.uv2.y)
+                    glVertexAttrib2f(5, (vtx.pos[0]+2048)/4096.0, (vtx.pos[2]+2048)/4096.0)
                     glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
 
                     vtx = tilemesh.vertices[quad[1]]
                     glVertexAttrib4f(2, vtx.color.r, vtx.color.g, vtx.color.b, vtx.color.a)
                     glVertexAttrib2f(3, vtx.uv1.x, vtx.uv1.y)
                     glVertexAttrib2f(4, vtx.uv2.x, vtx.uv2.y)
+                    glVertexAttrib2f(5, (vtx.pos[0] + 2048) / 4096.0, (vtx.pos[2] + 2048) / 4096.0)
                     glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
 
                     vtx = tilemesh.vertices[quad[2]]
                     glVertexAttrib4f(2, vtx.color.r, vtx.color.g, vtx.color.b, vtx.color.a)
                     glVertexAttrib2f(3, vtx.uv1.x, vtx.uv1.y)
                     glVertexAttrib2f(4, vtx.uv2.x, vtx.uv2.y)
+                    glVertexAttrib2f(5, (vtx.pos[0] + 2048) / 4096.0, (vtx.pos[2] + 2048) / 4096.0)
                     glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
 
                     vtx = tilemesh.vertices[quad[3]]
                     glVertexAttrib4f(2, vtx.color.r, vtx.color.g, vtx.color.b, vtx.color.a)
                     glVertexAttrib2f(3, vtx.uv1.x, vtx.uv1.y)
                     glVertexAttrib2f(4, vtx.uv2.x, vtx.uv2.y)
+                    glVertexAttrib2f(5, (vtx.pos[0] + 2048) / 4096.0, (vtx.pos[2] + 2048) / 4096.0)
                     glVertex3f(vtx.pos[0], vtx.pos[2], vtx.pos[1])
-
-
             glEnd()
+
+            # 11 12
+            # 13 14
+
+            # 21 22
+            # 23 24
+
+            #
+            """for tilemesh in meshes:
+                minaabb, maxaabb = tilemesh.aabb_min, tilemesh.aabb_max
+                corner_11 = minaabb.x, minaabb.z, minaabb.y
+                corner_12 = maxaabb.x, minaabb.z, minaabb.y
+                corner_13 = minaabb.x, maxaabb.z, minaabb.y
+                corner_14 = maxaabb.x, maxaabb.z, minaabb.y
+
+                corner_21 = minaabb.x, minaabb.z, maxaabb.y
+                corner_22 = maxaabb.x, minaabb.z, maxaabb.y
+                corner_23 = minaabb.x, maxaabb.z, maxaabb.y
+                corner_24 = maxaabb.x, maxaabb.z, maxaabb.y
+                glBegin(GL_LINE_LOOP)
+                glVertexAttrib4f(2, 0, 0, 0, 1.0)
+                glVertex3f(*corner_11)
+                glVertex3f(*corner_12)
+                glVertex3f(*corner_14)
+                glVertex3f(*corner_13)
+                glEnd()
+
+                glBegin(GL_LINE_LOOP)
+                glVertex3f(*corner_21)
+                glVertex3f(*corner_22)
+                glVertex3f(*corner_24)
+                glVertex3f(*corner_23)
+                glEnd()
+
+                glBegin(GL_LINES)
+                glVertex3f(*corner_11)
+                glVertex3f(*corner_21)
+
+                glVertex3f(*corner_12)
+                glVertex3f(*corner_22)
+
+                glVertex3f(*corner_13)
+                glVertex3f(*corner_23)
+
+                glVertex3f(*corner_14)
+                glVertex3f(*corner_24)
+                glEnd()"""
+
+            #glVertex3f()
+
+            #glEnd()
 
             glEndList()
             self.terrainmap.append(mesh)
@@ -467,9 +529,14 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
     def render_terrain_immediate(self):
         if self.bwmodelhandler is None:
             return
-
         glUseProgram(self.shader)
         glDisable(GL_ALPHA_TEST)
+
+        overlayvar = glGetUniformLocation(self.shader, "overlayTex")
+        glUniform1i(overlayvar, 2)
+        glActiveTexture(GL_TEXTURE2)
+        glBindTexture(GL_TEXTURE_2D, self.overlay_texture.id)
+
         for meshindex, displist in zip(self.bwterrain.meshes, self.terrainmap):
             material = self.bwterrain.materials[meshindex]
             tex1 = self.bwmodelhandler.textures.get_texture(material.mat1)
@@ -1176,6 +1243,8 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             glEnable(GL_ALPHA_TEST)
             glDisable(GL_BLEND)
 
+        self.plugin_handler.execute_event("render_post", self)
+
         self.gizmo.render_scaled(gizmo_scale,
                                  is3d=self.mode == MODE_3D,
                                  translation_visible=self.translation_visible,
@@ -1212,6 +1281,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             glEnd()
 
         glEnable(GL_DEPTH_TEST)
+
+
+
         glFinish()
         if record_selection:
             self.selectdebug.record_view("Finished", None, None)
