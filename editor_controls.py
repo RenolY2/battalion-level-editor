@@ -92,6 +92,17 @@ class ClickDragAction(MouseAction):
         return self.first_click.x != event.position().x() or self.first_click.y != event.position().y()
 
 
+class PluginEventClickAction(ClickAction):
+    def just_clicked(self, editor, buttons, event):
+        super().just_clicked(editor, buttons, event)
+
+        x, y = event.position().x(), event.position().y()
+
+        worldx, worldy = editor.mouse_coord_to_world_coord(x, y)
+
+        editor.plugin_handler.execute_event("world_click", editor, worldx, worldy)
+
+
 class TopdownScroll(ClickDragAction):
     def move(self, editor, buttons, event):
         x, y = event.position().x(), event.position().y()
@@ -545,6 +556,7 @@ class UserControl(object):
         self.add_action(Gizmo2DRotateY("Gizmo2DRotateY", "Left"))
         self.add_action(TopdownSelect("2DSelect", "Left"))
         self.add_action(AddObjectTopDown("AddObject2D", "Left"))
+        self.add_action(PluginEventClickAction("PluginClick", "Left"))
 
         self.add_action3d(RotateCamera3D("RotateCamera", "Right"))
         self.add_action3d(AddObject3D("AddObject3D", "Left"))
