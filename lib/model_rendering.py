@@ -112,7 +112,10 @@ class TexturedMesh(object):
 
         if not selected:
             if self.material.diffuse is not None:
-                glColor3f(*self.material.diffuse)
+                if len(self.material.diffuse) == 4:
+                    glColor4f(*self.material.diffuse)
+                else:
+                    glColor3f(*self.material.diffuse)
             else:
                 glColor3f(1.0, 1.0, 1.0)
         else:
