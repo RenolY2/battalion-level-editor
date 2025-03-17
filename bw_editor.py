@@ -48,6 +48,9 @@ from lib.game_visualizer import Game
 from widgets.menu.file_menu import EditorFileMenu
 from widgets.graphics_widgets import UnitViewer
 
+import typing
+if typing.TYPE_CHECKING:
+    from widgets.menu.plugin import PluginHandler
 
 def get_treeitem(root: QTreeWidgetItem, obj):
     for i in range(root.childCount()):
@@ -73,6 +76,11 @@ class LevelEditor(QMainWindow):
 
         self.level_file = None
         self.plugin_handler = PluginHandler()
+        self.hotreload_timer = QtCore.QTimer()
+        self.hotreload_timer.setInterval(1000)
+        self.hotreload_timer.timeout.connect(lambda: self.plugin_handler.hot_reload(self))
+        self.hotreload_timer.start()
+
         self.installEventFilter(self)
         self.file_menu = EditorFileMenu(self)
         self.mini_model_viewer = UnitViewer(self, self, angle=0)
@@ -82,6 +90,7 @@ class LevelEditor(QMainWindow):
 
         self.plugin_handler.load_plugins()
         self.plugin_handler.add_menu_actions(self)
+        self.plugin_handler.add_plugin_widgets(self)
 
         self.level_view.level_file = self.level_file
         self.level_view.set_editorconfig(self.configuration["editor"])
@@ -364,10 +373,9 @@ class LevelEditor(QMainWindow):
         self.leveldatatreeview.itemDoubleClicked.connect(self.do_goto_action)
         self.leveldatatreeview.itemSelectionChanged.connect(self.tree_select_arrowkey)
 
-        self.level_view = BolMapViewer(self.centralwidget)
+        self.level_view = BolMapViewer(self.plugin_handler, self.centralwidget)
 
         self.horizontalLayout.setObjectName("horizontalLayout")
-        QSplitter
         self.vertical_holder = QSplitter(self)
         self.vertical_holder.setOrientation(Qt.Orientation.Vertical)
         self.left_side = QVBoxLayout(self.vertical_holder)
@@ -377,6 +385,9 @@ class LevelEditor(QMainWindow):
 
         self.horizontalLayout.addWidget(self.vertical_holder)# Widget(self.leveldatatreeview)
         self.horizontalLayout.addWidget(self.level_view)
+        plugin_sidewidget = self.plugin_handler.create_plugin_sidewidget(self.centralwidget)
+        self.horizontalLayout.addWidget(plugin_sidewidget)
+
         self.leveldatatreeview.resize(200, self.leveldatatreeview.height())
         spacerItem = QSpacerItem(10, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         #self.horizontalLayout.addItem(spacerItem)

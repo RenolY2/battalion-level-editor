@@ -9,6 +9,9 @@ from functools import partial
 
 from collections import namedtuple
 from PyQt6.QtCore import QTimer
+import PyQt6.QtGui as QtGui
+import PyQt6.QtCore as QtCore
+import PyQt6.QtWidgets as QtWidgets
 from widgets.menu.menu import Menu
 
 PluginEntry = namedtuple("PluginEntry", ("module", "plugin"))
@@ -18,24 +21,39 @@ pluginfolder = os.path.join(
     "plugins")
 
 
+class PluginWidgetEntry(QtWidgets.QWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.widget_layout = QtWidgets.QVBoxLayout(self)
+        self.setLayout(self.widget_layout)
+
+    def add_widget(self, widget):
+        self.widget_layout.addWidget(widget)
+        return widget
+
+    def add_text(self, text):
+        textlabel = QtWidgets.QLabel(text, self)
+        self.add_widget(textlabel)
+        return textlabel
+
+
 class PluginHandler(object):
     def __init__(self):
         self.plugins = {}
         self.plugin_folder_last_changed = os.stat(pluginfolder).st_mtime
 
         self.plugin_menu: PluginMenu = None
-        self.plugin_sidewidget = None
+        self.plugin_sidewidget: PluginHolderWidget = None
 
-        self.timer = QTimer()
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(self.hot_reload)
-        self.timer.start()
 
+        # widget event: setup_widget(editor, widget)
         self.events = {}
         self.add_event("select_update", "LevelEditor")
         self.add_event("before_save", "LevelEditor")
         self.add_event("before_load")
         self.add_event("after_load")
+        self.add_event("render_post", "BolMapViewer")
+        self.add_event("world_click", "LevelEditor", "X", "Y")
 
     def add_event(self, event_name, *args):
         self.events[event_name] = args
@@ -45,16 +63,19 @@ class PluginHandler(object):
         return self.plugin_menu
 
     def create_plugin_sidewidget(self, parent):
-        #TODO: Create sidewidget
+        self.plugin_sidewidget = PluginHolderWidget(parent)
         return self.plugin_sidewidget
 
-    def hot_reload(self):
+    def hot_reload(self, editor):
         if self.plugin_folder_changed() and self.plugin_menu is not None:
-            self.reload_changed_plugins()
+            changed_plugins = self.reload_changed_plugins()
             self.plugin_folder_update_time()
 
             self.plugin_menu.clear_menu_actions()
-            self.plugin_menu.add_menu_actions()
+            self.plugin_menu.add_menu_actions(self.plugins, editor)
+
+            for pluginname in changed_plugins:
+                self.execute_plugin_widget_setup(pluginname, editor)
 
     def plugin_folder_update_time(self):
         self.plugin_folder_last_changed = os.stat(pluginfolder).st_mtime
@@ -98,12 +119,15 @@ class PluginHandler(object):
 
     def reload_changed_plugins(self):
         self.load_plugins()  # Check for newly added plugins
-
+        changed_plugins = []
         for pluginname in self.plugins:
             if self.plugin_changed(pluginname):
                 self.reload_plugin(pluginname)
+                changed_plugins.append(pluginname)
 
             self.plugin_update_time(pluginname)
+
+        return changed_plugins
 
     def load_plugins(self):
         for pluginfile in os.listdir(pluginfolder):
@@ -123,11 +147,69 @@ class PluginHandler(object):
                 except:
                     traceback.print_exc()
 
+    def add_plugin_widgets(self, editor):
+        for pluginname in self.plugins:
+            self.execute_plugin_widget_setup(pluginname, editor)
+
+    def execute_plugin_widget_setup(self, pluginname, editor):
+        entry = self.plugins[pluginname]
+        if hasattr(entry.plugin, "setup_widget"):
+            widget = PluginWidgetEntry(self.plugin_sidewidget)
+            try:
+                func = getattr(entry.plugin, "setup_widget")
+                func(editor, widget)
+            except:
+                traceback.print_exc()
+                widget.setParent(None)
+                widget.deleteLater()
+            else:
+                self.plugin_sidewidget.add_plugin_widget(pluginname, widget)
+
     def add_menu_actions(self, editor):
         self.plugin_menu.add_menu_actions(self.plugins, editor)
 
     def clear_menu_actions(self):
         self.plugin_menu.clear_menu_actions()
+
+
+class PluginHolderWidget(QtWidgets.QScrollArea):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setMinimumWidth(200)
+
+        self.setWidgetResizable(True)
+        #policy = self.scroll_area.sizePolicy()
+        #policy.setVerticalPolicy(QtWidgets.QSizePolicy.Policy.MinimumExpanding)
+
+        #self.scroll_area.setSizePolicy(policy)
+        self.scroll_area_content = QtWidgets.QWidget(self)
+
+        self.scroll_layout = QtWidgets.QVBoxLayout(self.scroll_area_content)
+        self.scroll_area_content.setLayout(self.scroll_layout)
+        self.scroll_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        self.setWidget(self.scroll_area_content)
+
+        self.plugin_widgets = {}
+
+    def remove_plugin_widget(self, pluginname):
+        if pluginname in self.plugin_widgets:
+            widget = self.plugin_widgets[pluginname]
+            index = self.scroll_layout.indexOf(widget)
+            widget.setParent(None)
+            widget.deleteLater()
+            del self.plugin_widgets[pluginname]
+
+            return index
+
+    def add_plugin_widget(self, pluginname, widget):
+        if pluginname not in self.plugin_widgets:
+            self.plugin_widgets[pluginname] = widget
+            self.scroll_layout.addWidget(widget)
+        else:
+            i = self.remove_plugin_widget(pluginname)
+
+            self.plugin_widgets[pluginname] = widget
+            self.scroll_layout.insertWidget(i, widget)
 
 
 class PluginMenu(Menu):
@@ -156,10 +238,6 @@ class PluginMenu(Menu):
             menu.deleteLater()
 
         self.menus = []
-
-
-
-
 
 
 if __name__ == "__main__":
