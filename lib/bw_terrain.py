@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from struct import pack, unpack, unpack_from, Struct
-from lib.vectors import Triangle, Vector3
+from lib.vectors import Triangle, Vector3, Quad, Line
 from OpenGL import *
 from numpy import array
+from math import inf
 
 
 def read_uint32(f):
@@ -30,11 +31,6 @@ class BWSectionedFile(object):
             data = f.read(size)
 
             self.sections[section_name] = data
-
-
-class ChunkModel(object):
-    def __init__(self, points):
-        self.vertices = []
 
 
 def initiate_from_section(cls, section):
@@ -75,16 +71,90 @@ class Vertex:
     uv2: UVPoint
 
 
+# 11 12
+# 13 14
+
+# 21 22
+# 23 24
+
+
+class AABB(object):
+    def __init__(self, min: Vector3, max: Vector3):
+        self.min = min
+        self.max = max
+        self.middle = (self.min + self.max)*0.5
+        self.quads = []
+
+        corner11 = Vector3(min.x, max.y, min.z)
+        corner12 = Vector3(max.x, max.y, min.z)
+        corner13 = Vector3(min.x, max.y, max.z)
+        corner14 = Vector3(max.x, max.y, max.z)
+
+        corner21 = Vector3(min.x, min.y, min.z)
+        corner22 = Vector3(max.x, min.y, min.z)
+        corner23 = Vector3(min.x, min.y, max.z)
+        corner24 = Vector3(max.x, min.y, max.z)
+
+        # Top
+        self.quads.append(Quad(corner11, corner12, corner13, corner14))
+
+        # Sides
+        self.quads.append(Quad(corner13, corner14, corner23, corner24))
+        self.quads.append(Quad(corner11, corner13, corner21, corner23))
+        self.quads.append(Quad(corner12, corner11, corner22, corner21))
+        self.quads.append(Quad(corner14, corner12, corner24, corner22))
+
+        # Bottom
+        self.quads.append(Quad(corner21, corner22, corner23, corner24))
+
+    def ray_hits_box(self, line: Line):
+        for quad in self.quads:
+            result = line.collide_quad(quad)
+            if result is not False:
+                return True
+        return False
+
+    @classmethod
+    def from_aabb_list(cls, aabbs: list["AABB"]):
+        min_vec = Vector3(inf, inf, inf)
+        max_vec = Vector3(-inf, -inf, -inf)
+
+        for aabb in aabbs:
+            if aabb.min.x < min_vec.x:
+                min_vec.x = aabb.min.x
+
+            if aabb.min.y < min_vec.y:
+                min_vec.y = aabb.min.y
+
+            if aabb.min.z < min_vec.z:
+                min_vec.z = aabb.min.z
+
+            if aabb.max.x > max_vec.x:
+                max_vec.x = aabb.max.x
+
+            if aabb.max.y > max_vec.y:
+                max_vec.y = aabb.max.y
+
+            if aabb.max.z > max_vec.z:
+                max_vec.z = aabb.max.z
+
+        return cls(min_vec, max_vec)
+
+
 class TileModel(object):
     def __init__(self, tile, materials, offsetx, offsety):
         self.vertices = []
         self.quads = []
         self.material = materials[tile.material_index]
+        self.quads_collision = []
 
         tl = tile.surface_coordinates[0]
         tr = tile.surface_coordinates[1]
         bl = tile.surface_coordinates[2]
         br = tile.surface_coordinates[3]
+
+        aabb_max = Vector3(-inf, -inf, -inf)
+        aabb_min = Vector3(inf, inf, inf)
 
         for y in range(4):
             for x in range(4):
@@ -109,6 +179,42 @@ class TileModel(object):
 
                     self.quads.append((index, indexr, indexbr, indexb))
 
+        for v1i, v2i, v4i, v3i in self.quads:
+            v1 = Vector3(*self.vertices[v1i].pos)
+            v2 = Vector3(*self.vertices[v2i].pos)
+            v3 = Vector3(*self.vertices[v3i].pos)
+            v4 = Vector3(*self.vertices[v4i].pos)
+            quad = Quad(v1, v2, v3, v4)
+            self.quads_collision.append(quad)
+
+            aabb_min.x = min(aabb_min.x, v1.x, v2.x, v3.x, v4.x)
+            aabb_min.y = min(aabb_min.y, v1.y, v2.y, v3.y, v4.y)
+            aabb_min.z = min(aabb_min.z, v1.z, v2.z, v3.z, v4.z)
+            aabb_max.x = max(aabb_max.x, v1.x, v2.x, v3.x, v4.x)
+            aabb_max.y = max(aabb_max.y, v1.y, v2.y, v3.y, v4.y)
+            aabb_max.z = max(aabb_max.z, v1.z, v2.z, v3.z, v4.z)
+
+        self.aabb = AABB(aabb_min, aabb_max)
+
+    def ray_collide(self, line: Line):
+        hit = self.aabb.ray_hits_box(line)
+        if hit:
+            dist = inf
+            point = None
+            for quad in self.quads_collision:
+                result = line.collide_quad(quad)
+                if result is not False:
+                    p, d = result
+                    if d < dist:
+                        dist = d
+                        point = p
+            if point is not None:
+                return point, dist
+            else:
+                return False
+        else:
+            return False
+
 
 @dataclass
 class Tile:
@@ -118,7 +224,6 @@ class Tile:
     detail_coordinates: list[UVPoint]   # 16 UVs
     material_index: int
     size = 180
-
 
     @classmethod
     def from_array(cls, array, i):
@@ -144,7 +249,6 @@ class Tile:
         return cls(heights, vertex_colors, surface_coordinates, detail_coordinates, material_index)
 
 
-
 @dataclass
 class Chunk(object):
     tiles: list[Tile]
@@ -155,7 +259,6 @@ class Chunk(object):
         chunkdata = array[i*cls.size:(i+1)*cls.size]
         tiles = initiate_from_section(Tile, chunkdata)
         return cls(tiles)
-
 
 
 @dataclass
@@ -201,6 +304,70 @@ class MapChunkReference:
         return cls(*unpack_from(">BBH", array, i*4))
 
 
+class AABBGroup(object):
+    def __init__(self, items: list[TileModel] | list["AABBGroup"]):
+        self.items = items
+        self.aabb = AABB.from_aabb_list([item.aabb for item in items])
+
+    def subdivide(self, levels=1):
+        if levels > 0 and len(self.items) > 0:
+            middle = self.aabb.middle
+
+            # group2 group3
+            # group1 group4
+            group1 = []
+            group2 = []
+            group3 = []
+            group4 = []
+
+            for item in self.items:
+                item_middle = item.aabb.middle
+                if item_middle.x <= middle.x:
+                    if item_middle.z <= middle.z:
+                        group1.append(item)  # -x -z
+                    else:
+                        group4.append(item)  # +x -z
+                else:
+                    if item_middle.z <= middle.z:
+                        group2.append(item)  # -x -z
+                    else:
+                        group3.append(item)  # -x +z
+
+            aabbgroup1 = AABBGroup(group1)
+            aabbgroup2 = AABBGroup(group2)
+            aabbgroup3 = AABBGroup(group3)
+            aabbgroup4 = AABBGroup(group4)
+
+            aabbgroup1.subdivide(levels - 1)
+            aabbgroup2.subdivide(levels - 1)
+            aabbgroup3.subdivide(levels - 1)
+            aabbgroup4.subdivide(levels - 1)
+
+            self.items = [aabbgroup1, aabbgroup2, aabbgroup3, aabbgroup4]
+
+
+
+    def ray_collide(self, line: Line):
+        if self.aabb.ray_hits_box(line):
+            point, dist = None, inf
+
+            for item in self.items:
+                result = item.ray_collide(line)
+
+                if result is not False:
+                    p, d = result
+                    if d < dist:
+                        dist = d
+                        point = p
+
+            if point is not None:
+                return point, dist
+            else:
+                return False
+        else:
+            return False
+
+
 class BWTerrainV2(BWSectionedFile):
     def __init__(self, f):
         super().__init__(f)
@@ -214,12 +381,18 @@ class BWTerrainV2(BWSectionedFile):
 
         self.pointdata = [[None for y in range(self.terrain_data.chunks_y * 16 + 1)] for x in range(self.terrain_data.chunks_y * 16 + 1)]
 
+        self.grids = []
+        chunk_group = []
+
         self.meshes: dict[TileModel] = {}
         for chunkx in range(64):
             for chunky in range(64):
                 mapchunk = self.map[chunky*64 + chunkx]
                 if mapchunk.b == 1:
                     chunk = self.chunks[mapchunk.chunkindex]
+
+                    chunk_tiles = []
+
                     for tilex in range(4):
                         for tiley in range(4):
                             tile = chunk.tiles[tiley*4+tilex]
@@ -234,6 +407,11 @@ class BWTerrainV2(BWSectionedFile):
 
                             tilemodel = TileModel(tile, self.materials, chunkx*16 + tilex*4 - tilex -chunkx*4, chunky*16 + tiley*4 - tiley - chunky*4)
                             self.meshes[tile.material_index].append(tilemodel)
+                            chunk_tiles.append(tilemodel)
+                            chunk_group.append(tilemodel)
+
+            self.chunk_group = AABBGroup(chunk_group)
+            self.chunk_group.subdivide(5)
 
     def check_height(self, x, y):
         mapx = int((x + 2048)*0.25)
@@ -244,6 +422,19 @@ class BWTerrainV2(BWSectionedFile):
             return self.pointdata[mapx][mapy]
         else:
             return None
+
+    def ray_collide(self, line: Line):
+        point, dist = None, inf
+        result = self.chunk_group.ray_collide(line)
+        if result is not False:
+            p, d = result
+            dist = d
+            point = p
+
+        if point is not None:
+            return point, dist
+        else:
+            return False
 
 
 class BWTerrain(BWSectionedFile):
