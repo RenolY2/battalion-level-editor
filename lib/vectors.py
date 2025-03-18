@@ -74,6 +74,11 @@ class Vector3(object):
     def is_zero(self):
         return self.x == self.y == self.z == 0
 
+    def swap_yz(self):
+        tmp = self.y
+        self.y = self.z
+        self.z = tmp
+
     def __eq__(self, other_vec):
         return self.x == other_vec.x and self.y == other_vec.y and self.z == other_vec.z
 
@@ -186,6 +191,18 @@ class Quad(object):
         self.tri1 = Triangle(p1, p2, p3)
         self.tri2 = Triangle(p2, p4, p3)
 
+        # P2 P4
+        # P1 P3
+
+        self.p2_to_p4 = p4 - p2
+        self.p4_to_p3 = p3 - p4
+        self.p3_to_p1 = p1 - p3
+
+        self.p1 = p1
+        self.p2 = p2
+        self.p3 = p3
+        self.p4 = p4
+
 
 class Line(object):
     def __init__(self, origin, direction):
@@ -193,12 +210,54 @@ class Line(object):
         self.direction = direction
         self.direction.normalize()
 
-    def collide_quad(self, quad: Quad):
-        result = self.collide(quad.tri1)
-        if result is None:
-            result = self.collide(quad.tri2)
+    def swap_yz(self):
+        self.origin.swap_yz()
+        self.direction.swap_yz()
 
-        return result
+    def swapped_yz(self):
+        line = Line(self.origin.copy(), self.direction.copy())
+        line.swap_yz()
+        return line
+
+    def collide_quad(self, quad: Quad):
+        tri = quad.tri1
+
+        normal = tri.normal
+        if normal.is_zero():
+            return False
+
+        if tri.normal.dot(self.direction) == 0:
+            return False
+
+        d = ((tri.origin - self.origin).dot(normal)) / normal.dot(self.direction)
+
+        if d < 0:
+            return False
+
+        intersection_point = self.origin + self.direction * d
+
+        # return intersection_point
+        C0 = intersection_point - tri.origin
+
+        if tri.normal.dot(tri.p1_to_p2.cross(C0)) > 0:
+            C1 = intersection_point - tri.p2
+
+            if tri.normal.dot(quad.p2_to_p4.cross(C1)) > 0:
+                C2 = intersection_point - quad.p4
+
+                if tri.normal.dot(quad.p4_to_p3.cross(C2)) > 0:
+                    C3 = intersection_point - quad.p3
+
+                    if tri.normal.dot(quad.p3_to_p1.cross(C3)) > 0:
+                        return intersection_point, d
+                    else:
+                        return False
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
 
     def collide(self, tri: Triangle):
         normal = tri.normal
