@@ -107,9 +107,9 @@ class AABB(object):
         # Bottom
         self.quads.append(Quad(corner21, corner22, corner23, corner24))
 
-    def ray_hits_box(self, line: Line):
+    def ray_hits_box(self, line: Line, d_filter=inf):
         for quad in self.quads:
-            result = line.collide_quad(quad)
+            result = line.collide_quad(quad, d_filter)
             if result is not False:
                 return True
         return False
@@ -156,6 +156,7 @@ class TileModel(object):
         aabb_max = Vector3(-inf, -inf, -inf)
         aabb_min = Vector3(inf, inf, inf)
 
+
         for y in range(4):
             for x in range(4):
                 fx = x/3.0
@@ -179,6 +180,12 @@ class TileModel(object):
 
                     self.quads.append((index, indexr, indexbr, indexb))
 
+        v1 = Vector3(*self.vertices[0].pos)
+        v2 = Vector3(*self.vertices[3].pos)
+        v3 = Vector3(*self.vertices[3*4+0].pos)
+        v4 = Vector3(*self.vertices[3*4+3].pos)
+        self.lod_quad = Quad(v1, v2, v3, v4)
+
         for v1i, v2i, v4i, v3i in self.quads:
             v1 = Vector3(*self.vertices[v1i].pos)
             v2 = Vector3(*self.vertices[v2i].pos)
@@ -196,13 +203,21 @@ class TileModel(object):
 
         self.aabb = AABB(aabb_min, aabb_max)
 
-    def ray_collide(self, line: Line):
-        hit = self.aabb.ray_hits_box(line)
+    def ray_collide(self, line: Line, d_filter=inf):
+        hit = self.aabb.ray_hits_box(line, d_filter)
+
         if hit:
-            dist = inf
+            aabb_dist = (line.origin - self.aabb.middle).norm_nosqrt()
+
+            if aabb_dist > 350**2:
+                quads = [self.lod_quad]
+            else:
+                quads = self.quads_collision
+
+            dist = d_filter
             point = None
-            for quad in self.quads_collision:
-                result = line.collide_quad(quad)
+            for quad in quads:#self.quads_collision:
+                result = line.collide_quad(quad, dist)
                 if result is not False:
                     p, d = result
                     if d < dist:
@@ -345,14 +360,22 @@ class AABBGroup(object):
 
             self.items = [aabbgroup1, aabbgroup2, aabbgroup3, aabbgroup4]
 
+    def ray_collide(self, line: Line, d_filter=inf, sort_level=0):
+        if self.aabb.ray_hits_box(line, d_filter):
+            point, dist = None, d_filter
 
+            sorted_items = []
 
-    def ray_collide(self, line: Line):
-        if self.aabb.ray_hits_box(line):
-            point, dist = None, inf
+            if sort_level < 3:
+                for item in self.items:
+                    item_dist = (item.aabb.middle - line.origin).norm_nosqrt()
+                    sorted_items.append((item, item_dist))
+                sorted_items.sort(key=lambda x: x[1])
+            else:
+                sorted_items.extend(self.items)
 
-            for item in self.items:
-                result = item.ray_collide(line)
+            for item, itemdist in sorted_items:
+                result = item.ray_collide(line, dist)
 
                 if result is not False:
                     p, d = result
