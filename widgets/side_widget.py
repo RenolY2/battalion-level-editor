@@ -14,6 +14,8 @@ from lib.BattalionXMLLib import BattalionObject
 import typing
 from typing import TYPE_CHECKING
 from lib.bw_types import BWMatrix
+from plugins.plugin_feature_test import NewEditWindow
+
 if TYPE_CHECKING:
     import bw_editor
 
@@ -116,14 +118,26 @@ class PikminSideWidget(QWidget):
         self.objectlist = []
 
         self.object_data_edit = None
-        self.edit_windows: typing.Dict[str, BWObjectEditWindow] = {}
+        #self.edit_windows: typing.Dict[str, BWObjectEditWindow] = {}
 
         self.reset_info()
         self.add_window = None
 
+        self.main_window = None
+        self.editwindows = []
+        self.parent.level_view.select_update.connect(self.update_main_edit_window)
+
+    def update_main_edit_window(self):
+        if self.main_window is not None:
+            obj = self.parent.get_selected_obj()
+            if obj is not None:
+                QtWidgets.QApplication.setOverrideCursor(
+                    QtCore.Qt.CursorShape.WaitCursor)
+                self.main_window.change_object(obj)
+                QtWidgets.QApplication.restoreOverrideCursor()
+
     def set_comment_label(self, text):
         self.comment_label.setText(text)
-
 
     def action_clear_vertical_rotation(self):
         if self.parent.dolphin.do_visualize():
@@ -139,10 +153,10 @@ class PikminSideWidget(QWidget):
         self.parent.pik_control.update_info()
 
     def close_all_windows(self):
-        for id, window in list(self.edit_windows.items()):
+        for window in self.editwindows:
             window.close()
 
-        self.edit_windows = {}
+        self.editwindows = []
 
     def set_spawn_matrix(self):
         for obj in self.parent.level_view.selected:
@@ -290,11 +304,36 @@ class PikminSideWidget(QWidget):
                 window.set_content(obj)
                 window.show()
 
+    def make_window(self, editor, currobj, make_main=False):
+        for window in self.editwindows:
+            if window.object == currobj:
+                window.activate()
+                break
+        else:
+            editwindow = NewEditWindow(None, currobj, editor, self.make_window)
+            editwindow.show()
+            self.editwindows.append(editwindow)
+
+            def handle_close():
+                self.editwindows.remove(editwindow)
+                if self.main_window is editwindow:
+                    self.main_window = None
+
+            if make_main:
+                if self.main_window is None:
+                    self.main_window = editwindow
+
+            editwindow.closing.connect(handle_close)
+
     def action_open_edit_object(self):
         selected = self.parent.level_view.selected
 
         if len(selected) >= 1:
             for i, v in enumerate(selected):
+                self.make_window(self.parent, v, make_main=True)
+
+
+                continue
                 offset = (len(self.edit_windows) %15)*25
                 obj = selected[i]
                 if obj.id in self.edit_windows:

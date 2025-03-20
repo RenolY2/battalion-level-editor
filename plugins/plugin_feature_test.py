@@ -2510,8 +2510,10 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.content_holder.setLayout(self.area_layout)
         self.setWidget(self.scroll_area)
         self.scroll_area.setWidgetResizable(True)
-
+        self.keep_window_on_top = False
         self.setup_rows(object)
+
+
 
     def closeEvent(self, event):
         self.closing.emit()
@@ -2535,6 +2537,18 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         print("Edit reset in", default_timer()-start, "s")
         self.setup_rows(object)
 
+    def change_window_on_top_state(self, state):
+        self.keep_window_on_top = state
+
+        if state == QtCore.Qt.CheckState.Checked:
+            print("turning ontop on", state)
+            self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowType.WindowStaysOnTopHint)
+        else:
+            print("turning ontop off", state)
+            self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowType.WindowStaysOnTopHint)
+
+        self.show()
+
     def setup_rows(self, object: BattalionObject):
         start = default_timer()
         self.fields = []
@@ -2542,6 +2556,14 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         parent = None
 
         self._curr_row = 0
+
+        getter = make_getter(object, "customname")
+        setter = lambda x: object.set_custom_name(x)
+
+        checkbox_widget = QtWidgets.QCheckBox(self.content_holder)
+        self.add_row(QtWidgets.QLabel("Keep Window On Top", parent), checkbox_widget)
+        checkbox_widget.setChecked(self.keep_window_on_top==QtCore.Qt.CheckState.Checked)
+        checkbox_widget.checkStateChanged.connect(self.change_window_on_top_state)
 
         # Add custom name field
         getter = make_getter(object, "customname")
@@ -2603,6 +2625,12 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
             obj = val
 
         self.makewindow(self.editor, obj)
+
+    def activate(self):
+        self.setWindowState(
+            self.windowState() & ~QtCore.Qt.WindowState.WindowMinimized | QtCore.Qt.WindowState.WindowActive)
+        self.activateWindow()
+        self.show()
 
 
 class AddExistingObject(QtWidgets.QSplitter):
