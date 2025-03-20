@@ -14,6 +14,9 @@ MOUSE_MODE_CONNECTWP = 3
 MODE_TOPDOWN = 0
 MODE_3D = 1
 
+import typing
+if typing.TYPE_CHECKING:
+    from bw_widgets import BolMapViewer
 
 key_enums = {
     "Middle": Qt.MouseButton.MiddleButton,
@@ -97,10 +100,37 @@ class PluginEventClickAction(ClickAction):
         super().just_clicked(editor, buttons, event)
 
         x, y = event.position().x(), event.position().y()
+        editor.plugin_handler.execute_event("topdown_click", editor, x, y)
 
         worldx, worldy = editor.mouse_coord_to_world_coord(x, y)
 
         editor.plugin_handler.execute_event("world_click", editor, worldx, worldy)
+
+
+class PluginEvent3DTerrainClickAction(ClickAction):
+    def just_clicked(self, editor, buttons, event):
+        super().just_clicked(editor, buttons, event)
+        editor: BolMapViewer
+        x, y = event.position().x(), event.position().y()
+
+        ray = editor.create_ray_from_mouseclick(x, y)
+        editor.plugin_handler.execute_event("raycast_3d", editor, ray)
+
+        swapped_ray = ray.swapped_yz()
+        result = editor.bwterrain.ray_collide(swapped_ray)
+
+        if result:
+            print("we did hit something")
+            point, d = result
+            point.swap_yz()
+
+            editor.plugin_handler.execute_event("terrain_click_3d", editor, ray, point)
+        else:
+            plane = Plane.xy_aligned(Vector3(0.0, 0.0, 0.0))
+            collision = ray.collide_plane(plane)
+            if collision is not False:
+                place_at, _ = collision
+                editor.plugin_handler.execute_event("terrain_click_3d", editor, ray, place_at)
 
 
 class TopdownScroll(ClickDragAction):
@@ -567,6 +597,7 @@ class UserControl(object):
         self.add_action3d(Gizmo3DRotateY("Gizmo3DRotateY", "Left"))
         self.add_action3d(Gizmo3DRotateZ("Gizmo3DRotateZ", "Left"))
         self.add_action3d(Select3D("Select3D", "Left"))
+        self.add_action3d(PluginEvent3DTerrainClickAction("PluginClick3D", "Left"))
 
         self.last_position_update = 0.0
 
