@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, inf
 from io import StringIO
 from numpy import array
 
@@ -11,6 +11,9 @@ class Vector3(object):
 
     def copy(self):
         return Vector3(self.x, self.y, self.z)
+
+    def norm_nosqrt(self):
+        return self.x**2 + self.y**2+self.z**2
 
     def norm(self):
         return sqrt(self.x**2 + self.y**2 + self.z**2)
@@ -219,19 +222,27 @@ class Line(object):
         line.swap_yz()
         return line
 
-    def collide_quad(self, quad: Quad):
+    def collide_quad_nonplanar(self, quad: Quad, d_filter=inf):
+        result = self.collide(quad.tri1)
+        if not result:
+            result = self.collide(quad.tri2)
+
+        return result
+
+    def collide_quad(self, quad: Quad, d_filter=inf):
         tri = quad.tri1
 
         normal = tri.normal
-        if normal.is_zero():
-            return False
 
-        if tri.normal.dot(self.direction) == 0:
+        if normal.dot(self.direction) == 0:
             return False
 
         d = ((tri.origin - self.origin).dot(normal)) / normal.dot(self.direction)
 
         if d < 0:
+            return False
+
+        if d > d_filter:  # d is too far away so we leave early
             return False
 
         intersection_point = self.origin + self.direction * d
