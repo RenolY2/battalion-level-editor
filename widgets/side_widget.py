@@ -130,7 +130,7 @@ class PikminSideWidget(QWidget):
     def update_main_edit_window(self):
         if self.main_window is not None:
             obj = self.parent.get_selected_obj()
-            if obj is not None:
+            if obj is not None and self.main_window.object != obj:
                 QtWidgets.QApplication.setOverrideCursor(
                     QtCore.Qt.CursorShape.WaitCursor)
                 self.main_window.change_object(obj)
