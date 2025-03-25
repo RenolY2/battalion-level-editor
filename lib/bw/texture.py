@@ -7,6 +7,7 @@ from OpenGL.GL import *
 from io import BytesIO
 from array import array
 from struct import Struct
+from PIL import Image
 
 
 from PyQt6.QtGui import QImage, QPainter
@@ -204,3 +205,42 @@ class TextureArchive(object):
             self.initialize_texture(texname)
             return self.load_texture(texname)
 
+
+class OpenGLTexture(object):
+    def __init__(self, image: Image, min_filter=GL_LINEAR, mag_filter=GL_LINEAR):
+        self.img_data = image
+        self.id = None
+
+        self.min_filter = min_filter
+        self.mag_filter = mag_filter
+
+    @classmethod
+    def create_dummy(cls, width, height, min_filter=GL_LINEAR, mag_filter=GL_LINEAR):
+        img = Image.new("RGBA", (width, height), (255, 255, 255, 255))
+        return cls(img, min_filter, mag_filter)
+
+    def init(self):
+        if self.id is None:
+            self.id = glGenTextures(1)
+            glBindTexture(GL_TEXTURE_2D, self.id)
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0)
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, self.min_filter)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, self.mag_filter)
+
+            # glPixelStorei(GL_UNPACK_ROW_LENGTH, tex.size_x)
+            # print("call info", tex.size_x, tex.size_y, tex.size_x * tex.size_y * 4, len(tex.rgba))
+            # print(ID)
+            size_x, size_y = self.img_data.width, self.img_data.height
+            rgba = self.img_data.tobytes()
+            glTexImage2D(GL_TEXTURE_2D, 0, 4, size_x, size_y, 0, GL_RGB, GL_UNSIGNED_BYTE, rgba)
+
+    def update(self):
+        if self.id is not None:
+            print(self.id, type(self.id))
+            glDeleteTextures(1, int(self.id))
+            self.id = None
+        self.init()

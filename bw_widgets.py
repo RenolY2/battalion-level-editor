@@ -41,7 +41,7 @@ from lib.bw.bwmodelrender import BWModelHandler
 from lib.graphics import Graphics
 from widgets.filter_view import FilterViewMenu
 from widgets.editor_widgets import GizmoWidget
-from plugins.plugin_pfd_research import OpenGLTexture
+from lib.bw.texture import OpenGLTexture
 
 import typing
 if typing.TYPE_CHECKING:
@@ -347,7 +347,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.minimap = Minimap(Vector3(-1000.0, 0.0, -1000.0), Vector3(1000.0, 0.0, 1000.0), 0,
                                None)
         self.overlay_texture = OpenGLTexture.create_dummy(512, 512, mag_filter=GL_NEAREST)
-        self.bwterrain = None
+        self.bwterrain: BWTerrainV2 = None
         self.terrainmap = None
         self._lasthit = []
         self._hitcycle = 0
@@ -478,7 +478,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
             #
             """for tilemesh in meshes:
-                minaabb, maxaabb = tilemesh.aabb_min, tilemesh.aabb_max
+                minaabb, maxaabb = tilemesh.aabb.min, tilemesh.aabb.max
                 corner_11 = minaabb.x, minaabb.z, minaabb.y
                 corner_12 = maxaabb.x, minaabb.z, minaabb.y
                 corner_13 = minaabb.x, maxaabb.z, minaabb.y
@@ -515,11 +515,11 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
                 glVertex3f(*corner_14)
                 glVertex3f(*corner_24)
-                glEnd()"""
+                glEnd()
 
             #glVertex3f()
 
-            #glEnd()
+            #glEnd()"""
 
             glEndList()
             self.terrainmap.append(mesh)
