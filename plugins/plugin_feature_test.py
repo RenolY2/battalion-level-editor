@@ -1,6 +1,7 @@
 
 import os
 import math
+from functools import partial
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
@@ -1745,6 +1746,24 @@ class StrongFocusComboBox(QtWidgets.QComboBox):
         self.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.setStyleSheet("QComboBox {combobox-popup: 0;}")
 
+        self.items_total = []
+        self.optimize = False
+        self.callback = lambda: True
+
+    def full_callback(self, func):
+        self.callback = func
+
+    def showPopup(self) -> None:
+        if self.optimize:
+            self.callback()
+
+        super().showPopup()
+
+    def optimize_large_sets(self):
+        self.optimize = True
+        self.setMinimumContentsLength(int(self.minimumContentsLength()*1.2))
+        self.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+
     def wheelEvent(self, event) -> None:
         if not self.hasFocus():
             event.ignore()
@@ -2089,6 +2108,7 @@ class ReferenceEdit(QtWidgets.QWidget):
         #line_2.setContentsMargins(0, 0, 0, 0)
 
         self.object_combo_box = StrongFocusComboBox(self)
+        self.object_combo_box.optimize_large_sets()
         self.object_combo_box.setMaxVisibleItems(20)
         self.edit_button = QtWidgets.QPushButton("Edit", self)
         self.set_to_selected_button = QtWidgets.QPushButton("Set To Selected", self)
@@ -2105,111 +2125,116 @@ class ReferenceEdit(QtWidgets.QWidget):
         #self.gridlayout.addWidget(line_2_holder, 1, 0)
         self.setLayout(line_1)
 
-    def update_value(self, item_cache=None):
+    def update_value(self, item_cache=None, large_set_optimize=False):
         self.object_combo_box.blockSignals(True)
         self.object_combo_box.clear()
 
         currobj = self.get_value()
 
-        """
-        noitem = QtWidgets.QListWidgetItem()
-        noitem.setText("None")
-        noitem.obj = None
-        curritem = noitem
-        items = []
-        for objtype, objlist in chain(self.objects.category.items(), self.preload.category.items()):
-            if self.is_instance(objtype):
-                for objid, object in objlist.items():
-                    item = QtWidgets.QListWidgetItem()
-                    item.setText(object.name)
-                    item.obj = object
-                    items.append(item)
-                    if object == currobj:
-                        curritem = item
+        if large_set_optimize:
+            self.object_combo_box.addItem(currobj.name)
+            self.object_combo_box.full_callback(partial(self.update_value, item_cache))
+            self.object_combo_box.setCurrentIndex(0)
+        else:
 
-        if currobj is not None and curritem == noitem:
-            self.object_combo_box.blockSignals(False)
-            raise RuntimeError(f"Failed to assign object: {currobj.type}")
-
-        items.sort(key=lambda x: x.text())
-        items.insert(0, noitem)
-        currindex = items.index(curritem)
-        self.items = items
-        for item in items:
-            self.object_combo_box.addItem(item.text(), item.obj)"""
-        noitem = ("None", None)
-        curritem = noitem
-
-        items = []
-        wrong_object = None
-        #for objtype, objlist in chain(self.objects.category.items(), self.preload.category.items()):
-        #    if self.is_instance(objtype):
-        check_types = [self.type]
-        if self.type in SUBSETS:
-            check_types.extend(SUBSETS[self.type])
-
-        if item_cache is None or self.type not in item_cache:
-
-
-            for category in [self.objects.category, self.preload.category]:
-                for objtype in check_types:
-                    if objtype in category:
-                        objlist = category[objtype]
-                        for objid, object in objlist.items():
-                            item = (object.name, object)
-                            items.append(item)
-                            if object == currobj:
-                                curritem = item
-
+            """
+            noitem = QtWidgets.QListWidgetItem()
+            noitem.setText("None")
+            noitem.obj = None
+            curritem = noitem
+            items = []
+            for objtype, objlist in chain(self.objects.category.items(), self.preload.category.items()):
+                if self.is_instance(objtype):
+                    for objid, object in objlist.items():
+                        item = QtWidgets.QListWidgetItem()
+                        item.setText(object.name)
+                        item.obj = object
+                        items.append(item)
+                        if object == currobj:
+                            curritem = item
+    
             if currobj is not None and curritem == noitem:
-                checkedtypes = ", ".join(check_types)
-                open_message_dialog(f"Warning!\n"
-                                    f"Tried to fit object {currobj.name} with type {currobj.type} into field that expects "
-                                    f"one of {checkedtypes}.")
-                wrong_object = currobj
-                #self.object_combo_box.blockSignals(False)
-                #raise RuntimeError(f"Failed to assign object: {currobj.type}")
-
-            items.sort(key=lambda x: x[0])
+                self.object_combo_box.blockSignals(False)
+                raise RuntimeError(f"Failed to assign object: {currobj.type}")
+    
+            items.sort(key=lambda x: x.text())
             items.insert(0, noitem)
-
+            currindex = items.index(curritem)
             self.items = items
-            #for item in items:
-            self.object_combo_box.addItems([x[0] for x in items])
-            if wrong_object is not None:
-                currindex = len(items)
-                self.object_combo_box.addItem(wrong_object.name)
-                self.wrong_object = wrong_object
-            else:
-                currindex = items.index(curritem)
-            self.object_combo_box.setCurrentIndex(currindex)
+            for item in items:
+                self.object_combo_box.addItem(item.text(), item.obj)"""
+            noitem = ("None", None)
+            curritem = noitem
 
-            if item_cache is not None:
-                item_cache[self.type] = self.items
+            items = []
+            wrong_object = None
+            #for objtype, objlist in chain(self.objects.category.items(), self.preload.category.items()):
+            #    if self.is_instance(objtype):
+            check_types = [self.type]
+            if self.type in SUBSETS:
+                check_types.extend(SUBSETS[self.type])
 
-        elif item_cache is not None and self.type in item_cache:
-            if currobj is not None:
-                curritem = (currobj.name, currobj)
-            else:
-                curritem = None
+            if item_cache is None or self.type not in item_cache:
+                for category in [self.objects.category, self.preload.category]:
+                    for objtype in check_types:
+                        if objtype in category:
+                            objlist = category[objtype]
+                            for objid, object in objlist.items():
+                                item = (object.name, object)
 
-            items = item_cache[self.type]
-            self.object_combo_box.addItems([x[0] for x in items])
+                                items.append(item)
+                                if object == currobj:
+                                    curritem = item
 
-            try:
-                currindex = items.index(curritem)
-            except ValueError:
-                if curritem is not None:
-                    currindex = len(items)
-                    self.object_combo_box.addItem(currobj.name)
+                if currobj is not None and curritem == noitem:
                     checkedtypes = ", ".join(check_types)
                     open_message_dialog(f"Warning!\n"
                                         f"Tried to fit object {currobj.name} with type {currobj.type} into field that expects "
                                         f"one of {checkedtypes}.")
-                else:
-                    currindex = 0
+                    wrong_object = currobj
+                    #self.object_combo_box.blockSignals(False)
+                    #raise RuntimeError(f"Failed to assign object: {currobj.type}")
 
-            self.object_combo_box.setCurrentIndex(currindex)
+                items.sort(key=lambda x: x[0])
+                items.insert(0, noitem)
+
+                self.items = items
+                #for item in items:
+                self.object_combo_box.addItems([x[0] for x in items])
+                if wrong_object is not None:
+                    currindex = len(items)
+                    self.object_combo_box.addItem(wrong_object.name)
+                    self.wrong_object = wrong_object
+                else:
+                    currindex = items.index(curritem)
+                self.object_combo_box.setCurrentIndex(currindex)
+
+                if item_cache is not None:
+                    item_cache[self.type] = self.items
+
+            elif item_cache is not None and self.type in item_cache:
+                if currobj is not None:
+                    curritem = (currobj.name, currobj)
+                else:
+                    curritem = None
+
+                items = item_cache[self.type]
+                self.object_combo_box.addItems([x[0] for x in items])
+
+                try:
+                    currindex = items.index(curritem)
+                except ValueError:
+                    if curritem is not None:
+                        currindex = len(items)
+                        self.object_combo_box.addItem(currobj.name)
+                        checkedtypes = ", ".join(check_types)
+                        open_message_dialog(f"Warning!\n"
+                                            f"Tried to fit object {currobj.name} with type {currobj.type} into field that expects "
+                                            f"one of {checkedtypes}.")
+                    else:
+                        currindex = 0
+
+                self.object_combo_box.setCurrentIndex(currindex)
         self.object_combo_box.blockSignals(False)
 
     def change_object(self):
@@ -2488,12 +2513,14 @@ class LuaNameEdit(QtWidgets.QWidget):
 
 class NewEditWindow(QtWidgets.QMdiSubWindow):
     closing = QtCore.pyqtSignal()
+    main_window_changed = QtCore.pyqtSignal(object)
 
     def __init__(self, parent, object: BattalionObject, editor: "bw_editor.LevelEditor", makewindow):
         super().__init__(parent)
         self.resize(900, 500)
         self.setMinimumSize(QtCore.QSize(300, 300))
 
+        self.is_autoupdate = False
         self.editor = editor
         self.object = object
         self.makewindow = makewindow
@@ -2549,6 +2576,9 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
 
         self.show()
 
+    def store_autoupdate_status(self):
+        self.is_autoupdate = self.autoupdate_checkbox.isChecked()
+
     def setup_rows(self, object: BattalionObject):
         start = default_timer()
         self.fields = []
@@ -2564,6 +2594,12 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.add_row(QtWidgets.QLabel("Keep Window On Top", parent), checkbox_widget)
         checkbox_widget.setChecked(self.keep_window_on_top==QtCore.Qt.CheckState.Checked)
         checkbox_widget.checkStateChanged.connect(self.change_window_on_top_state)
+
+        self.autoupdate_checkbox = QtWidgets.QCheckBox(self.content_holder)
+        self.add_row(QtWidgets.QLabel("Change Context to Selected Object", parent), self.autoupdate_checkbox)
+        self.autoupdate_checkbox.setChecked(self.is_autoupdate)
+        self.autoupdate_checkbox.checkStateChanged.connect(self.store_autoupdate_status)
+        self.autoupdate_checkbox.checkStateChanged.connect(lambda x: self.main_window_changed.emit(self))
 
         # Add custom name field
         getter = make_getter(object, "customname")
@@ -2835,8 +2871,15 @@ class Plugin(object):
         self.editwindows = []
         self.main_window: NewEditWindow = None
 
+    def set_main_window(self, window: NewEditWindow):
+        if window.autoupdate_checkbox.isChecked():
+            if self.main_window is not window:
+                self.main_window.autoupdate_checkbox.setChecked(False)
+                self.main_window = window
+
     def make_window(self, editor, currobj, make_main=False):
         editwindow = NewEditWindow(None, currobj, editor, self.make_window)
+        editwindow.main_window_changed.connect(self.set_main_window)
         editwindow.show()
         self.editwindows.append(editwindow)
 
@@ -2848,6 +2891,7 @@ class Plugin(object):
         if make_main:
             if self.main_window is None:
                 self.main_window = editwindow
+                self.main_window.autoupdate_checkbox.setChecked(True)
 
         editwindow.closing.connect(handle_close)
 
@@ -2881,7 +2925,7 @@ class Plugin(object):
             self.make_window(editor, currobj, make_main=True)
 
     def select_update(self, editor: "bw_editor.LevelEditor"):
-        if self.main_window is not None:
+        if self.main_window is not None and self.main_window.autoupdate_checkbox.isChecked():
             obj = editor.get_selected_obj()
             if obj is not None:
                 QtWidgets.QApplication.setOverrideCursor(
