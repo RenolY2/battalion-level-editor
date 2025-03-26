@@ -3,17 +3,78 @@ import traceback
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenu
 from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
+import PyQt6.QtGui as QtGui
+import PyQt6.QtWidgets as QtWidgets
+import PyQt6.QtCore as QtCore
+
+
+class NonAutodismissibleMenu(QtWidgets.QMenu):
+    def mouseReleaseEvent(self, event: QtGui.QMouseEvent):
+        action = self.activeAction()
+        if action is not None and (
+                action.isEnabled() and action.isCheckable()
+                or hasattr(action, "dismiss") and not action.dismiss
+        ):
+            action.trigger()
+            event.accept()
+            return
+
+        super().mouseReleaseEvent(event)
+
+
+class NonDismissableAction(QAction):
+    dismiss = False
+
+
+class ShowHideAllCategory(object):
+    def __init__(self, name, menuparent, content: None | list["ObjectViewSelectionToggle"] = None):
+        self.name = name
+
+        self.toggle_parent = menuparent
+
+        self.action_show = NonDismissableAction("Show all {0}".format(name), self.toggle_parent)
+        self.action_hide = NonDismissableAction("Hide all {0}".format(name), self.toggle_parent)
+
+        self.toggle_parent.addAction(self.action_show)
+        self.toggle_parent.addAction(self.action_hide)
+
+        self.action_show.triggered.connect(self.show_all)
+        self.action_hide.triggered.connect(self.hide_all)
+
+        self.content = []
+        if content is not None:
+            self.content.extend(content)
+
+    def show_all(self):
+        for toggle in self.content:
+            toggle.action_view_toggle.setChecked(True)
+            toggle.action_select_toggle.setChecked(True)
+
+    def hide_all(self):
+        for toggle in self.content:
+            toggle.action_view_toggle.setChecked(False)
+            toggle.action_select_toggle.setChecked(False)
+
+
+class SubGroup(NonAutodismissibleMenu):
+    def __init__(self, name, menuparent):
+        super().__init__(parent=menuparent, title=name)
+        self.showhide = ShowHideAllCategory(name, self)
+
+    def add_content(self, content: "ObjectViewSelectionToggle"):
+        self.showhide.content.append(content)
 
 
 class ObjectViewSelectionToggle(object):
-    def __init__(self, name, menuparent, option3d_exists=False, addlater=False):
+    def __init__(self, name, menuparent, option3d_exists=False, addlater=False, subgroup=None):
         self.name = name
         self.menuparent = menuparent
+        self.toggle_parent = menuparent if subgroup is None else subgroup
 
         self.option3d_exists = option3d_exists
 
-        self.action_view_toggle = QAction("{0} visible".format(name), menuparent)
-        self.action_select_toggle = QAction("{0} 3D visible".format(name), menuparent)
+        self.action_view_toggle = QAction("{0} visible".format(name), self.toggle_parent)
+        self.action_select_toggle = QAction("{0} 3D visible".format(name), self.toggle_parent)
         self.action_view_toggle.setCheckable(True)
         self.action_view_toggle.setChecked(True)
         self.action_select_toggle.setCheckable(True)
@@ -21,16 +82,22 @@ class ObjectViewSelectionToggle(object):
 
         self.action_view_toggle.triggered.connect(self.handle_view_toggle)
         #self.action_select_toggle.triggered.connect(self.handle_select_toggle)
+        self.toggle_parent: QMenu
+
         if not addlater:
-            menuparent.addAction(self.action_view_toggle)
+            self.toggle_parent.addAction(self.action_view_toggle)
+
         if option3d_exists:
-            menuparent.addAction(self.action_select_toggle)
+            self.toggle_parent.addAction(self.action_select_toggle)
+
+        if subgroup is not None:
+            subgroup.add_content(self)
 
         self.action_view_toggle.triggered.connect(self.menuparent.emit_update)
         self.action_select_toggle.triggered.connect(self.menuparent.emit_update)
 
     def add_3d(self):
-        self.menuparent.addAction(self.action_select_toggle)
+        self.toggle_parent.addAction(self.action_select_toggle)
 
     def handle_view_toggle(self, val):
         if not val:
@@ -81,7 +148,7 @@ a = {
 }
 
 
-class FilterViewMenu(QMenu):
+class FilterViewMenu(NonAutodismissibleMenu):
     filter_update = pyqtSignal()
 
     def __init__(self, *args, **kwargs):
@@ -97,33 +164,45 @@ class FilterViewMenu(QMenu):
         self.hide_all.triggered.connect(self.handle_hide_all)
         self.addAction(self.hide_all)
         self.addSeparator()
-        self.groundtroops = ObjectViewSelectionToggle("Troops", self, True)
-        self.groundvehicles = ObjectViewSelectionToggle("Ground Vehicles", self, True)
-        self.airvehicles = ObjectViewSelectionToggle("Air Vehicles", self, True)
-        self.watervehicles = ObjectViewSelectionToggle("Water Vehicles", self, True)
-        self.buildings = ObjectViewSelectionToggle("Buildings", self, True)
-        self.pickups = ObjectViewSelectionToggle("Pickups", self, True)
-        self.destroyableobjects = ObjectViewSelectionToggle("Destroyable Objects", self, True)
-        self.scenerycluster = ObjectViewSelectionToggle("Scenery Clusters", self, True)
-        self.capturepoints = ObjectViewSelectionToggle("Capture Points", self, True)
-        self.cameras = ObjectViewSelectionToggle("Cameras", self)
+
+        self.units_menu = SubGroup("Units", self)
+        self.map_content = SubGroup("Map Objects", self)
+        self.misc_content = SubGroup("Misc Objects", self)
+        self.zones = SubGroup("Zones", self)
+
+        self.addMenu(self.units_menu)
+        self.addMenu(self.map_content)
+        self.addMenu(self.misc_content)
+        self.addMenu(self.zones)
+
+        self.groundtroops = ObjectViewSelectionToggle("Troops", self, True, subgroup=self.units_menu)
+        self.groundvehicles = ObjectViewSelectionToggle("Ground Vehicles", self, True, subgroup=self.units_menu)
+        self.airvehicles = ObjectViewSelectionToggle("Air Vehicles", self, True, subgroup=self.units_menu)
+        self.watervehicles = ObjectViewSelectionToggle("Water Vehicles", self, True, subgroup=self.units_menu)
+
+        self.buildings = ObjectViewSelectionToggle("Buildings", self, True, subgroup=self.map_content)
+        self.pickups = ObjectViewSelectionToggle("Pickups", self, True, subgroup=self.map_content)
+        self.destroyableobjects = ObjectViewSelectionToggle("Destroyable Objects", self, True, subgroup=self.map_content)
+        self.scenerycluster = ObjectViewSelectionToggle("Scenery Clusters", self, True, subgroup=self.map_content)
+        self.capturepoints = ObjectViewSelectionToggle("Capture Points", self, True, subgroup=self.map_content)
+        self.cameras = ObjectViewSelectionToggle("Cameras", self, subgroup=self.misc_content)
 
         #self.mapzones = ObjectViewSelectionToggle("Map Zones", self)
         #self.damagezones = ObjectViewSelectionToggle("Damage Zones", self)
         #self.coastzones = ObjectViewSelectionToggle("Coast Zones", self)
         #self.nogohintzones = ObjectViewSelectionToggle("No-Go Hint Zones", self)
 
-        self.zone_defaultzones = ObjectViewSelectionToggle("Default Zones", self)
-        self.zone_worldboundary = ObjectViewSelectionToggle("World Boundary", self)
-        self.zone_mission = ObjectViewSelectionToggle("Mission Boundary", self)
-        self.zone_nogo = ObjectViewSelectionToggle("No-Go Areas", self)
-        self.zone_ford = ObjectViewSelectionToggle("Fords", self)
+        self.zone_defaultzones = ObjectViewSelectionToggle("Default Zones", self, subgroup=self.zones)
+        self.zone_worldboundary = ObjectViewSelectionToggle("World Boundary", self, subgroup=self.zones)
+        self.zone_mission = ObjectViewSelectionToggle("Mission Boundary", self, subgroup=self.zones)
+        self.zone_nogo = ObjectViewSelectionToggle("No-Go Areas", self, subgroup=self.zones)
+        self.zone_ford = ObjectViewSelectionToggle("Fords", self, subgroup=self.zones)
 
 
-        self.waypoints = ObjectViewSelectionToggle("Waypoints", self)
-        self.ambientareapoints = ObjectViewSelectionToggle("Ambient Area Points", self)
-        self.objectivemarkers = ObjectViewSelectionToggle("Objective Markers", self)
-        self.unitgroups = ObjectViewSelectionToggle("Unit Groups", self)
+        self.waypoints = ObjectViewSelectionToggle("Waypoints", self, subgroup=self.misc_content)
+        self.ambientareapoints = ObjectViewSelectionToggle("Ambient Area Points", self, subgroup=self.misc_content)
+        self.objectivemarkers = ObjectViewSelectionToggle("Objective Markers", self, subgroup=self.misc_content)
+        self.unitgroups = ObjectViewSelectionToggle("Unit Groups", self, subgroup=self.misc_content)
 
         for action in (self.groundtroops, self.groundvehicles, self.airvehicles, self.watervehicles,
                        self.buildings, self.pickups, self.destroyableobjects, self.scenerycluster,
@@ -140,9 +219,9 @@ class FilterViewMenu(QMenu):
                        self.buildings, self.capturepoints, self.pickups, self.destroyableobjects, self.scenerycluster):
             action.add_3d()
 
-        self.addSeparator()
+        """self.addSeparator()
         for action in (self.zone_defaultzones, self.zone_worldboundary, self.zone_mission, self.zone_nogo,self.zone_ford):
-            self.addAction(action.action_view_toggle)
+            self.addAction(action.action_view_toggle)"""
         #self.addAction(self.mapzones.action_view_toggle)
         #self.addAction(self.damagezones.action_view_toggle)
         #self.addAction(self.coastzones.action_view_toggle)
