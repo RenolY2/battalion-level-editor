@@ -892,6 +892,18 @@ class BattalionObject(object):
     def iconoffset(self):
         return self._iconoffset
 
+    @property
+    def faction(self):
+        if hasattr(self, "mArmy"):
+            return self.mArmy
+        elif hasattr(self, "mAllegiance"):
+            return self.mAllegiance
+        else:
+            base = getattr(self, "mBase", None)
+            if base:
+                return getattr(base, "mArmy", None)
+            return None
+
     #@property
     #def position(self):
     #    return None
