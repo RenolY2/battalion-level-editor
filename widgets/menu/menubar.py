@@ -27,7 +27,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.debug_window = None
         self.lua_find_menu = None
 
-        self.visibility_menu = FilterViewMenu(self)
+        self.visibility_menu = FilterViewMenu(self.editor, self)
         self.visibility_menu.filter_update.connect(self.editor.update_render)
 
         # ------ Collision Menu

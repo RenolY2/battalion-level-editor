@@ -1,4 +1,5 @@
 import traceback
+from functools import partial
 
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenu
@@ -6,6 +7,11 @@ from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
 import PyQt6.QtGui as QtGui
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtCore as QtCore
+from lib.BattalionXMLLib import BattalionObject
+
+import typing
+if typing.TYPE_CHECKING:
+    from bw_editor import LevelEditor
 
 
 class NonAutodismissibleMenu(QtWidgets.QMenu):
@@ -26,6 +32,12 @@ class NonDismissableAction(QAction):
     dismiss = False
 
 
+class ActionFunction(QAction):
+    def __init__(self, name, parent, func):
+        super().__init__(name, parent=parent)
+        self.triggered.connect(func)
+
+
 class ShowHideAllCategory(object):
     def __init__(self, name, menuparent, content: None | list["ObjectViewSelectionToggle"] = None):
         self.name = name
@@ -33,9 +45,11 @@ class ShowHideAllCategory(object):
         self.toggle_parent = menuparent
 
         self.action_show = NonDismissableAction("Show all {0}".format(name), self.toggle_parent)
+        self.action_show_only = NonDismissableAction("Show only {0}".format(name), self.toggle_parent)
         self.action_hide = NonDismissableAction("Hide all {0}".format(name), self.toggle_parent)
 
         self.toggle_parent.addAction(self.action_show)
+        self.toggle_parent.addAction(self.action_show_only)
         self.toggle_parent.addAction(self.action_hide)
 
         self.action_show.triggered.connect(self.show_all)
@@ -57,9 +71,14 @@ class ShowHideAllCategory(object):
 
 
 class SubGroup(NonAutodismissibleMenu):
+    show_all = pyqtSignal(object)
+
     def __init__(self, name, menuparent):
         super().__init__(parent=menuparent, title=name)
         self.showhide = ShowHideAllCategory(name, self)
+        self.showhide.action_show_only.triggered.connect(
+            lambda: self.show_all.emit(self.showhide)
+        )
 
     def add_content(self, content: "ObjectViewSelectionToggle"):
         self.showhide.content.append(content)
@@ -151,10 +170,12 @@ a = {
 class FilterViewMenu(NonAutodismissibleMenu):
     filter_update = pyqtSignal()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, editor, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setTitle("Filter View")
         self.visibility_override = False
+
+        self.editor: LevelEditor = editor
 
         self.show_all = QAction("Show All", self)
         self.show_all.triggered.connect(self.handle_show_all)
@@ -169,6 +190,11 @@ class FilterViewMenu(NonAutodismissibleMenu):
         self.map_content = SubGroup("Map Objects", self)
         self.misc_content = SubGroup("Misc Objects", self)
         self.zones = SubGroup("Zones", self)
+
+        self.units_menu.show_all.connect(self.show_only)
+        self.map_content.show_all.connect(self.show_only)
+        self.misc_content.show_all.connect(self.show_only)
+        self.zones.show_all.connect(self.show_only)
 
         self.addMenu(self.units_menu)
         self.addMenu(self.map_content)
@@ -253,6 +279,65 @@ class FilterViewMenu(NonAutodismissibleMenu):
         self.toggles["ZONETYPE_NOGOAREA"] = self.zone_nogo
         self.toggles["ZONETYPE_FORD"] = self.zone_ford
 
+        self.addSeparator()
+        self.object_specific_vis = set()
+
+        self.action_limit_to_selection = ActionFunction("Filter to Selected",
+                                                        self,
+                                                        self.set_object_vis_to_selected)
+        self.action_clear_filter = ActionFunction("Reset Filter",
+                                                        self,
+                                                        self.clear_object_visibility_filter)
+
+        self.addAction(self.action_limit_to_selection)
+
+
+        filter_menu = QMenu("Filter to Faction", self)
+        filter_menu.addAction(ActionFunction("No Army", filter_menu,
+                                             partial(self.faction_filter, "eNoArmy")))
+        filter_menu.addAction(ActionFunction("Western Frontier", filter_menu,
+                                             partial(self.faction_filter, "eWesternFrontier")))
+        filter_menu.addAction(ActionFunction("Tundran Territories", filter_menu,
+                                             partial(self.faction_filter, "eTundranTerritories")))
+        filter_menu.addAction(ActionFunction("Xylvania", filter_menu,
+                                             partial(self.faction_filter, "eXylvanian")))
+        filter_menu.addAction(ActionFunction("Solar Empire", filter_menu,
+                                             partial(self.faction_filter, "eSolarEmpire")))
+        filter_menu.addAction(ActionFunction("Iron Legion", filter_menu,
+                                             partial(self.faction_filter, "eUnderWorld")))
+        filter_menu.addAction(ActionFunction("Neutral", filter_menu,
+                                             partial(self.faction_filter, "eNeutral")))
+        filter_menu.addAction(ActionFunction("Anglo Isles", filter_menu,
+                                             partial(self.faction_filter, "eAngloIsles")))
+        self.addMenu(filter_menu)
+        self.addAction(self.action_clear_filter)
+
+        self.filter_rule = None
+
+    def show_only(self, toggle_group):
+        self.handle_hide_all()
+        toggle_group.show_all()
+
+    def set_filter_rule(self, filter_rule):
+        self.filter_rule = filter_rule
+        self.filter_update.emit()
+
+    def faction_filter(self, faction):
+        self.set_filter_rule(lambda x: x.faction == faction)
+
+    def set_object_vis_to_selected(self):
+        selected = set(self.editor.get_selected_objs())
+        if selected:
+            self.filter_rule = lambda x: x in selected
+            self.filter_update.emit()
+
+    def clear_object_visibility_filter(self):
+        self.filter_rule = None
+        self.filter_update.emit()
+
+    def add_object_visibility(self, objects):
+        for obj in objects:
+            self.object_specific_vis.add(obj.id)
 
     def restore(self, cfg):
         for type, toggle in self.toggles.items():
@@ -276,6 +361,7 @@ class FilterViewMenu(NonAutodismissibleMenu):
             return True
 
         if objtype in self.toggles:
+
             return self.toggles[objtype].is_selectable()
         else:
             return True
@@ -286,12 +372,18 @@ class FilterViewMenu(NonAutodismissibleMenu):
 
         if obj is not None and objtype in ("cMapZone", "cCoastZone", "cDamageZone", "cNogoHintZone"):
             if obj.mZoneType in self.toggles:
-                return self.toggles[obj.mZoneType].is_visible()
+                if self.filter_rule is not None and obj is not None:
+                    return self.toggles[obj.mZoneType].is_visible() and self.filter_rule(obj)
+                else:
+                    return self.toggles[obj.mZoneType].is_visible()
             else:
                 return True
 
         if objtype in self.toggles:
-            return self.toggles[objtype].is_visible()
+            if self.filter_rule is not None and obj is not None:
+                return self.toggles[objtype].is_visible() and self.filter_rule(obj)
+            else:
+                return self.toggles[objtype].is_visible()
         else:
             return True
 
@@ -304,6 +396,7 @@ class FilterViewMenu(NonAutodismissibleMenu):
                        self.zone_defaultzones, self.zone_worldboundary, self.zone_mission, self.zone_nogo,self.zone_ford):
             action.action_view_toggle.setChecked(True)
             action.action_select_toggle.setChecked(True)
+        self.filter_rule = None
         self.filter_update.emit()
 
     def handle_hide_all(self):
@@ -315,6 +408,7 @@ class FilterViewMenu(NonAutodismissibleMenu):
                        self.zone_defaultzones, self.zone_worldboundary, self.zone_mission, self.zone_nogo,self.zone_ford):
             action.action_view_toggle.setChecked(False)
             action.action_select_toggle.setChecked(False)
+        self.filter_rule = None
         self.filter_update.emit()
 
     def emit_update(self, val):
