@@ -322,6 +322,7 @@ class PikminSideWidget(QWidget):
             if make_main:
                 if self.main_window is None:
                     self.main_window = editwindow
+                    self.main_window.autoupdate_checkbox.setChecked(True)
 
             editwindow.closing.connect(handle_close)
 
