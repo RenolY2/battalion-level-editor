@@ -141,6 +141,9 @@ class LevelEditor(QMainWindow):
         else:
             return None
 
+    def get_selected_objs(self):
+        return self.level_view.selected
+
     def get_editor_folder(self):
         return EDITOR_ROOT
 
