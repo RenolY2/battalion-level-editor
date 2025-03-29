@@ -1,0 +1,22 @@
+>BOTH:
+-mZoneType:
+Possible values:
+* ZONETYPE_DEFAULT: Default zone type without special properties.
+* ZONETYPE_WORLDBOUNDARY: Used for zones that encompass the full level.
+* ZONETYPE_MISSIONBOUNDARY: Zone type which defines the area the player is allowed to be in. In BW2 this is also baked into the .pf2 file.
+* ZONETYPE_NOGOAREA: Zone type which makes troops avoid this area. In BW2 this is also baked into the .pf2 file. Some units have settings to ignore this area.
+* ZONETYPE_FORD: Unknown. Used often on river crossings. In BW2 this is also baked into the .pf2 file.
+-mRadius:
+Defines the zone as a circular shape with this radius. 
+-mSize:
+Defines the zone as a box shape with these XYZ dimensions. The fourth value is always 1.0.
+-mFlags:
+If ZONEFLAG_3D is set, the location of the top and bottom end of the mapzone matters, 
+e.g. for zones that should affect air units but not ground units.
+Otherwise, the zone extends upwards and downwards infinitely.
+-mMatrix:
+Location and orientation of mapzone. Scale isn't used.
+-SystemFlags:
+Unknown.
+>BW1:
+>BW2:
