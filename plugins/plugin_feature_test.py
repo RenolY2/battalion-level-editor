@@ -1,6 +1,7 @@
 
 import os
 import math
+import json
 from functools import partial
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
@@ -19,6 +20,8 @@ from widgets.editor_widgets import open_message_dialog
 
 if TYPE_CHECKING:
     import bw_editor
+
+
 
 ENUMS = {
     "BW1":
@@ -2267,6 +2270,105 @@ class ReferenceEdit(QtWidgets.QWidget):
         return False
 
 
+class DocFile(object):
+    def __init__(self, classname):
+        self.classname = classname
+        self.docs = {}
+
+    @classmethod
+    def from_file(cls, path):
+        basename: str = os.path.basename(path)
+        objname = basename.removesuffix(".doc")
+        doc = cls(objname)
+
+        with open(path, "r") as f:
+            lines = f.readlines()
+
+        i = 0
+        end = len(lines)
+        game = None
+        field = None
+        fielddoc = []
+
+        state = 0
+
+        for i in range(0, end):
+            if lines[i][0] in (">", "-") and fielddoc:
+                doc.add_doc(game, objname, field, fielddoc)
+
+            if lines[i].startswith(">"):
+                state = 1
+                game = lines[i][1:].strip().removesuffix(":")
+
+            elif lines[i].startswith("-"):
+                field = lines[i][1:].strip().removesuffix(":")
+                fielddoc = []
+                state = 2
+            elif state == 2:
+                assert game is not None and field is not None, "Parsing failure when reading {}".format(path)
+                line = lines[i]
+                fielddoc.append(line)
+
+                if i == end - 1:
+                    doc.add_doc(game, objname, field, fielddoc)
+
+        return doc
+
+    def add_doc(self, game, objname, field, doc):
+        while doc[-1] == "\n":
+            doc.pop(-1)
+
+        if game == "BOTH":
+            self.docs[("BW1", objname, field)] = "".join(doc)
+            self.docs[("BW2", objname, field)] = "".join(doc)
+        else:
+            self.docs[(game, objname, field)] = "".join(doc)
+
+
+class FieldDocumentationHolder(object):
+    def __init__(self, doc_folder):
+        self.docs = {}
+        self.doc_folder = doc_folder
+        self.last_changed = {}
+
+        doc_files = os.listdir(doc_folder)
+
+        for fname in doc_files:
+            if fname.endswith(".doc"):
+                self.read_object_doc(os.path.join(doc_folder, fname))
+
+    def doc_needs_update(self, classname):
+        if classname not in self.last_changed:
+            return True
+
+        doc_file = os.path.join(self.doc_folder, classname+".doc")
+        return os.stat(doc_file).st_mtime > self.last_changed[classname]
+
+    def update(self, classname):
+        print("Checking if", classname, "needs update")
+        if self.doc_needs_update(classname):
+            print("Updating...")
+            try:
+                self.read_object_doc(os.path.join(self.doc_folder, classname+".doc"))
+            except FileNotFoundError:
+                pass
+
+    def read_object_doc(self, fpath):
+        objdoc: DocFile = DocFile.from_file(fpath)
+        self.last_changed[objdoc.classname] = os.stat(fpath).st_mtime
+        for item, doc in objdoc.docs.items():
+            self.docs[item] = doc
+
+    def add_doc(self, game, classname, fieldtype, doc):
+        self.docs[(game, classname, fieldtype)] = doc
+
+    def get_doc(self, game, classname, fieldtype):
+        return self.docs.get((game, classname, fieldtype), "")
+
+
+BW_DOCUMENTATION = FieldDocumentationHolder("objecthelp/")
+
+
 class FieldEdit(QtCore.QObject):
     edit_obj = QtCore.pyqtSignal(str, int)
     editor_refresh = QtCore.pyqtSignal()
@@ -2276,6 +2378,18 @@ class FieldEdit(QtCore.QObject):
         self.object = object
         #self.edit_layout = QtWidgets.QVBoxLayout(self)
         self.name = QtWidgets.QLabel(name, parent)
+        tooltip = "Data Type: {}".format(type)
+        doc = BW_DOCUMENTATION
+
+        if doc is not None:
+            doc.update(object.type)
+            game = "BW2" if editor.level_file.bw2 else "BW1"
+            tooltip_extra = doc.get_doc(game, object.type, name)
+
+            if tooltip_extra:
+                tooltip += "\n" + tooltip_extra
+
+        self.name.setToolTip(tooltip)
         #self.edit_layout.addWidget(self.name)
         #self.setLayout(self.edit_layout)
 
@@ -2511,6 +2625,12 @@ class LuaNameEdit(QtWidgets.QWidget):
                 self.set_value(val)
 
 
+class TooltippedLabel(QtWidgets.QLabel):
+    def __init__(self, name, parent, tooltip):
+        super().__init__(name, parent)
+        self.setToolTip(tooltip)
+
+
 class NewEditWindow(QtWidgets.QMdiSubWindow):
     closing = QtCore.pyqtSignal()
     main_window_changed = QtCore.pyqtSignal(object)
@@ -2539,8 +2659,6 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.scroll_area.setWidgetResizable(True)
         self.keep_window_on_top = False
         self.setup_rows(object)
-
-
 
     def closeEvent(self, event):
         self.closing.emit()
@@ -2591,12 +2709,20 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         setter = lambda x: object.set_custom_name(x)
 
         checkbox_widget = QtWidgets.QCheckBox(self.content_holder)
-        self.add_row(QtWidgets.QLabel("Keep Window On Top", parent), checkbox_widget)
+        self.add_row(TooltippedLabel("Keep Window On Top",
+                                     parent,
+                                     "If set, this window will stay on top of other windows no matter which one is in focus."),
+                    checkbox_widget)
         checkbox_widget.setChecked(self.keep_window_on_top==QtCore.Qt.CheckState.Checked)
         checkbox_widget.checkStateChanged.connect(self.change_window_on_top_state)
 
         self.autoupdate_checkbox = QtWidgets.QCheckBox(self.content_holder)
-        self.add_row(QtWidgets.QLabel("Change Context to Selected Object", parent), self.autoupdate_checkbox)
+        self.add_row(TooltippedLabel(
+            "Change Context to Selected Object",
+            parent,
+            "If set, selecting an object in the editor will change this edit window to show that object's data."
+
+        ), self.autoupdate_checkbox)
         self.autoupdate_checkbox.setChecked(self.is_autoupdate)
         self.autoupdate_checkbox.checkStateChanged.connect(self.store_autoupdate_status)
         self.autoupdate_checkbox.checkStateChanged.connect(lambda x: self.main_window_changed.emit(self))
@@ -2607,7 +2733,10 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
 
         customname_edit = CustomNameEdit(self.content_holder, getter, setter)
         self.fields.append(customname_edit)
-        self.add_row(QtWidgets.QLabel("Custom Name", parent), customname_edit)
+        self.add_row(TooltippedLabel("Custom Name",
+                                      parent,
+                                      "A user-decided object name for reference in the editor."),
+                                     customname_edit)
         customname_edit.update_value()
 
         # Add Lua name field
@@ -2624,7 +2753,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         item_cache = {}
         luaname_edit = LuaNameEdit(self.content_holder, getter, setter, editor.lua_workbench.entityinit.name_usages, object)
         self.fields.append(luaname_edit)
-        self.add_row(QtWidgets.QLabel("Lua Name", parent), luaname_edit)
+        self.add_row(TooltippedLabel("Lua Name", parent, "Lua variable which references this object."), luaname_edit)
         luaname_edit.update_value()
         for tag, name, type, elements in object.fields():
             field = FieldEdit(self.content_holder, editor, object, tag, name, type, elements, item_cache)
