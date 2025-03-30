@@ -14,7 +14,7 @@ from lib.BattalionXMLLib import BattalionObject
 import typing
 from typing import TYPE_CHECKING
 from lib.bw_types import BWMatrix
-from plugins.plugin_feature_test import NewEditWindow
+from widgets.edit_window import NewEditWindow
 
 if TYPE_CHECKING:
     import bw_editor
