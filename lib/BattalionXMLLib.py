@@ -531,7 +531,7 @@ class BattalionFilePaths(object):
 
 class BattalionObject(object):
     def __init__(self, level: BattalionLevelFile, node: etree.Element):
-        self._node = node
+        self._node: etree.Element = node
         self._level = level
 
         self._attributes = {}
