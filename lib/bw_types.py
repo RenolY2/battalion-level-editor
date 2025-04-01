@@ -131,6 +131,16 @@ class BWMatrix(object):
     def z(self):
         return self.mtx[14]
 
+    def set_position(self, x, y, z):
+        self.mtx[12] = x
+        self.mtx[13] = y
+        self.mtx[14] = z
+
+    def reset_rotation(self):
+        self.mtx[0:12] = [1.0, 0.0, 0.0, 0.0,
+                          0.0, 1.0, 0.0, 0.0,
+                          0.0, 0.0, 1.0, 0.0]
+
 
 def boolean_from(bool):
     if bool == "eFalse":
