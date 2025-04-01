@@ -1,5 +1,5 @@
 
-
+import math
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
@@ -17,11 +17,46 @@ if TYPE_CHECKING:
     import bw_editor
 
 
+class ObjectGroupInstancer(ObjectGroup):
+    def __init__(self, name, xmlpath):
+        super().__init__(name)
+        with open(xmlpath, "r") as f:
+            data = f.read()
+
+        self.base_obj = BattalionObject.create_from_text(data, None, None)
 
 
+class NamedItemInstancer(NamedItem):
+    def __init__(self, parent, name, obj, base=None):
+        self.base = base
+        self.name = name
+        self.bound_to: BattalionObject
+        super().__init__(parent, name, obj)
 
+    def update_name_original(self):
+        self.setText(0, self.bound_to.name)
+        self.setText(1, self.bound_to.extra_detail_name())
 
+    def update_name(self):
+        if self.base is None:
+            self.setText(0, self.name)
+            self.setText(1, self.bound_to.extra_detail_name())
+        else:
+            self.update_name_original()
 
+    def create_instance(self, level_data, preload_data):
+        if self.base is None:
+            obj = self.bound_to.clone_object(level_data, preload_data)
+            obj._level = level_data
+
+            return obj
+        else:
+            obj: BattalionObject = self.base.clone_object(level_data, preload_data)
+            obj.mBase = self.bound_to
+            obj._level = level_data
+            obj.update_xml()
+
+            return obj
 
 
 class AddExistingObject(QtWidgets.QSplitter):
@@ -38,28 +73,79 @@ class AddExistingObject(QtWidgets.QSplitter):
         self.addWidget(self.viewer)
         self.treewidget.setColumnCount(2)
         self.treewidget.setHeaderLabels(["Objects", "Info"])
-        self.categories = {
-                        "sTroopBase": ObjectGroup("Troops"),
-                        "cGroundVehicleBase": ObjectGroup("Ground Vehicles"),
-                        "sAirVehicleBase": ObjectGroup("Air Vehicles"),
-                        "cBuildingImpBase": ObjectGroup("Buildings"),
-                        "sDestroyBase": ObjectGroup("Destroyable/Environment Objects"),
-                        "sSceneryClusterBase": ObjectGroup("Trees/Vegetation"),
-                        "cCameraBase": ObjectGroup("Cameras"),
-                        "cObjectiveMarkerBase": ObjectGroup("Objective Markers"),
-        }
+        self.spawn: NamedItemInstancer = None
+
+        bw1path = "resources/basetemplates/BW1/"
+        bw2path = "resources/basetemplates/BW2/"
+
+        if self.editor.file_menu.level_data.is_bw1():
+            self.categories: typing.Dict[str, ObjectGroupInstancer] = {
+                "sTroopBase": ObjectGroupInstancer("Troops", bw1path+"cTroop.xml"),
+                "cGroundVehicleBase": ObjectGroupInstancer("Ground Vehicles", bw1path+"cGroundVehicle.xml"),
+                "sAirVehicleBase": ObjectGroupInstancer("Air Vehicles", bw1path+"cAirVehicle.xml"),
+                "cBuildingImpBase": ObjectGroupInstancer("Buildings", bw1path+"cBuilding.xml"),
+                "cCapturePointBase": ObjectGroupInstancer("Capture Points", bw1path+"cCapturePoint.xml"),
+                "sDestroyBase": ObjectGroupInstancer("Destroyable/Environment Objects", bw1path+"cDestroyableObject.xml"),
+                "sSceneryClusterBase": ObjectGroupInstancer("Trees/Vegetation", bw1path+"cSceneryCluster.xml"),
+                "cCameraBase": ObjectGroupInstancer("Cameras", bw1path+"cCamera.xml"),
+                "cObjectiveMarkerBase": ObjectGroupInstancer("Objective Markers", bw1path+"cObjectiveMarker.xml"),
+                "sPickupBase": ObjectGroupInstancer("Pickups", bw1path+"cPickupReflected.xml")
+            }
+        else:
+            self.categories: typing.Dict[str, ObjectGroupInstancer] = {
+                "sTroopBase": ObjectGroupInstancer("Troops", bw2path+"cTroop.xml"),
+                "cGroundVehicleBase": ObjectGroupInstancer("Ground Vehicles", bw2path+"cGroundVehicle.xml"),
+                "sAirVehicleBase": ObjectGroupInstancer("Air Vehicles", bw2path+"cAirVehicle.xml"),
+                "cWaterVehicleBase": ObjectGroupInstancer("Water Vehicles", bw2path+"cWaterVehicle.xml"),
+                "cBuildingImpBase": ObjectGroupInstancer("Buildings", bw2path+"cBuilding.xml"),
+                "cCapturePointBase": ObjectGroupInstancer("Capture Points", bw2path+"cCapturePoint.xml"),
+                "sDestroyBase": ObjectGroupInstancer("Destroyable/Environment Objects", bw2path+"cDestroyableObject.xml"),
+                "sSceneryClusterBase": ObjectGroupInstancer("Trees/Vegetation", bw2path+"cSceneryCluster.xml"),
+                "cCameraBase": ObjectGroupInstancer("Cameras", bw2path+"cCamera.xml"),
+                "cObjectiveMarkerBase": ObjectGroupInstancer("Objective Markers", bw2path+"cObjectiveMarker.xml"),
+                "sPickupBase": ObjectGroupInstancer("Pickups", bw2path+"cPickupReflected.xml")
+            }
 
         for objid, obj in editor.level_file.objects.items():
             if obj.type in self.categories:
                 category = self.categories[obj.type]
-                item = NamedItem(category, obj.name, obj)
+                item = NamedItemInstancer(category, obj.name, obj, category.base_obj)
                 item.setText(2, "AAA")
                 category.addChild(item)
 
         for category in self.categories.values():
             self.treewidget.addTopLevelItem(category)
 
+        for name, xmlname in (("Map Zone", "cMapZone.xml"),
+                              ("Waypoint", "cWaypoint.xml")):
+            xmlpath = bw1path+xmlname if self.editor.file_menu.level_data.is_bw1() else bw2path+xmlname
+            obj = BattalionObject.create_from_path(bw1path + xmlname, None, None)
+            item = NamedItemInstancer(self.treewidget, name, obj, None)
+            self.treewidget.addTopLevelItem(item)
+
         self.treewidget.itemSelectionChanged.connect(self.set_model_scene)
+        self.treewidget.itemDoubleClicked.connect(self.set_spawn_obj)
+
+    def set_spawn_obj(self, result):
+        if isinstance(result, NamedItemInstancer):
+            self.spawn = result
+
+    def spawn_object(self, point):
+        level_data = self.editor.file_menu.level_data
+        preload_data = self.editor.file_menu.preload_data
+        newobj: BattalionObject = self.spawn.create_instance(level_data, preload_data)
+        newobj.updatemodelname()
+        mtx = newobj.getmatrix()
+        if mtx is not None:
+            mtx.reset_rotation()
+            mtx.rotate_y(-self.editor.level_view.camera_horiz - self.viewer.angle - math.pi/2)
+            mtx.set_position(point.x, point.z, point.y)
+        level_data.add_object_new(newobj)
+        self.editor.leveldatatreeview.set_objects(self.editor.level_file, self.editor.preload_file,
+                                                  remember_position=True)
+        self.editor.update_3d()
+        self.editor.level_view.do_redraw(force=True)
+        self.editor.set_has_unsaved_changes(True)
 
     def set_model_scene(self):
         curritem = self.treewidget.selectedItems()
@@ -214,9 +300,9 @@ class NewAddWindow(QtWidgets.QMdiSubWindow):
 class Plugin(object):
     def __init__(self):
         self.name = "Feature Test"
-        self.actions = []#,
+        self.actions = [("New Add Window", self.unitaddwindow)]#,
                         #("Unit Viewer Test", self.testfunc),
-                        #("New Add Window", self.unitaddwindow),
+                        #,
                         #("Edit Window Mass Test", self.neweditwindowtest)]
         print("I have been initialized")
         self.opengl = None
@@ -225,19 +311,15 @@ class Plugin(object):
         self.lua_find_window = None
         self.editwindows = []
 
+    def terrain_click_3d(self, viewer, ray, point):
+        if self.newaddwindow is not None:
+            self.newaddwindow.addexistinboject: AddExistingObject
+            self.newaddwindow.addexistinboject.spawn_object(point)
+
     def unitaddwindow(self, editor: "bw_editor.LevelEditor"):
         print("hi")
         self.newaddwindow = NewAddWindow(editor)
         self.newaddwindow.show()
-
-    def select_update(self, editor: "bw_editor.LevelEditor"):
-        if self.main_window is not None and self.main_window.autoupdate_checkbox.isChecked():
-            obj = editor.get_selected_obj()
-            if obj is not None:
-                QtWidgets.QApplication.setOverrideCursor(
-                    QtCore.Qt.CursorShape.WaitCursor)
-                self.main_window.change_object(obj)
-                QtWidgets.QApplication.restoreOverrideCursor()
 
     def testfunc(self, editor: "bw_editor.LevelEditor"):
         print("This is a test function")
