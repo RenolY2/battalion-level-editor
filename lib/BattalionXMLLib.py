@@ -318,6 +318,12 @@ class BattalionLevelFile(object):
         if self.bw2:
             print("Detected XML as BW2")
 
+    def is_bw1(self):
+        return not self.bw2
+
+    def is_bw2(self):
+        return self.bw2
+
     @property
     def category(self):
         return self._categories
@@ -533,6 +539,7 @@ class BattalionObject(object):
     def __init__(self, level: BattalionLevelFile, node: etree.Element):
         self._node: etree.Element = node
         self._level = level
+        self.getmatrix: typing.Callable[[], BWMatrix] = lambda: None
 
         self._attributes = {}
         self._custom_name = ""
@@ -547,6 +554,7 @@ class BattalionObject(object):
         self.deleted = False
 
         self.mtxoverride = None
+
 
     def choose_unique_id(self, level, preload):
         assert not self.deleted
@@ -631,12 +639,16 @@ class BattalionObject(object):
                             [convert_from(attr_node.attrib["type"], subnode.text) for subnode in attr_node])
                 #self._attributes[attr_node.attrib["name"]] = Attribute.from_node(attr_node, self._level)
 
+
         if hasattr(self, "Mat"):
-            setattr(self, "getmatrix", lambda: self.Mat)
+            #setattr(self, "getmatrix", lambda: self.Mat)
+            self.getmatrix = lambda: self.Mat
         elif hasattr(self, "mMatrix"):
-            setattr(self, "getmatrix", lambda: self.mMatrix)
+            #setattr(self, "getmatrix", lambda: self.mMatrix)
+            self.getmatrix = lambda: self.mMatrix
         else:
-            setattr(self, "getmatrix", lambda: None)
+            #setattr(self, "getmatrix", lambda: None)
+            self.getmatrix = lambda: None
 
     @property
     def references(self):
@@ -872,6 +884,19 @@ class BattalionObject(object):
         elif "customName" in obj._node.attrib:
             del obj._node.attrib["customName"]
         return obj
+
+    def clone_object(self, level_data, preload_data) -> "BattalionObject":
+        txt = self.tostring()
+        newobj = BattalionObject.create_from_text(txt, level_data, preload_data)
+        newobj.choose_unique_id(level_data, preload_data)
+
+        return newobj
+
+    @classmethod
+    def create_from_path(cls, fpath, leveldata, preload, dontresolve=False):
+        with open(fpath, "r") as f:
+            data = f.read()
+        return cls.create_from_text(data, leveldata, preload, dontresolve)
 
     def update_object_from_text(self, xmltext, leveldata, preload):
         xmlnode = etree.fromstring(xmltext)
