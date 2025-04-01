@@ -1,0 +1,30 @@
+<Object type="cCamera" id="550042114">
+		<Pointer name="mBase" type="cCameraBase" elements="1">
+			<Item>2138048464</Item>
+		</Pointer>
+		<Attribute name="mInstanceFlags" type="sInt32" elements="1">
+			<Item>6</Item>
+		</Attribute>
+		<Enum name="mCamType" type="eCameraType" elements="1">
+			<Item>eCAMTYPE_WAYPOINTCAM</Item>
+		</Enum>
+		<Pointer name="mTarget" type="cEntity" elements="1">
+			<Item>550042113</Item>
+		</Pointer>
+		<Pointer name="mCurrentWP" type="cWaypoint" elements="1">
+			<Item>550039470</Item>
+		</Pointer>
+		<Attribute name="mLodBias" type="sInt32" elements="1">
+			<Item>-2</Item>
+		</Attribute>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>1.000000,0.000000,0.000000,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.000000,0.000000,1.000000,0.000000, -83.585999,0.000000,1441.380981,1.000000</Item>
+		</Attribute>
+		<Attribute name="miWorldObjFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

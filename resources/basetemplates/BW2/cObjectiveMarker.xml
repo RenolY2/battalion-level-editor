@@ -1,0 +1,26 @@
+<Object type="cObjectiveMarker" id="550041497">
+		<Pointer name="mBase" type="cObjectiveMarkerBase" elements="1">
+			<Item>200001170</Item>
+		</Pointer>
+		<Pointer name="mAttachedTo" type="cWorldObject" elements="1">
+			<Item>550038408</Item>
+		</Pointer>
+		<Pointer name="mParent" type="cObjective" elements="1">
+			<Item>550041498</Item>
+		</Pointer>
+		<Attribute name="mFlags" type="sUInt32" elements="1">
+			<Item>5</Item>
+		</Attribute>
+		<Attribute name="mHeightAboveTarget" type="sFloat" elements="1">
+			<Item>17.500000</Item>
+		</Attribute>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>1.000000,0.000000,0.000000,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.000000,0.000000,1.000000,0.000000, -248.388000,0.000000,-280.057007,1.000000</Item>
+		</Attribute>
+		<Attribute name="miWorldObjFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>

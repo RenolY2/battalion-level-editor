@@ -1,0 +1,39 @@
+<Object type="cTroop" id="2138056090">
+		<Pointer name="mBase" type="sTroopBase" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="mName" type="cFxString8" elements="1">
+			<Item></Item>
+		</Attribute>
+		<Attribute name="spawnMatrix" type="cMatrix4x4" elements="1">
+			<Item>-0.772726,0.000000,-0.634739,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.634739,0.000000,-0.772726,0.000000, -374.813995,0.000000,-286.256989,1.000000</Item>
+		</Attribute>
+		<Enum name="State" type="eAiUnitState" elements="1">
+			<Item>AI_STATE_NORMAL</Item>
+		</Enum>
+		<Enum name="mAttackStyle" type="eAttackStyle" elements="1">
+			<Item>ATTACKSTYLE_HUNT_AND_DESTROY</Item>
+		</Enum>
+		<Enum name="mMoveStyle" type="eMoveStyle" elements="1">
+			<Item>MOVESTYLE_ATTACK_ON_SIGHT</Item>
+		</Enum>
+		<Pointer name="mStartWaypoint" type="cWaypoint" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Enum name="mPlaceOnPlatform" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Attribute name="mUnitInstanceFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Resource name="mpScript" type="cGameScriptResource" elements="1">
+			<Item>0</Item>
+		</Resource>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>-0.772726,0.000000,-0.634739,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.634739,0.000000,-0.772726,0.000000, -374.813995,0.000000,-286.256989,1.000000</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

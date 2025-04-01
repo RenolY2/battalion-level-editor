@@ -1,0 +1,15 @@
+<Object type="cSceneryCluster" id="350011690">
+		<Pointer name="mBase" type="sSceneryClusterBase" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="Seed" type="sUInt16" elements="1">
+			<Item>120</Item>
+		</Attribute>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>1.000000,0.000000,0.000000,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.000000,0.000000,1.000000,0.000000, -323.388000,0.000000,934.193970,1.000000</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

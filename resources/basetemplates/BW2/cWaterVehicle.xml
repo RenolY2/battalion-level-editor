@@ -1,0 +1,66 @@
+<Object type="cWaterVehicle" id="280014659">
+		<Pointer name="mBase" type="cWaterVehicleBase" elements="1">
+			<Item>550017520</Item>
+		</Pointer>
+		<Enum name="mPhysEngine" type="ePhysicEngineType" elements="1">
+			<Item>physEngODE</Item>
+		</Enum>
+		<Attribute name="spawnMatrix" type="cMatrix4x4" elements="1">
+			<Item>0.220578,0.000000,-0.975369,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.975369,0.000000,0.220578,0.000000, -285.316986,0.000000,-388.540009,1.000000</Item>
+		</Attribute>
+		<Enum name="State" type="eAiUnitState" elements="1">
+			<Item>AI_STATE_NORMAL</Item>
+		</Enum>
+		<Enum name="mAttackStyle" type="eAttackStyle" elements="1">
+			<Item>ATTACKSTYLE_FROM_DEFENSIVE_AREA</Item>
+		</Enum>
+		<Enum name="mMoveStyle" type="eMoveStyle" elements="1">
+			<Item>MOVESTYLE_RESPOND_TO_ATTACKS</Item>
+		</Enum>
+		<Pointer name="mStartWaypoint" type="cWaypoint" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Enum name="mPlaceOnPlatform" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Attribute name="mUnitInstanceFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Enum name="mVehicleOccupant" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mRevivable" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mDontRegisterBirth" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mEnemyTargetableOnly" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Resource name="mpScript" type="cGameScriptResource" elements="1">
+			<Item>0</Item>
+		</Resource>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>0.220578,0.000000,-0.975369,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.975369,0.000000,0.220578,0.000000, -285.316986,0.000000,-388.540009,1.000000</Item>
+		</Attribute>
+		<Attribute name="miWorldObjFlags" type="sUInt32" elements="1">
+			<Item>1</Item>
+		</Attribute>
+		<Pointer name="mPassenger" type="cUnit" elements="10">
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>280014657</Item>
+			<Item>280014658</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

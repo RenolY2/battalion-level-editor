@@ -1,0 +1,24 @@
+<Object type="cCamera" id="2138050664">
+		<Pointer name="mBase" type="cCameraBase" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="mInstanceFlags" type="sInt32" elements="1">
+			<Item>21</Item>
+		</Attribute>
+		<Enum name="mCamType" type="eCameraType" elements="1">
+			<Item>eCAMTYPE_STATIC</Item>
+		</Enum>
+		<Pointer name="mTarget" type="cEntity" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mCurrentWP" type="cWaypoint" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>-0.595227,0.000000,0.803557,0.000000, 0.000000,1.000000,0.000000,0.000000, -0.803557,0.000000,-0.595227,0.000000, 98.785004,0.000000,-146.681000,1.000000</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

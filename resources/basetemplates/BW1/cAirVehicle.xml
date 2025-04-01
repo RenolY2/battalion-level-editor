@@ -1,0 +1,46 @@
+<Object type="cAirVehicle" id="2138055589">
+		<Pointer name="mBase" type="sAirVehicleBase" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mPassenger" type="cUnit" elements="8">
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="spawnMatrix" type="cMatrix4x4" elements="1">
+			<Item>0.608431,0.000000,-0.793607,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.793607,0.000000,0.608431,0.000000, -300.315002,0.000000,-5.065000,1.000000</Item>
+		</Attribute>
+		<Enum name="State" type="eAiUnitState" elements="1">
+			<Item>AI_STATE_NORMAL</Item>
+		</Enum>
+		<Enum name="mAttackStyle" type="eAttackStyle" elements="1">
+			<Item>ATTACKSTYLE_HUNT_AND_DESTROY</Item>
+		</Enum>
+		<Enum name="mMoveStyle" type="eMoveStyle" elements="1">
+			<Item>MOVESTYLE_ATTACK_ON_SIGHT</Item>
+		</Enum>
+		<Pointer name="mStartWaypoint" type="cWaypoint" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Enum name="mPlaceOnPlatform" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Attribute name="mUnitInstanceFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Resource name="mpScript" type="cGameScriptResource" elements="1">
+			<Item>0</Item>
+		</Resource>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>0.608431,0.000000,-0.793607,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.793607,0.000000,0.608431,0.000000, -300.315002,0.000000,-5.065000,1.000000</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

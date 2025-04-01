@@ -1,0 +1,18 @@
+<Object type="cSceneryCluster" id="550041785">
+		<Pointer name="mBase" type="sSceneryClusterBase" elements="1">
+			<Item>2138044922</Item>
+		</Pointer>
+		<Attribute name="Seed" type="sUInt16" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>1.000000,0.000000,0.000000,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.000000,0.000000,1.000000,0.000000, -170.212997,0.000000,86.180000,1.000000</Item>
+		</Attribute>
+		<Attribute name="miWorldObjFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

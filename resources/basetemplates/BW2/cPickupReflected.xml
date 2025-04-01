@@ -1,0 +1,18 @@
+<Object type="cPickupReflected" id="550041596">
+		<Pointer name="mBase" type="sPickupBase" elements="1">
+			<Item>2138050072</Item>
+		</Pointer>
+		<Enum name="mState" type="ePickupState" elements="1">
+			<Item>PICKUP_STATE_ACTIVE</Item>
+		</Enum>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>1.000000,0.000000,0.000000,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.000000,0.000000,1.000000,0.000000, 147.044006,0.000000,1522.072998,1.000000</Item>
+		</Attribute>
+		<Attribute name="miWorldObjFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

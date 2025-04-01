@@ -1,0 +1,15 @@
+<Object type="cPickupReflected" id="550007543">
+		<Pointer name="mBase" type="sPickupBase" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Enum name="mState" type="ePickupState" elements="1">
+			<Item>PICKUP_STATE_ACTIVE</Item>
+		</Enum>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>1.000000,0.000000,0.000000,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.000000,0.000000,1.000000,0.000000, 358.622009,0.000000,-416.929993,1.000000</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

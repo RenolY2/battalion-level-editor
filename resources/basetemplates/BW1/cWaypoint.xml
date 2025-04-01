@@ -1,0 +1,27 @@
+<Object type="cWaypoint" id="2138055724">
+		<Pointer name="NextWP" type="cWaypoint" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="Flags" type="sUInt32" elements="1">
+			<Item>8</Item>
+		</Attribute>
+		<Attribute name="mPauseTime" type="sFloat" elements="1">
+			<Item>0.000000</Item>
+		</Attribute>
+		<Attribute name="mSpeed" type="sFloat" elements="1">
+			<Item>10.000000</Item>
+		</Attribute>
+		<Pointer name="mOptionalNextWP1" type="cWaypoint" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Pointer name="mOptionalNextWP2" type="cWaypoint" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>1.000000,0.000000,0.000000,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.000000,0.000000,1.000000,0.000000, -134.539001,0.000000,399.720001,1.000000</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

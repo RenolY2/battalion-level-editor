@@ -1,0 +1,69 @@
+<Object type="cBuilding" id="550042210">
+		<Pointer name="mBase" type="cBuildingImpBase" elements="1">
+			<Item>550042984</Item>
+		</Pointer>
+		<Enum name="mLockToSurface" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Attribute name="mNavalGuardOffset" type="sVector4" elements="1">
+			<Item>0.000000,0.000000,0.000000,0.000000</Item>
+		</Attribute>
+		<Attribute name="spawnMatrix" type="cMatrix4x4" elements="1">
+			<Item>-0.342020,0.000000,-0.939693,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.939693,0.000000,-0.342020,0.000000, -14.939000,0.000000,1461.599976,1.000000</Item>
+		</Attribute>
+		<Enum name="State" type="eAiUnitState" elements="1">
+			<Item>AI_STATE_NORMAL</Item>
+		</Enum>
+		<Enum name="mAttackStyle" type="eAttackStyle" elements="1">
+			<Item>ATTACKSTYLE_FROM_DEFENSIVE_AREA</Item>
+		</Enum>
+		<Enum name="mMoveStyle" type="eMoveStyle" elements="1">
+			<Item>MOVESTYLE_RESPOND_TO_ATTACKS</Item>
+		</Enum>
+		<Pointer name="mStartWaypoint" type="cWaypoint" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Enum name="mPlaceOnPlatform" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Attribute name="mUnitInstanceFlags" type="sUInt32" elements="1">
+			<Item>8</Item>
+		</Attribute>
+		<Enum name="mVehicleOccupant" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mRevivable" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mDontRegisterBirth" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Enum name="mEnemyTargetableOnly" type="eBoolean" elements="1">
+			<Item>eFalse</Item>
+		</Enum>
+		<Resource name="mpScript" type="cGameScriptResource" elements="1">
+			<Item>0</Item>
+		</Resource>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>-0.342020,0.000000,-0.939693,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.939693,0.000000,-0.342020,0.000000, -14.939000,238.000000,1461.599976,1.000000</Item>
+		</Attribute>
+		<Attribute name="miWorldObjFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Pointer name="mPassenger" type="cUnit" elements="10">
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

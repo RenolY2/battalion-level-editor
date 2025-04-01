@@ -1,0 +1,21 @@
+<Object type="cMapZone" id="550041997">
+		<Enum name="mZoneType" type="eZoneType" elements="1">
+			<Item>ZONETYPE_NOGOAREA</Item>
+		</Enum>
+		<Attribute name="mRadius" type="sFloat32" elements="1">
+			<Item>0.000000</Item>
+		</Attribute>
+		<Attribute name="mSize" type="sVector4" elements="1">
+			<Item>75.000000,32.000000,450.000000,1.000000</Item>
+		</Attribute>
+		<Attribute name="mFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Attribute name="mMatrix" type="cMatrix4x4" elements="1">
+			<Item>0.993884,0.000000,-0.110432,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.110432,0.000000,0.993884,0.000000, 377.468994,0.000000,589.280029,1.000000</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	

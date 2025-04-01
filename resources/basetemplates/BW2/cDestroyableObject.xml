@@ -1,0 +1,30 @@
+<Object type="cDestroyableObject" id="550040456">
+		<Pointer name="mBase" type="sDestroyBase" elements="1">
+			<Item>2145002811</Item>
+		</Pointer>
+		<Enum name="mStickToFloor" type="eBoolean" elements="1">
+			<Item>eTrue</Item>
+		</Enum>
+		<Pointer name="NextLinkObject" type="cDestroyableObject" elements="1">
+			<Item>0</Item>
+		</Pointer>
+		<Attribute name="LinkOffset" type="sVector4" elements="1">
+			<Item>0.000000,0.000000,0.000000,1.000000</Item>
+		</Attribute>
+		<Attribute name="mInstanceFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Resource name="mpScript" type="cGameScriptResource" elements="1">
+			<Item>0</Item>
+		</Resource>
+		<Attribute name="Mat" type="sMatrix4x4" elements="1">
+			<Item>-0.923077,0.000000,-0.384615,0.000000, 0.000000,1.000000,0.000000,0.000000, 0.384615,0.000000,-0.923077,0.000000, -424.618011,-0.500000,39.603001,1.000000</Item>
+		</Attribute>
+		<Attribute name="miWorldObjFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+		<Attribute name="SystemFlags" type="sUInt32" elements="1">
+			<Item>0</Item>
+		</Attribute>
+	</Object>
+	
