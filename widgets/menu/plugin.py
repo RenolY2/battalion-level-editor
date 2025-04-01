@@ -57,7 +57,7 @@ class PluginHandler(object):
         self.add_event("topdown_click", "X", "Y")
         self.add_event("world_click", "worldX", "worldY")
         self.add_event("raycast_3d", "ray")
-        self.add_event("terrain_click_3d", "ray", "point")
+        self.add_event("terrain_click_3d", "BolMapViewer", "ray", "point")
 
     def add_event(self, event_name, *args):
         self.events[event_name] = args
