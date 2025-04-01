@@ -339,8 +339,8 @@ class EditorFileMenu(QMenu):
                     progressbar.set(100)
 
                     self.level_paths = levelpaths
-                    self.level_data = level_data
-                    self.preload_data = preload_data
+                    self.level_data: BattalionLevelFile = level_data
+                    self.preload_data: BattalionLevelFile = preload_data
                     self.resource_archive = resource_archive
                     self.editor.setup_level_file(level_data, preload_data, filepath)
                     self.current_gen_path = filepath
