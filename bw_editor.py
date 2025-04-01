@@ -461,6 +461,9 @@ class LevelEditor(QMainWindow):
                 self.mini_model_viewer.set_scene_single_model(obj.modelname)
             elif obj.type == "cNodeHierarchyResource":
                 self.mini_model_viewer.set_scene_single_model(obj.mName)
+            elif obj.type == "cTextureResource":
+                self.mini_model_viewer.set_scene_texture(obj.mName)
+                self.mini_model_viewer.angle = 0
 
         for obj in editor.level_view.selected:
             obj
@@ -509,6 +512,9 @@ class LevelEditor(QMainWindow):
                 obj = editor.level_view.selected[0]
                 if obj.type == "cTroop":
                     angle = -pi * (3 / 4)
+
+                if obj.type == "cTextureResource":
+                    angle = 0
             self.mini_model_viewer.angle = angle
         self.mini_model_viewer.recalculate_camera()
         self.mini_model_viewer.update()

@@ -60,11 +60,21 @@ class UnitViewer(QtOpenGLWidgets.QOpenGLWidget):
                       0.0, 0.0, 1.0, 0.0,
                       0.0, 0.0, 0.0, 1.0])
 
+    def set_scene_texture(self, texturename):
+        self.reset_scene()
+        self.add_to_scene(texturename,
+                    [1.0, 0.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0, 0.0,
+                      0.0, 0.0, 1.0, 0.0,
+                      0.0, 0.0, 0.0, 1.0],
+                          texture=True)
+        self.vertical_angle = 0.0
+
     def reset_scene(self):
         self.scene = []
 
-    def add_to_scene(self, modelname, mtx):
-        self.scene.append((modelname, mtx))
+    def add_to_scene(self, modelname, mtx, texture=False):
+        self.scene.append((modelname, mtx, texture))
 
     def wheelEvent(self, event):
         wheel_delta = event.angleDelta().y()
@@ -92,14 +102,15 @@ class UnitViewer(QtOpenGLWidgets.QOpenGLWidget):
         avgy = 0
         avgz = 0
 
-        for modelname, mtx in self.scene:
-            model = self.editor.level_view.bwmodelhandler.models[modelname]
-            midx = model.boundsphere[0]+mtx[12]
-            midy = model.boundsphere[1]+mtx[13]
-            midz = model.boundsphere[2]+mtx[14]
-            avgx += midx
-            avgy += midy
-            avgz += midz
+        for modelname, mtx, is_texture in self.scene:
+            if not is_texture:
+                model = self.editor.level_view.bwmodelhandler.models[modelname]
+                midx = model.boundsphere[0]+mtx[12]
+                midy = model.boundsphere[1]+mtx[13]
+                midz = model.boundsphere[2]+mtx[14]
+                avgx += midx
+                avgy += midy
+                avgz += midz
         if len(self.scene) > 0:
             avgx = avgx / len(self.scene)
             avgy = avgy / len(self.scene)
@@ -109,22 +120,27 @@ class UnitViewer(QtOpenGLWidgets.QOpenGLWidget):
         maxdisty = 0
         maxdistz = 0
 
-        for modelname, mtx in self.scene:
-            model = self.editor.level_view.bwmodelhandler.models[modelname]
-            midx = model.boundsphere[0] + mtx[12]
-            midy = model.boundsphere[1] + mtx[13]
-            midz = model.boundsphere[2] + mtx[14]
+        for modelname, mtx, is_texture in self.scene:
+            if is_texture:
+                maxdistx = 10
+                maxdisty = 10
+                maxdistz = 10
+            else:
+                model = self.editor.level_view.bwmodelhandler.models[modelname]
+                midx = model.boundsphere[0] + mtx[12]
+                midy = model.boundsphere[1] + mtx[13]
+                midz = model.boundsphere[2] + mtx[14]
 
-            distx = abs(midx-avgx + model.boundsphereradius)
-            disty = abs(midy-avgy + model.boundsphereradius)
-            distz = abs(midz-avgz + model.boundsphereradius)
+                distx = abs(midx-avgx + model.boundsphereradius)
+                disty = abs(midy-avgy + model.boundsphereradius)
+                distz = abs(midz-avgz + model.boundsphereradius)
 
-            if distx > maxdistx:
-                maxdistx = distx
-            if disty > maxdisty:
-                maxdisty = disty
-            if distz > maxdistz:
-                maxdistz = distz
+                if distx > maxdistx:
+                    maxdistx = distx
+                if disty > maxdisty:
+                    maxdisty = disty
+                if distz > maxdistz:
+                    maxdistz = distz
         self.avg = (avgx, avgy, avgz)
         radius = (maxdistx**2 + maxdisty**2 + maxdistz**2)**0.5
 
@@ -165,13 +181,31 @@ class UnitViewer(QtOpenGLWidgets.QOpenGLWidget):
                       0.0, 1.0, 0.0, 0.0,
                       0.0, 0.0, 0.0, 1.0])
 
-        for modelname, mtx in self.scene:
+        for modelname, mtx, is_texture in self.scene:
             glPushMatrix()
             mtx2 = mtx.copy()
             mtx2[12] -= self.avg[0]
             mtx2[14] -= self.avg[2]
             glMultMatrixf(mtx2)
-            self.editor.level_view.bwmodelhandler.render_model_inplace(modelname)
+
+            scale=10.0
+
+            if is_texture:
+                tex, id = self.editor.level_view.bwmodelhandler.textures.get_texture(modelname.lower())
+                glBindTexture(GL_TEXTURE_2D, id)
+                ratio = tex.texture.height/tex.texture.width
+                glBegin(GL_TRIANGLE_FAN)
+                glTexCoord2d(1.0, 1.0)
+                glVertex3f(-scale, -scale*ratio, 0.0)
+                glTexCoord2d(1.0, 0.0)
+                glVertex3f(-scale, scale*ratio, 0.0)
+                glTexCoord2d(0.0, 0.0)
+                glVertex3f(scale, scale*ratio, 0.0)
+                glTexCoord2d(0.0, 1.0)
+                glVertex3f(scale, -scale*ratio, 0.0)
+                glEnd()
+            else:
+                self.editor.level_view.bwmodelhandler.render_model_inplace(modelname)
             glPopMatrix()
         glFinish()
         if self.record_image:
