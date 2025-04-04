@@ -1,3 +1,5 @@
+import enum
+
 from math import pi, tan, atan2, degrees
 from timeit import default_timer
 import abc
@@ -6,6 +8,11 @@ from PyQt6.QtCore import Qt
 from lib.vectors import Vector3, Plane, Vector2
 from gizmo import AXIS_X, AXIS_Y, AXIS_Z
 import numpy
+
+import typing
+if typing.TYPE_CHECKING:
+    from bw_widgets import BolMapViewer
+
 MOUSE_MODE_NONE = 0
 MOUSE_MODE_MOVEWP = 1
 MOUSE_MODE_ADDWP = 2
@@ -14,15 +21,63 @@ MOUSE_MODE_CONNECTWP = 3
 MODE_TOPDOWN = 0
 MODE_3D = 1
 
-import typing
-if typing.TYPE_CHECKING:
-    from bw_widgets import BolMapViewer
+
+class ViewMode(enum.Enum):
+    VIEW_TOPDOWN = 0
+    VIEW_3D = 1
+
 
 key_enums = {
     "Middle": Qt.MouseButton.MiddleButton,
     "Left": Qt.MouseButton.LeftButton,
     "Right": Qt.MouseButton.RightButton
 }
+
+
+class MouseMode(enum.Enum):
+    NONE = 0
+    ADD_OBJECT = 1
+    PLUGIN = 2
+
+
+class EditorMouseMode(object):
+    def __init__(self):
+        self.mode: MouseMode = MouseMode.NONE
+        self.plugin_modes: list[str] = []
+        self.plugin_mode_none: int = self.add_plugin_mode("NONE")
+        self.plugin_mode: int = self.plugin_mode_none
+
+        self.callback_change_to = {}
+        self.callback_change_from = {}
+
+    def add_change_to_callback(self, mode, func):
+        self.callback_change_to[mode] = func
+
+    def add_change_from_callback(self, mode, func):
+        self.callback_change_from[mode] = func
+
+    def set_mode(self, mode: MouseMode):
+        assert isinstance(mode, MouseMode)
+        self.mode = mode
+
+    # Add plugin mode and return its index for identification
+    def add_plugin_mode(self, mode_name: str):
+        if mode_name not in self.plugin_modes:
+            self.plugin_modes.append(mode_name)
+            return len(self.plugin_modes) - 1
+        else:
+            return self.plugin_modes.index(mode_name)
+
+    def set_plugin_mode(self, mode: int):
+        assert 0 <= mode < len(self.plugin_modes)
+        self.set_mode(MouseMode.PLUGIN)
+        self.plugin_mode = mode
+
+    def active(self, mode: MouseMode):
+        return self.mode == mode
+
+    def plugin_active(self, mode: int):
+        return self.mode == MouseMode.PLUGIN and self.plugin_mode == mode
 
 
 class Buttons(object):
@@ -150,7 +205,7 @@ class TopdownScroll(ClickDragAction):
 
 class TopdownSelect(ClickDragAction):
     def condition(self, editor, buttons, event):
-        return (editor.gizmo.was_hit_at_all is not True) and editor.mousemode == MOUSE_MODE_NONE
+        return (editor.gizmo.was_hit_at_all is not True) and editor.mouse_mode.active(MouseMode.NONE)
 
     def just_clicked(self, editor, buttons, event):
         super().just_clicked(editor, buttons, event)
@@ -289,7 +344,7 @@ class Gizmo2DRotateY(Gizmo2DMoveX):
 
 class AddObjectTopDown(ClickAction):
     def condition(self, editor, buttons, event):
-        return editor.mousemode == MOUSE_MODE_ADDWP
+        return False # editor.mousemode == MOUSE_MODE_ADDWP
 
     def just_clicked(self, editor, buttons, event):
         mouse_x, mouse_z = (event.position().x(), event.position().y())
@@ -326,13 +381,8 @@ ufac = 500
 
 
 class Select3D(ClickDragAction):
-    def condition(self, editor, buttons, event):
-        if False and not (editor.mousemode == MOUSE_MODE_NONE and not buttons.is_held(event, "Right") and not editor.gizmo.was_hit_at_all):
-            print("Wanted to do a select but", editor.mousemode == MOUSE_MODE_NONE,
-                  not buttons.is_held(event, "Right"),
-                  not editor.gizmo.was_hit_at_all
-                  )
-        return editor.mousemode == MOUSE_MODE_NONE and not buttons.is_held(event, "Right") and not editor.gizmo.was_hit_at_all
+    def condition(self, editor: "BolMapViewer", buttons, event):
+        return editor.mouse_mode.active(MouseMode.NONE) and not buttons.is_held(event, "Right") and not editor.gizmo.was_hit_at_all
 
     def just_clicked(self, editor, buttons, event):
         super().just_clicked(editor, buttons, event)
@@ -387,7 +437,7 @@ class Select3D(ClickDragAction):
 
 class AddObject3D(ClickAction):
     def condition(self, editor, buttons, event):
-        return editor.mousemode == MOUSE_MODE_ADDWP
+        return False #editor.mousemode == MOUSE_MODE_ADDWP
 
     def just_clicked(self, editor, buttons, event):
         #print("added object in 3d")

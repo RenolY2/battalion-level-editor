@@ -2,6 +2,7 @@ import traceback
 import os
 import sys
 import random
+import enum
 from itertools import chain
 from time import sleep
 from timeit import default_timer
@@ -33,7 +34,7 @@ from lib.model_rendering import TexturedPlane, Model, Grid, GenericObject, Mater
 from lib.shader import create_default_shader
 from gizmo import Gizmo
 from lib.object_models import ObjectModels
-from editor_controls import UserControl
+from editor_controls import UserControl, MouseMode, EditorMouseMode
 import numpy
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
 from lib.bw_terrain import BWTerrainV2
@@ -194,6 +195,92 @@ class FPSCounter(QtWidgets.QLabel):
         self.setText("\n".join((total, terraintime, objecttime, liveedit)))
 
 
+class CustomText(QtWidgets.QLabel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setText("        ")
+        self.text_categories = []
+    
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Get the bounding rectangle and expand it to fit the outline, and shift it 10 pixels to the right
+        rect = self.rect().adjusted(10, -2, 2, 2)  # Offset 10 pixels to the right, expand slightly vertically
+
+        # Draw the outline with a shift of 1 pixel in each direction
+        outline_color = QColor(255, 255, 255)
+        painter.setPen(outline_color)
+
+        # Draw the text with shifts of 1 pixel in all directions
+        for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
+            painter.drawText(rect.adjusted(dx, dy, dx, dy), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                             self.text())
+
+        text_color = QColor(0, 0, 0)
+        painter.setPen(text_color)
+        painter.drawText(rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, self.text())
+        painter.end()
+    
+    def category_exists(self, textid):
+        for _textid, text in self.text_categories:
+            if _textid == textid:
+                return True
+        else:
+            return False
+
+    def category_pos(self, textid):
+        for i in range(len(self.text_categories)):
+            if self.text_categories[i][0] == textid:
+                return i
+
+        return -1
+
+    def set_text(self, textid, text):
+        if not text:
+            self.remove_text(textid)
+        else:
+            pos = self.category_pos(textid)
+            if pos == -1:
+                self.text_categories.append((textid, text))
+
+                self.text_categories.sort(key=lambda x: x[0])
+                self.update_text()
+            else:
+                self.text_categories[pos] = (textid, text)
+                self.update_text()
+
+    def update_text(self):
+        full_text = "\n".join(entry[1] for entry in self.text_categories)
+
+        self.setText(full_text)
+        hint = self.sizeHint()
+        self.setFixedSize(hint.width(), hint.height())
+
+    def remove_text(self, textid):
+        for i in range(len(self.text_categories)):
+            _textid, text = self.text_categories[i]
+            if _textid == textid:
+                self.text_categories.pop(i)
+                break
+        self.update_text()
+
+
+class OnScreenWidgetHandler(object):
+    def __init__(self):
+        self.widgets: list[QtWidgets.QWidget] = []
+
+    def add_widget(self, widget: QtWidgets.QWidget):
+        self.widgets.append(widget)
+
+    def update(self):
+        height = 10
+        for widget in self.widgets:
+            widget.move(50, height)
+            if widget.isVisible():
+                height += widget.height()
+
+
 class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
     mouse_clicked = pyqtSignal(QMouseEvent)
     entity_clicked = pyqtSignal(QMouseEvent, str)
@@ -252,8 +339,6 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
         self.visualize_cursor = None
 
-        self.click_mode = 0
-
         self.level_image = None
 
         self.collision = None
@@ -265,7 +350,8 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.level_file:BattalionLevelFile = None
         self.waterboxes = []
 
-        self.mousemode = MOUSE_MODE_NONE
+        self.mouse_mode = EditorMouseMode()
+        self.mouse_mode.set_mode(MouseMode.NONE)
 
         self.overlapping_wp_index = 0
         self.editorconfig = None
@@ -358,6 +444,13 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
         self.fpscounter = FPSCounter(0, 10, self)
         self.fpscounter.setVisible(False)
+        self.text_display = CustomText(self)
+
+        self.onscreen_handler = OnScreenWidgetHandler()
+        self.onscreen_handler.add_widget(self.fpscounter)
+        self.onscreen_handler.add_widget(self.indicator)
+        self.onscreen_handler.add_widget(self.text_display)
+        self.onscreen_handler.update()
 
         self._dont_render = False
 
@@ -600,9 +693,10 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
         if config.getboolean("fps_counter", fallback=False):
             self.fpscounter.setVisible(True)
-            self.indicator.move(0, 150)
+            self.onscreen_handler.update()
         else:
             self.fpscounter.setVisible(False)
+            self.onscreen_handler.update()
 
     def change_from_topdown_to_3d(self):
         if self.mode == MODE_3D:
@@ -610,7 +704,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         else:
             self.mode = MODE_3D
 
-            if self.mousemode == MOUSE_MODE_NONE:
+            if self.mouse_mode.active(MouseMode.NONE):
                 self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
 
             # This is necessary so that the position of the 3d camera equals the middle of the topdown view
@@ -622,7 +716,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             return
         else:
             self.mode = MODE_TOPDOWN
-            if self.mousemode == MOUSE_MODE_NONE:
+            if self.mouse_mode.active(MouseMode.NONE):
                 self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
             self.offset_x *= -1
@@ -867,15 +961,12 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         #glEnd()
         glEndList()
 
-    def set_mouse_mode(self, mode):
-        assert mode in (MOUSE_MODE_NONE, MOUSE_MODE_ADDWP, MOUSE_MODE_CONNECTWP, MOUSE_MODE_MOVEWP)
-
-        self.mousemode = mode
-
-        if self.mousemode == MOUSE_MODE_NONE and self.mode == MODE_TOPDOWN:
+    def enable_custom_context_menu(self):
+        if self.mode == MODE_TOPDOWN:
             self.setContextMenuPolicy(Qt.CustomContextMenu)
-        else:
-            self.setContextMenuPolicy(Qt.DefaultContextMenu)
+
+    def disable_custom_context_menu(self):
+        self.setContextMenuPolicy(Qt.DefaultContextMenu)
 
     @property
     def zoom_factor(self):
