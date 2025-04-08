@@ -14,6 +14,8 @@ import PyQt6.QtCore as QtCore
 import PyQt6.QtWidgets as QtWidgets
 from widgets.menu.menu import Menu
 
+from PyQt6.QtCore import Qt
+
 PluginEntry = namedtuple("PluginEntry", ("module", "plugin"))
 
 pluginfolder = os.path.join(
@@ -48,6 +50,7 @@ class PluginHandler(object):
 
         # widget event: setup_widget(editor, widget)
         self.events = {}
+        self.add_event("plugin_init", "LevelEditor")
         self.add_event("select_update", "LevelEditor")
         self.add_event("before_save", "LevelEditor")
         self.add_event("before_load")
@@ -58,6 +61,8 @@ class PluginHandler(object):
         self.add_event("world_click", "worldX", "worldY")
         self.add_event("raycast_3d", "ray")
         self.add_event("terrain_click_3d", "BolMapViewer", "ray", "point")
+        self.add_event("key_release", "LevelEditor", "qtkey")
+        self.add_event("key_press", "LevelEditor", "qtkey")
 
     def add_event(self, event_name, *args):
         self.events[event_name] = args
@@ -79,6 +84,7 @@ class PluginHandler(object):
             self.plugin_menu.add_menu_actions(self.plugins, editor)
 
             for pluginname in changed_plugins:
+                self.execute_event("plugin_init", editor)
                 self.execute_plugin_widget_setup(pluginname, editor)
 
     def plugin_folder_update_time(self):
@@ -153,6 +159,7 @@ class PluginHandler(object):
 
     def add_plugin_widgets(self, editor):
         for pluginname in self.plugins:
+            self.execute_event("plugin_init", editor)
             self.execute_plugin_widget_setup(pluginname, editor)
 
     def execute_plugin_widget_setup(self, pluginname, editor):
