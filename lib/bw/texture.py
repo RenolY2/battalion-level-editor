@@ -66,8 +66,9 @@ class TextureArchive(object):
             if texname in self.cached_textures:
                 os.remove(os.path.join(self.cachefolder, texname+".png"))
                 del self.cached_textures[texname]
-                tex, ID = self._cached[texname]
-                tex.loaded = False
+                if texname in self._cached:
+                    tex, ID = self._cached[texname]
+                    tex.loaded = False
             else:
                 print(texname, "not found")
 
