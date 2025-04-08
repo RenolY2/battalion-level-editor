@@ -1,6 +1,6 @@
 <Object type="cWaterVehicle" id="280014659">
 		<Pointer name="mBase" type="cWaterVehicleBase" elements="1">
-			<Item>550017520</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Enum name="mPhysEngine" type="ePhysicEngineType" elements="1">
 			<Item>physEngODE</Item>
@@ -51,8 +51,8 @@
 			<Item>0</Item>
 			<Item>0</Item>
 			<Item>0</Item>
-			<Item>280014657</Item>
-			<Item>280014658</Item>
+			<Item>0</Item>
+			<Item>0</Item>
 			<Item>0</Item>
 			<Item>0</Item>
 			<Item>0</Item>

@@ -1,6 +1,6 @@
 <Object type="cPickupReflected" id="550041596">
 		<Pointer name="mBase" type="sPickupBase" elements="1">
-			<Item>2138050072</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Enum name="mState" type="ePickupState" elements="1">
 			<Item>PICKUP_STATE_ACTIVE</Item>

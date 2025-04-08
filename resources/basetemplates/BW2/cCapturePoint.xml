@@ -1,6 +1,6 @@
 <Object type="cCapturePoint" id="50032395">
 		<Pointer name="mBase" type="cCapturePointBase" elements="1">
-			<Item>260022935</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Resource name="mCurrentFlag" type="cNodeHierarchyResource" elements="1">
 			<Item>0</Item>

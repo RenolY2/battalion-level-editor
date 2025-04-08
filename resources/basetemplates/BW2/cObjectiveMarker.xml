@@ -1,12 +1,12 @@
 <Object type="cObjectiveMarker" id="550041497">
 		<Pointer name="mBase" type="cObjectiveMarkerBase" elements="1">
-			<Item>200001170</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Pointer name="mAttachedTo" type="cWorldObject" elements="1">
-			<Item>550038408</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Pointer name="mParent" type="cObjective" elements="1">
-			<Item>550041498</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Attribute name="mFlags" type="sUInt32" elements="1">
 			<Item>5</Item>

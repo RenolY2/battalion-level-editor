@@ -3,7 +3,7 @@
 			<Item></Item>
 		</Attribute>
 		<Pointer name="mBase" type="sTroopBase" elements="1">
-			<Item>2138049769</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Attribute name="spawnMatrix" type="cMatrix4x4" elements="1">
 			<Item>-0.987763,0.000000,0.155963,0.000000, 0.000000,1.000000,0.000000,0.000000, -0.155963,0.000000,-0.987763,0.000000, -508.489990,0.000000,173.802994,1.000000</Item>

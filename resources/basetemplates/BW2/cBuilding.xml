@@ -1,6 +1,6 @@
 <Object type="cBuilding" id="550042210">
 		<Pointer name="mBase" type="cBuildingImpBase" elements="1">
-			<Item>550042984</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Enum name="mLockToSurface" type="eBoolean" elements="1">
 			<Item>eFalse</Item>

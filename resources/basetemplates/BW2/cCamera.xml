@@ -1,6 +1,6 @@
 <Object type="cCamera" id="550042114">
 		<Pointer name="mBase" type="cCameraBase" elements="1">
-			<Item>2138048464</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Attribute name="mInstanceFlags" type="sInt32" elements="1">
 			<Item>6</Item>
@@ -9,10 +9,10 @@
 			<Item>eCAMTYPE_WAYPOINTCAM</Item>
 		</Enum>
 		<Pointer name="mTarget" type="cEntity" elements="1">
-			<Item>550042113</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Pointer name="mCurrentWP" type="cWaypoint" elements="1">
-			<Item>550039470</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Attribute name="mLodBias" type="sInt32" elements="1">
 			<Item>-2</Item>

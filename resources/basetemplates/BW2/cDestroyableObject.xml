@@ -1,6 +1,6 @@
 <Object type="cDestroyableObject" id="550040456">
 		<Pointer name="mBase" type="sDestroyBase" elements="1">
-			<Item>2145002811</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Enum name="mStickToFloor" type="eBoolean" elements="1">
 			<Item>eTrue</Item>

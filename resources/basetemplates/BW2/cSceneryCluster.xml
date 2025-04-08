@@ -1,6 +1,6 @@
 <Object type="cSceneryCluster" id="550041785">
 		<Pointer name="mBase" type="sSceneryClusterBase" elements="1">
-			<Item>2138044922</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Attribute name="Seed" type="sUInt16" elements="1">
 			<Item>0</Item>

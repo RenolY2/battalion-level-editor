@@ -1,9 +1,9 @@
 <Object type="cAirVehicle" id="260019194">
 		<Pointer name="mBase" type="sAirVehicleBase" elements="1">
-			<Item>2138049505</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Pointer name="mPassenger" type="cUnit" elements="10">
-			<Item>260019200</Item>
+			<Item>0</Item>
 			<Item>0</Item>
 			<Item>0</Item>
 			<Item>0</Item>
@@ -27,7 +27,7 @@
 			<Item>MOVESTYLE_RESPOND_TO_ATTACKS</Item>
 		</Enum>
 		<Pointer name="mStartWaypoint" type="cWaypoint" elements="1">
-			<Item>550041166</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Enum name="mPlaceOnPlatform" type="eBoolean" elements="1">
 			<Item>eFalse</Item>

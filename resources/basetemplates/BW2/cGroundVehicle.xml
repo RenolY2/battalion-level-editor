@@ -1,6 +1,6 @@
 <Object type="cGroundVehicle" id="550040524">
 		<Pointer name="mBase" type="cGroundVehicleBase" elements="1">
-			<Item>2138048226</Item>
+			<Item>0</Item>
 		</Pointer>
 		<Enum name="mPhysEngine" type="ePhysicEngineType" elements="1">
 			<Item>physEngODE</Item>
@@ -49,8 +49,8 @@
 		</Attribute>
 		<Pointer name="mPassenger" type="cUnit" elements="10">
 			<Item>0</Item>
-			<Item>780001115</Item>
-			<Item>780001116</Item>
+			<Item>0</Item>
+			<Item>0</Item>
 			<Item>0</Item>
 			<Item>0</Item>
 			<Item>0</Item>
