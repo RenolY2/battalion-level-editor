@@ -9,6 +9,7 @@ from copy import deepcopy
 from io import TextIOWrapper, BytesIO, StringIO
 from math import sin, cos, atan2, pi
 import json
+import enum
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtCore as QtCore
 from PyQt6.QtCore import Qt
@@ -51,6 +52,7 @@ from widgets.graphics_widgets import UnitViewer
 import typing
 if typing.TYPE_CHECKING:
     from widgets.menu.plugin import PluginHandler
+
 
 def get_treeitem(root: QTreeWidgetItem, obj):
     for i in range(root.childCount()):
@@ -916,14 +918,6 @@ class LevelEditor(QMainWindow):
         self.set_has_unsaved_changes(True)
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):
-
-        if event.key() == Qt.Key.Key_Escape:
-            self.level_view.set_mouse_mode(bw_widgets.MOUSE_MODE_NONE)
-            self.pik_control.button_add_object.setChecked(False)
-            #self.pik_control.button_move_object.setChecked(False)
-            if self.add_object_window is not None:
-                self.add_object_window.close()
-
         if event.key() == Qt.Key.Key_Shift:
             self.level_view.shift_is_pressed = True
         elif event.key() == Qt.Key.Key_R:
@@ -949,6 +943,8 @@ class LevelEditor(QMainWindow):
         elif event.key() == Qt.Key.Key_Minus:
             self.level_view.zoom_out()
 
+        self.plugin_handler.execute_event("key_press", self, event.key())
+
     def keyReleaseEvent(self, event: QtGui.QKeyEvent):
         if event.key() == Qt.Key.Key_Shift:
             self.level_view.shift_is_pressed = False
@@ -969,6 +965,8 @@ class LevelEditor(QMainWindow):
             self.level_view.MOVE_UP = 0
         elif event.key() == Qt.Key.Key_E:
             self.level_view.MOVE_DOWN = 0
+
+        self.plugin_handler.execute_event("key_release", self, event.key())
 
     def focusOutEvent(self, a0) -> None:
         super().focusOutEvent(a0)
