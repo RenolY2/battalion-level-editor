@@ -1,20 +1,30 @@
-
+import os
 import math
+import enum
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
-
-
-
 import typing
+
 from typing import TYPE_CHECKING
 from widgets.graphics_widgets import UnitViewer
 from widgets.tree_view import ObjectGroup, NamedItem
 from lib.BattalionXMLLib import BattalionObject, BattalionLevelFile
-
+from editor_controls import MouseMode
+from plugins.plugin_object_exportimport import Plugin as ObjectExportImportPlugin
+from lib.bw_types import BWMatrix
+from lib.vectors import Vector3
 
 if TYPE_CHECKING:
     import bw_editor
+    import bw_widgets
+
+
+class AddObjectMode(enum.Enum):
+    NONE = 0
+    EXISTING = 1
+    IMPORT = 2
+    XML = 3
 
 
 class ObjectGroupInstancer(ObjectGroup):
@@ -60,6 +70,9 @@ class NamedItemInstancer(NamedItem):
 
 
 class AddExistingObject(QtWidgets.QSplitter):
+    signal_addobj = QtCore.pyqtSignal(str)
+    mode_change = QtCore.pyqtSignal(AddObjectMode)
+
     def __init__(self, parent, editor: "bw_editor.LevelEditor"):
         super().__init__(parent)
         self.editor = editor
@@ -128,24 +141,34 @@ class AddExistingObject(QtWidgets.QSplitter):
 
     def set_spawn_obj(self, result):
         if isinstance(result, NamedItemInstancer):
+            self.editor.level_view.text_display.set_text(
+                "AddObject",
+                "Now adding {}\nHold Shift to place multiple.\nPress ESC to cancel.".format(result.text(0)))
+            self.editor.level_view.mouse_mode.set_mode(MouseMode.ADD_OBJECT)
             self.spawn = result
 
-    def spawn_object(self, point):
-        level_data = self.editor.file_menu.level_data
-        preload_data = self.editor.file_menu.preload_data
-        newobj: BattalionObject = self.spawn.create_instance(level_data, preload_data)
-        newobj.updatemodelname()
-        mtx = newobj.getmatrix()
-        if mtx is not None:
-            mtx.reset_rotation()
-            mtx.rotate_y(-self.editor.level_view.camera_horiz - self.viewer.angle - math.pi/2)
-            mtx.set_position(point.x, point.z, point.y)
-        level_data.add_object_new(newobj)
-        self.editor.leveldatatreeview.set_objects(self.editor.level_file, self.editor.preload_file,
-                                                  remember_position=True)
-        self.editor.update_3d()
-        self.editor.level_view.do_redraw(force=True)
-        self.editor.set_has_unsaved_changes(True)
+            self.mode_change.emit(AddObjectMode.EXISTING)
+            self.editor.activateWindow()
+
+    def spawn_object(self, point) -> BattalionObject:
+        if self.spawn is not None:
+            level_data = self.editor.file_menu.level_data
+            preload_data = self.editor.file_menu.preload_data
+            newobj: BattalionObject = self.spawn.create_instance(level_data, preload_data)
+            newobj.updatemodelname()
+            mtx = newobj.getmatrix()
+            if mtx is not None:
+                mtx.reset_rotation()
+                mtx.rotate_y(-self.editor.level_view.camera_horiz - self.viewer.angle - math.pi/2)
+                mtx.set_position(point.x, point.z, point.y)
+            level_data.add_object_new(newobj)
+            self.editor.leveldatatreeview.set_objects(self.editor.level_file, self.editor.preload_file,
+                                                      remember_position=True)
+            self.editor.update_3d()
+            self.editor.level_view.do_redraw(force=True)
+            self.editor.set_has_unsaved_changes(True)
+
+            return newobj
 
     def set_model_scene(self):
         curritem = self.treewidget.selectedItems()
@@ -160,17 +183,155 @@ class AddExistingObject(QtWidgets.QSplitter):
             self.viewer.update()
 
 
-class ImportObject(QtWidgets.QWidget):
-    def __init__(self, parent, editor):
-        super().__init__(parent)
-        self.layout = QtWidgets.QVBoxLayout(self)
+class DirectoryList(QtWidgets.QListWidget):
+    directory_change = QtCore.pyqtSignal(str)
 
+    def __init__(self, parent, basepath):
+        super().__init__(parent)
+        self.foldericon = load_icon("resources/Folder-32x32.png")
+        self.basepath = basepath
+        self.currpath = basepath
+        self.level = 0
+
+        dirs = self.get_directory_listing(basepath)
+        self.set_directory_listing(dirs)
+        self.itemDoubleClicked.connect(self.change_dir)
+
+    def change_dir(self, item):
+        if item.text() == "..":
+            currpath = os.path.dirname(self.currpath)
+            self.currpath = currpath
+            self.level -= 1
+            dirs = self.get_directory_listing(currpath)
+            self.set_directory_listing(dirs)
+
+        else:
+            dir = item.text()
+            currpath =  os.path.join(self.currpath, dir)
+            self.currpath = currpath
+            self.level += 1
+            dirs = self.get_directory_listing(currpath)
+            self.set_directory_listing(dirs)
+
+        self.directory_change.emit(self.currpath)
+
+    def set_directory_listing(self, dirs):
+        self.clear()
+
+        if self.level > 0:
+            up_level = QtWidgets.QListWidgetItem(self)
+            up_level.setText("..")
+            self.addItem(up_level)
+
+        for dir in dirs:
+            diritem = QtWidgets.QListWidgetItem(self)
+            diritem.setIcon(self.foldericon)
+            diritem.setText(dir)
+            self.addItem(diritem)
+
+    def get_directory_listing(self, path):
+        dirs = []
+
+        for entry in os.listdir(path):
+            bundle_path = os.path.join(path, entry, "bundle.xml")
+            if not os.path.exists(bundle_path) and os.path.isdir(os.path.join(path, entry)):
+                dirs.append(entry)
+
+        dirs.sort()
+
+        return dirs
+
+
+def load_icon(imagepath: str) -> QtGui.QIcon | None:
+    if not os.path.exists(imagepath):
+        return None
+
+    try:
+        image = QtGui.QImage(imagepath)
+    except Exception as err:
+        icon = None
+    else:
+        pixmap = QtGui.QPixmap.fromImage(image)
+        icon = QtGui.QIcon(pixmap)
+
+    return icon
+
+
+class ItemWithPath(QtWidgets.QListWidgetItem):
+    def __init__(self, parent, path: str):
+        super().__init__(parent)
+        self.path = path
+
+
+class ImportObject(QtWidgets.QWidget):
+    mode_change = QtCore.pyqtSignal(AddObjectMode)
+
+    def __init__(self, parent, editor: "bw_editor.LevelEditor"):
+        super().__init__(parent)
+        self.editor = editor
+        self.layout = QtWidgets.QHBoxLayout(self)
         self.setLayout(self.layout)
+
+        game = "bw1" if editor.level_file.is_bw1() else "bw2"
+        dirpath = os.path.join("battalion_objects", game)
+
+        self.dir_list = DirectoryList(self, dirpath)
+        self.layout.addWidget(self.dir_list)
+
+        self.list = QtWidgets.QListWidget(self)
+        self.list.setIconSize(QtCore.QSize(128, 128))
+        self.layout.addWidget(self.list)
+        self.no_icon = load_icon("battalion_objects/no_icon.png")
+
+        assert self.no_icon is not None, "battalion_objects/no_icon.png is missing"
+
+        self.layout.setStretch(0, 1)
+        self.layout.setStretch(1, 3)
+        self.populate_items(dirpath)
+
+        self.dir_list.directory_change.connect(lambda x: self.populate_items(x))
+        self.list.itemDoubleClicked.connect(self.import_object)
+        self.current_bundle = None
+
+    def populate_items(self, dirpath):
+        self.list.clear()
+        for entry in os.listdir(dirpath):
+            bundle_path = os.path.join(dirpath, entry, "bundle.xml")
+            preview_path = os.path.join(dirpath, entry, "preview.png")
+
+            if os.path.exists(bundle_path):
+                item = ItemWithPath(self.list, os.path.join(dirpath, entry))
+                item.setText(entry)
+
+                icon = load_icon(preview_path)
+                if icon is None:
+                    icon = self.no_icon
+
+                item.setIcon(icon)
+
+    def import_object(self):
+        item: ItemWithPath = self.list.currentItem()
+
+        with open(os.path.join(item.path, "bundle.xml"), "r") as f:
+            level = BattalionLevelFile(f)
+
+        if len(level.objects_with_positions) == 0:
+            ObjectExportImportPlugin.import_bundle(self.editor, item.path)
+            self.current_bundle = None
+        else:
+            self.editor.level_view.text_display.set_text(
+                "AddObject",
+                "Now importing {}\nClick on terrain to choose import location.\nHold shift to import multiple times.\nPress ESC to cancel.".format(item.text()))
+            self.editor.level_view.mouse_mode.set_mode(MouseMode.ADD_OBJECT)
+            self.mode_change.emit(AddObjectMode.IMPORT)
+            self.current_bundle = item.path
+            self.editor.activateWindow()
 
 
 class AddBWObjectWindow(QtWidgets.QWidget):
     closing = QtCore.pyqtSignal()
     addobject = QtCore.pyqtSignal(str, bool)
+    signal_addobject = QtCore.pyqtSignal(str)
 
     def __init__(self, parent, editor):
         super().__init__(parent)
@@ -278,20 +439,38 @@ class NewAddWindow(QtWidgets.QMdiSubWindow):
         self.verticalHolder = QtWidgets.QWidget(self)
         self.verticalHolder.setLayout(self.vertical)
         self.tabs = QtWidgets.QTabWidget(self)
-        self.addxml = AddBWObjectWindow(self, editor)
-        self.importobj = ImportObject(self, editor)
-        self.addexistinboject = AddExistingObject(self, editor)
+        #self.addxml = AddBWObjectWindow(self, editor)
+        self.importobj: ImportObject = ImportObject(self, editor)
+        self.addexistinboject: AddExistingObject = AddExistingObject(self, editor)
         self.tabs.addTab(self.addexistinboject, "Add Existing Object")
         self.tabs.addTab(self.importobj, "Import External Object")
-        self.tabs.addTab(self.addxml, "Add XML Object")
+        #self.tabs.addTab(self.addxml, "Add XML Object")
 
         self.vertical.addWidget(self.tabs)
         self.add_object = QtWidgets.QPushButton("Add Object", self)
         self.add_object.pressed.connect(self.action_add_object)
         self.vertical.addWidget(self.add_object)
 
-
+        self.tabs.currentChanged.connect(self.change_button_text)
         self.setWidget(self.verticalHolder)
+
+        self.current_mode = AddObjectMode.NONE
+        self.importobj.mode_change.connect(self.change_mode)
+        self.addexistinboject.mode_change.connect(self.change_mode)
+
+    def change_mode(self, mode):
+        self.current_mode = mode
+
+    def reset_mode(self):
+        self.change_mode(AddObjectMode.NONE)
+
+    def change_button_text(self, index):
+        if index == 0:
+            self.add_object.setText("Add Object")
+        elif index == 1:
+            self.add_object.setText("Import Object")
+        else:
+            raise RuntimeError(f"Unknown index {index}")
 
     def action_add_object(self):
         print("Current index:", self.tabs.currentIndex())
@@ -306,18 +485,91 @@ class Plugin(object):
                         #("Edit Window Mass Test", self.neweditwindowtest)]
         print("I have been initialized")
         self.opengl = None
-        self.newaddwindow = None
+        self.newaddwindow: NewAddWindow|None = None
         self.gizmowidget = None
         self.lua_find_window = None
         self.editwindows = []
 
-    def terrain_click_3d(self, viewer, ray, point):
+        self.last_obj = None
+
+    def plugin_init(self, editor: "bw_editor.LevelEditor"):
+        editor.level_view.text_display.set_text("Feature", "")
+
+    def cancel_mode(self, editor: "bw_editor.LevelEditor"):
+        self.cancel_mode_manual(editor.level_view)
+
+    def cancel_mode_manual(self, level_view: "bw_widgets.BolMapViewer"):
+        level_view.mouse_mode.set_mode(MouseMode.NONE)
+        level_view.text_display.set_text("AddObject", "")
+        self.last_obj = None
         if self.newaddwindow is not None:
-            self.newaddwindow.addexistinboject: AddExistingObject
-            self.newaddwindow.addexistinboject.spawn_object(point)
+            self.newaddwindow.change_mode(AddObjectMode.NONE)
+
+    def terrain_click_3d(self, viewer: "bw_widgets.BolMapViewer", ray, point):
+        if self.newaddwindow is not None and viewer.mouse_mode.active(MouseMode.ADD_OBJECT):
+            if self.newaddwindow.current_mode == AddObjectMode.EXISTING:
+                self.newaddwindow.addexistinboject: AddExistingObject
+                obj = self.newaddwindow.addexistinboject.spawn_object(point)
+                if self.last_obj is not None:
+                    if obj.type == "cWaypoint" and self.last_obj.type == "cWaypoint":
+                        self.last_obj.NextWP = obj
+
+                self.last_obj = obj
+
+                if not viewer.shift_is_pressed:
+                    print("CANCELLING")
+                    self.cancel_mode_manual(viewer)
+                else:
+                    print("NOT CANCELLING")
+            else:
+                editor: bw_editor.LevelEditor = self.newaddwindow.editor
+                QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
+
+                objects: list[BattalionObject] = ObjectExportImportPlugin.import_bundle(
+                    editor,
+                    self.newaddwindow.importobj.current_bundle,
+                    go_to_object=False,
+                    show_info=not viewer.shift_is_pressed
+                )
+
+
+                # Calculate mid point of all objects.
+                mid = Vector3(0, 0, 0)
+                count = 0
+
+                for obj in objects:
+
+                    mtx: BWMatrix = obj.getmatrix()
+                    if mtx is not None:
+                        print(obj.name, mtx.x, mtx.y, mtx.z)
+                        mid.x += mtx.x
+                        mid.y += mtx.y
+                        mid.z += mtx.z
+                        count += 1
+
+                if count > 0:
+                    mid.x /= count
+                    mid.y /= count
+                    mid.z /= count
+                print("MIDPOINT", mid)
+                diff: Vector3 = Vector3(point.x, point.z, point.y) - mid
+                print("DIFFERENCE", diff)
+                for obj in objects:
+                    mtx: BWMatrix = obj.getmatrix()
+                    if mtx is not None:
+                        mtx.set_position(mtx.x+diff.x, mtx.y+diff.y, mtx.z+diff.z)
+                        print(obj.name, "has moved to", mtx.x, mtx.y, mtx.z)
+
+                editor.level_view.do_redraw(force=True)
+                QtWidgets.QApplication.restoreOverrideCursor()
+                if not viewer.shift_is_pressed:
+                    self.cancel_mode_manual(viewer)
+
+    def key_press(self, editor, key):
+        if key == QtCore.Qt.Key.Key_Escape:
+            self.cancel_mode_manual(editor.level_view)
 
     def unitaddwindow(self, editor: "bw_editor.LevelEditor"):
-        print("hi")
         self.newaddwindow = NewAddWindow(editor)
         self.newaddwindow.show()
 
