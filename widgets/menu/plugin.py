@@ -63,6 +63,7 @@ class PluginHandler(object):
         self.add_event("terrain_click_3d", "BolMapViewer", "ray", "point")
         self.add_event("key_release", "LevelEditor", "qtkey")
         self.add_event("key_press", "LevelEditor", "qtkey")
+        self.add_event("cancel_mode", "LevelEditor")
 
     def add_event(self, event_name, *args):
         self.events[event_name] = args
