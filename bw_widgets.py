@@ -198,6 +198,16 @@ class FPSCounter(QtWidgets.QLabel):
 class CustomText(QtWidgets.QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        font = QFont()
+        font.setFamily("Consolas")
+        font.setStyleHint(QFont.StyleHint.Monospace)
+        font.setFixedPitch(True)
+        font.setPointSize(15)
+        font.setBold(True)
+
+        self.setFont(font)
+
         self.setText("        ")
         self.text_categories = []
     
