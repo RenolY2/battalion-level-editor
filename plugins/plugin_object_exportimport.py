@@ -69,13 +69,13 @@ class ExportSettings(QDialog):
         self.name_widget = LabeledWidget(self, "Object Bundle name:",
                                          QtWidgets.QLineEdit)
         self.include_passengers = QtWidgets.QCheckBox(self, text="Include Passengers")
-        self.include_mpscript = QtWidgets.QCheckBox(self, text="Include MpScript")
+        #self.include_mpscript = QtWidgets.QCheckBox(self, text="Include MpScript")
         self.include_startwaypoint = QtWidgets.QCheckBox(self, text="Include Start Waypoint")
         self.clear_instance_flags = QtWidgets.QCheckBox(self, text="Clear Instance Flags")
 
         self.layout.addWidget(self.name_widget)
         self.layout.addWidget(self.include_passengers)
-        self.layout.addWidget(self.include_mpscript)
+        #self.layout.addWidget(self.include_mpscript)
         self.layout.addWidget(self.include_startwaypoint)
         self.layout.addWidget(self.clear_instance_flags)
 
@@ -381,7 +381,7 @@ class Plugin(object):
             return
 
         include_passenger = dialog.include_passengers.isChecked()
-        include_mpscript = dialog.include_mpscript.isChecked()
+        include_mpscript = False #dialog.include_mpscript.isChecked()
         reset_instance_flags = dialog.clear_instance_flags.isChecked()
         include_startwaypoint = dialog.include_startwaypoint.isChecked()
         bundle_name = dialog.get_name()
@@ -402,8 +402,13 @@ class Plugin(object):
             to_be_exported = []
             selected_ids = []
 
+            script_stuff_skipped = 0
+
             for obj in selected:
                 obj: BattalionObject
+                if obj.type in ("cGameScriptResource", "cGlobalScriptEntity", "cInitialisationScriptEntity"):
+                    script_stuff_skipped += 1
+                    continue
 
                 for dep in obj.get_dependencies(skip=skip):
                     if dep not in to_be_exported:
@@ -412,6 +417,10 @@ class Plugin(object):
                 if obj not in to_be_exported:
                     to_be_exported.append(obj)
                     selected_ids.append(obj.id)
+
+            if len(selected) == script_stuff_skipped:
+                open_error_dialog("Exporting Lua scripts is not supported!", None)
+                return
 
             for obj in to_be_exported:
                 export.add_object_new(obj)
@@ -559,8 +568,6 @@ class Plugin(object):
             for objid, obj in re_export.objects.items():
                 obj.update_xml()
 
-
-
             try:
                 os.mkdir(bundle_path)
             except:
@@ -613,8 +620,10 @@ class Plugin(object):
             except Exception as err:
                 traceback.print_exc()
                 open_error_dialog(f"Wasn't able to create a preview render: \n{str(err)}\nCheck console log for more details.", None)
-
-            open_message_dialog(f"{len(re_export.objects)} XML object(s) and {resource_count} resource(s) have been exported for '{bundle_name}'!",
+            message = f"{len(re_export.objects)} XML object(s) and {resource_count} resource(s) have been exported for '{bundle_name}'!"
+            if script_stuff_skipped > 0:
+                message += f"{script_stuff_skipped} script objects have been skipped."
+            open_message_dialog(message,
                                 parent=editor)
 
         except Exception as err:
@@ -750,7 +759,6 @@ class Plugin(object):
                         existing_res = res.get_resource(resource.secname, resource.name)
                         if existing_res is not None:
                             res.delete_resource(existing_res)
-
 
                         res.add_resource(resource)
 
