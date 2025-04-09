@@ -244,7 +244,9 @@ class PikminSideWidget(QWidget):
         setattr(self, field, None)
 
     def open_add_window(self):
-        if self.add_window is not None:
+        self.parent.plugin_handler.add_object_window.open_add_window(self.parent)
+
+        """if self.add_window is not None:
             self.add_window.setWindowState(
                 self.add_window.windowState() & ~QtCore.Qt.WindowState.WindowMinimized | QtCore.Qt.WindowState.WindowActive)
             self.add_window.activateWindow()
@@ -253,7 +255,7 @@ class PikminSideWidget(QWidget):
         else:
             self.add_window = AddBWObjectWindow(self.parent)
             self.add_window.closing.connect(partial(self.handle_close, "add_window"))
-            self.add_window.show()
+            self.add_window.show()"""
 
     def goto_object(self, id):
         if id in self.parent.level_file.objects_with_positions:

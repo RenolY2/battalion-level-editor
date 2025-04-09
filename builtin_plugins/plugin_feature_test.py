@@ -329,6 +329,8 @@ class ImportObject(QtWidgets.QWidget):
 
 
 class NewAddWindow(QtWidgets.QMdiSubWindow):
+    closing = QtCore.pyqtSignal()
+
     def __init__(self, editor):
         super().__init__()
         self.editor = editor
@@ -377,12 +379,17 @@ class NewAddWindow(QtWidgets.QMdiSubWindow):
         if index == 0:
             item = self.addexistingoject.treewidget.currentItem()
             self.addexistingoject.set_spawn_obj(item)
+        elif index == 1:
+            self.importobj.import_object()
+
+    def closeEvent(self, closeEvent: typing.Optional[QtGui.QCloseEvent]) -> None:
+        self.closing.emit()
 
 
 class Plugin(object):
     def __init__(self):
         self.name = "Feature Test"
-        self.actions = [("New Add Window", self.unitaddwindow)]#,
+        self.actions = []#,
                         #("Unit Viewer Test", self.testfunc),
                         #,
                         #("Edit Window Mass Test", self.neweditwindowtest)]
@@ -404,6 +411,10 @@ class Plugin(object):
         self.last_obj = None
         if self.newaddwindow is not None:
             self.newaddwindow.change_mode(AddObjectMode.NONE)
+
+    def handle_close_window(self):
+        self.cancel_mode(self.newaddwindow.editor)
+        self.newaddwindow = None
 
     def terrain_click_2d(self, viewer, point):
         self.terrain_click_3d(viewer, None, point)
@@ -472,9 +483,13 @@ class Plugin(object):
         if key == QtCore.Qt.Key.Key_Escape:
             self.cancel_mode_manual(editor.level_view)
 
-    def unitaddwindow(self, editor: "bw_editor.LevelEditor"):
-        self.newaddwindow = NewAddWindow(editor)
-        self.newaddwindow.show()
+    def open_add_window(self, editor: "bw_editor.LevelEditor"):
+        if self.newaddwindow is not None:
+            self.newaddwindow.activateWindow()
+        else:
+            self.newaddwindow = NewAddWindow(editor)
+            self.newaddwindow.closing.connect(self.handle_close_window)
+            self.newaddwindow.show()
 
     def testfunc(self, editor: "bw_editor.LevelEditor"):
         print("This is a test function")
