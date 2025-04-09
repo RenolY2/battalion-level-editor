@@ -255,7 +255,7 @@ class CustomText(QtWidgets.QLabel):
 
         self.setText(full_text)
         hint = self.sizeHint()
-        self.setFixedSize(hint.width(), hint.height())
+        self.setFixedSize(int(hint.width()*1.1), int(hint.height()*1.1))
 
     def remove_text(self, textid):
         for i in range(len(self.text_categories)):
