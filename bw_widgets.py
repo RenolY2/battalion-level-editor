@@ -357,7 +357,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.editorconfig = None
         self.visibility_menu = None
 
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
 
         self.spawnpoint = None
         self.alternative_mesh = None
@@ -704,9 +704,6 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         else:
             self.mode = MODE_3D
 
-            if self.mouse_mode.active(MouseMode.NONE):
-                self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
-
             # This is necessary so that the position of the 3d camera equals the middle of the topdown view
             self.offset_x *= -1
             self.do_redraw()
@@ -716,8 +713,6 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             return
         else:
             self.mode = MODE_TOPDOWN
-            if self.mouse_mode.active(MouseMode.NONE):
-                self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
             self.offset_x *= -1
             self.do_redraw()
@@ -960,13 +955,6 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         draw_collision(verts, faces)
         #glEnd()
         glEndList()
-
-    def enable_custom_context_menu(self):
-        if self.mode == MODE_TOPDOWN:
-            self.setContextMenuPolicy(Qt.CustomContextMenu)
-
-    def disable_custom_context_menu(self):
-        self.setContextMenuPolicy(Qt.DefaultContextMenu)
 
     @property
     def zoom_factor(self):
