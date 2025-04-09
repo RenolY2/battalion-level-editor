@@ -970,7 +970,7 @@ class LevelEditor(QMainWindow):
 
     def focusOutEvent(self, a0) -> None:
         super().focusOutEvent(a0)
-        self.level_view.shift_is_pressed = False
+        #self.level_view.shift_is_pressed = False
         self.level_view.MOVE_FORWARD = 0
         self.level_view.MOVE_BACKWARD = 0
         self.level_view.MOVE_LEFT = 0

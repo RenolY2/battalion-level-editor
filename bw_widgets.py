@@ -743,7 +743,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             self.MOVE_FORWARD = 0
             self.MOVE_BACKWARD = 0
             self.SPEEDUP = 0
-            self.shift_is_pressed = False
+            #self.shift_is_pressed = False
 
         if self.mode == MODE_TOPDOWN:
             self.handle_arrowkey_scroll(timedelta)
