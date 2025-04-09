@@ -100,14 +100,14 @@ class PluginHandler(object):
         return self.plugin_folder_last_changed != os.stat(pluginfolder).st_mtime
 
     def plugin_changed(self, pluginname):
-        if not self.plugins[pluginname].module.__hotreload:
+        if not self.plugins[pluginname].module.__hotload:
             return False
 
         pluginpath = os.path.join(pluginfolder, pluginname+".py")
         return self.plugins[pluginname].module.__time != os.stat(pluginpath).st_mtime
 
     def plugin_update_time(self, pluginname):
-        if self.plugins[pluginname].module.__hotreload:
+        if self.plugins[pluginname].module.__hotload:
             pluginpath = os.path.join(pluginfolder, pluginname + ".py")
             self.plugins[pluginname].module.__time = os.stat(pluginpath).st_mtime
 
