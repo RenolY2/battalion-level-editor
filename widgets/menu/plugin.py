@@ -14,6 +14,8 @@ import PyQt6.QtCore as QtCore
 import PyQt6.QtWidgets as QtWidgets
 from widgets.menu.menu import Menu
 
+from builtin_plugins import plugin_feature_test
+
 from PyQt6.QtCore import Qt
 
 PluginEntry = namedtuple("PluginEntry", ("module", "plugin"))
@@ -61,9 +63,12 @@ class PluginHandler(object):
         self.add_event("world_click", "worldX", "worldY")
         self.add_event("raycast_3d", "ray")
         self.add_event("terrain_click_3d", "BolMapViewer", "ray", "point")
+        self.add_event("terrain_click_2d", "BolMapViewer", "point")
         self.add_event("key_release", "LevelEditor", "qtkey")
         self.add_event("key_press", "LevelEditor", "qtkey")
         self.add_event("cancel_mode", "LevelEditor")
+
+        self.add_object_window: plugin_feature_test.Plugin = self.load_builtin_plugin(plugin_feature_test)
 
     def add_event(self, event_name, *args):
         self.events[event_name] = args
@@ -95,21 +100,37 @@ class PluginHandler(object):
         return self.plugin_folder_last_changed != os.stat(pluginfolder).st_mtime
 
     def plugin_changed(self, pluginname):
+        if not self.plugins[pluginname].module.__hotreload:
+            return False
+
         pluginpath = os.path.join(pluginfolder, pluginname+".py")
         return self.plugins[pluginname].module.__time != os.stat(pluginpath).st_mtime
 
     def plugin_update_time(self, pluginname):
-        pluginpath = os.path.join(pluginfolder, pluginname + ".py")
-        self.plugins[pluginname].module.__time = os.stat(pluginpath).st_mtime
+        if self.plugins[pluginname].module.__hotreload:
+            pluginpath = os.path.join(pluginfolder, pluginname + ".py")
+            self.plugins[pluginname].module.__time = os.stat(pluginpath).st_mtime
 
     def is_loaded(self, pluginname):
         return pluginname in self.plugins
+
+    def load_builtin_plugin(self, module):
+        pluginname = module.__name__
+        assert pluginname not in self.plugins
+        module.__hotload = False
+
+        plugin = module.Plugin()
+        module.__time = 0
+        self.plugins[pluginname] = PluginEntry(module, plugin)
+
+        return plugin
 
     def load_plugin(self, pluginname, reload=False):
         assert pluginname not in self.plugins
         importlib.invalidate_caches()
         try:
             module = importlib.import_module("plugins."+pluginname)
+            module.__hotload = True
             plugin = module.Plugin()
         except:
             traceback.print_exc()
@@ -122,6 +143,7 @@ class PluginHandler(object):
 
         try:
             module = importlib.reload(self.plugins[pluginname].module)
+            module.__hotload = True
             plugin = module.Plugin()
 
             self.plugins[pluginname] = PluginEntry(module, plugin)

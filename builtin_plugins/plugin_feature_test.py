@@ -328,111 +328,11 @@ class ImportObject(QtWidgets.QWidget):
             self.editor.activateWindow()
 
 
-class AddBWObjectWindow(QtWidgets.QWidget):
-    closing = QtCore.pyqtSignal()
-    addobject = QtCore.pyqtSignal(str, bool)
-    signal_addobject = QtCore.pyqtSignal(str)
-
-    def __init__(self, parent, editor):
-        super().__init__(parent)
-        #self.editor: bw_editor.LevelEditor = editor
-        self.resize(900, 500)
-        self.setMinimumSize(QtCore.QSize(300, 300))
-
-        self.explanation = QtWidgets.QLabel(("Insert the XML data of an object you want to add here. "
-                                             "This does not automatically add object dependencies or resources if they don't exist already.\n"
-                                             "Each press of 'Add Object' adds the object to the level with a new ID."))
-        self.vlayout = QtWidgets.QVBoxLayout(self)
-        self.setLayout(self.vlayout)
-        self.vlayout.addWidget(self.explanation)
-        self.textbox_xml = QtWidgets.QTextEdit(self)
-
-
-        #self.add_object_on_map = QtWidgets.QPushButton("Add Object On Map", self)
-
-        #self.add_object_on_map.setEnabled(False)
-
-        self.vlayout.addWidget(self.textbox_xml)
-
-        self.hlayout = QtWidgets.QHBoxLayout(self)
-        #self.hlayout.addWidget(self.add_object_on_map)
-
-        self.vlayout.addLayout(self.hlayout)
-
-        self.textbox_xml.textChanged.connect(self.resetoffset)
-        self.offsetx = 0
-        self.offsety = 0
-        self.donotreset = False
-
-        font = QtGui.QFont()
-        font.setFamily("Consolas")
-        font.setStyleHint(QtGui.QFont.StyleHint.Monospace)
-        font.setFixedPitch(True)
-        font.setPointSize(10)
-
-        metrics = QtGui.QFontMetrics(font)
-        self.textbox_xml.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
-        self.textbox_xml.setFont(font)
-
-    def resetoffset(self):
-        if not self.donotreset:
-            self.offsetx = 0
-            self.offsety = 0
-
-    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-        self.closing.emit()
-
-    def action_add_object(self):
-        content = self.textbox_xml.toPlainText()
-        try:
-            obj = BattalionObject.create_from_text(content, self.editor.level_file, self.editor.preload_file)
-        except Exception as err:
-            open_error_dialog("Couldn't add object:\n"+str(err), None)
-            return
-
-        oldid = obj.id
-        obj.choose_unique_id(self.editor.level_file, self.editor.preload_file)
-        newid = obj.id
-
-        self.offsety += 1
-        if self.offsety > 5:
-            self.offsety = 0
-            self.offsetx += 1
-        mtx = obj.getmatrix()
-        if mtx is not None:
-            mtx.mtx[12] += self.offsetx*4
-            mtx.mtx[14] -= self.offsety*4
-
-        if obj.type == "cGameScriptResource" and obj.mName != "":
-            if self.editor.lua_workbench.script_exists(obj.mName):
-                number = 1
-                while True:
-                    newscriptname = "{0}_{1}".format(obj.mName, number)
-                    if not self.editor.lua_workbench.script_exists(newscriptname):
-                        obj.mName = newscriptname
-                        break
-                    else:
-                        number += 1
-
-            self.editor.lua_workbench.create_empty_if_not_exist(obj.mName)
-
-        if obj.is_preload():
-            self.editor.preload_file.add_object_new(obj)
-        else:
-            self.editor.level_file.add_object_new(obj)
-
-
-        self.donotreset = True
-        self.textbox_xml.setText(content.replace(oldid, newid))
-        self.donotreset = False
-        self.editor.leveldatatreeview.set_objects(self.editor.level_file, self.editor.preload_file, remember_position=True)
-        self.editor.level_view.do_redraw(force=True)
-
-
 class NewAddWindow(QtWidgets.QMdiSubWindow):
     def __init__(self, editor):
         super().__init__()
         self.editor = editor
+        self.setWindowTitle("Choose Object")
         self.resize(900, 500)
 
         self.vertical = QtWidgets.QVBoxLayout()
@@ -441,8 +341,8 @@ class NewAddWindow(QtWidgets.QMdiSubWindow):
         self.tabs = QtWidgets.QTabWidget(self)
         #self.addxml = AddBWObjectWindow(self, editor)
         self.importobj: ImportObject = ImportObject(self, editor)
-        self.addexistinboject: AddExistingObject = AddExistingObject(self, editor)
-        self.tabs.addTab(self.addexistinboject, "Add Existing Object")
+        self.addexistingoject: AddExistingObject = AddExistingObject(self, editor)
+        self.tabs.addTab(self.addexistingoject, "Add Existing Object")
         self.tabs.addTab(self.importobj, "Import External Object")
         #self.tabs.addTab(self.addxml, "Add XML Object")
 
@@ -456,7 +356,7 @@ class NewAddWindow(QtWidgets.QMdiSubWindow):
 
         self.current_mode = AddObjectMode.NONE
         self.importobj.mode_change.connect(self.change_mode)
-        self.addexistinboject.mode_change.connect(self.change_mode)
+        self.addexistingoject.mode_change.connect(self.change_mode)
 
     def change_mode(self, mode):
         self.current_mode = mode
@@ -473,7 +373,10 @@ class NewAddWindow(QtWidgets.QMdiSubWindow):
             raise RuntimeError(f"Unknown index {index}")
 
     def action_add_object(self):
-        print("Current index:", self.tabs.currentIndex())
+        index = self.tabs.currentIndex()
+        if index == 0:
+            item = self.addexistingoject.treewidget.currentItem()
+            self.addexistingoject.set_spawn_obj(item)
 
 
 class Plugin(object):
@@ -492,9 +395,6 @@ class Plugin(object):
 
         self.last_obj = None
 
-    def plugin_init(self, editor: "bw_editor.LevelEditor"):
-        editor.level_view.text_display.set_text("Feature", "")
-
     def cancel_mode(self, editor: "bw_editor.LevelEditor"):
         self.cancel_mode_manual(editor.level_view)
 
@@ -505,11 +405,14 @@ class Plugin(object):
         if self.newaddwindow is not None:
             self.newaddwindow.change_mode(AddObjectMode.NONE)
 
+    def terrain_click_2d(self, viewer, point):
+        self.terrain_click_3d(viewer, None, point)
+
     def terrain_click_3d(self, viewer: "bw_widgets.BolMapViewer", ray, point):
         if self.newaddwindow is not None and viewer.mouse_mode.active(MouseMode.ADD_OBJECT):
             if self.newaddwindow.current_mode == AddObjectMode.EXISTING:
-                self.newaddwindow.addexistinboject: AddExistingObject
-                obj = self.newaddwindow.addexistinboject.spawn_object(point)
+                self.newaddwindow.addexistingoject: AddExistingObject
+                obj = self.newaddwindow.addexistingoject.spawn_object(point)
                 if self.last_obj is not None:
                     if obj.type == "cWaypoint" and self.last_obj.type == "cWaypoint":
                         self.last_obj.NextWP = obj

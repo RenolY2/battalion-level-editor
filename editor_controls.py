@@ -151,21 +151,24 @@ class ClickDragAction(MouseAction):
 
 
 class PluginEventClickAction(ClickAction):
-    def just_clicked(self, editor, buttons, event):
+    def just_clicked(self, editor: "BolMapViewer", buttons, event):
         super().just_clicked(editor, buttons, event)
 
         x, y = event.position().x(), event.position().y()
         editor.plugin_handler.execute_event("topdown_click", editor, x, y)
 
         worldx, worldy = editor.mouse_coord_to_world_coord(x, y)
-
         editor.plugin_handler.execute_event("world_click", editor, worldx, worldy)
+
+        height = editor.bwterrain.check_height(worldx, worldy)
+        if height is None:
+            height = editor.waterheight
+        editor.plugin_handler.execute_event("terrain_click_2d", editor, Vector3(worldx, worldy, height))
 
 
 class PluginEvent3DTerrainClickAction(ClickAction):
-    def just_clicked(self, editor, buttons, event):
+    def just_clicked(self, editor: "BolMapViewer", buttons, event):
         super().just_clicked(editor, buttons, event)
-        editor: BolMapViewer
         x, y = event.position().x(), event.position().y()
 
         ray = editor.create_ray_from_mouseclick(x, y)
@@ -228,6 +231,9 @@ class TopdownSelect(ClickDragAction):
         editor.do_redraw()
 
     def just_released(self, editor, buttons, event):
+        if self.first_click is None:
+            return
+
         selectstartx, selectstartz = self.first_click.x, self.first_click.y
         selectendx, selectendz = event.position().x(), event.position().y()
 
