@@ -254,6 +254,9 @@ class PluginMenu(Menu):
 
     def add_menu_actions(self, plugins, editor):
         for pluginname, pluginentry in plugins.items():
+            if len(pluginentry.plugin.actions) == 0:
+                continue
+
             menu = Menu(self, pluginentry.plugin.name)
             for action in pluginentry.plugin.actions:
                 name, func = action[:2]
