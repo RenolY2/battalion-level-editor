@@ -261,6 +261,8 @@ class EditorFileMenu(QMenu):
             else:
                 func_open = open
 
+            # Cancel any available mouse modes
+            self.editor.plugin_handler.execute_event("cancel_mode", self.editor)
             self.editor.plugin_handler.execute_event("before_load")
 
             with func_open(filepath, "rb") as f:
