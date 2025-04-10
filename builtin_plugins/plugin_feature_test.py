@@ -130,9 +130,11 @@ class AddExistingObject(QtWidgets.QSplitter):
             self.treewidget.addTopLevelItem(category)
 
         for name, xmlname in (("Map Zone", "cMapZone.xml"),
-                              ("Waypoint", "cWaypoint.xml")):
+                              ("Waypoint", "cWaypoint.xml"),
+                              ("Global Script", "cGlobalScriptEntity.xml"),
+                              ("Initialisation Script", "cInitialisationScriptEntity.xml")):
             xmlpath = bw1path+xmlname if self.editor.file_menu.level_data.is_bw1() else bw2path+xmlname
-            obj = BattalionObject.create_from_path(bw1path + xmlname, None, None)
+            obj = BattalionObject.create_from_path(xmlpath, None, None)
             item = NamedItemInstancer(self.treewidget, name, obj, None)
             self.treewidget.addTopLevelItem(item)
 
