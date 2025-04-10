@@ -138,6 +138,8 @@ class AddExistingObject(QtWidgets.QSplitter):
             item = NamedItemInstancer(self.treewidget, name, obj, None)
             self.treewidget.addTopLevelItem(item)
 
+        self.treewidget.resizeColumnToContents(0)
+
         self.treewidget.itemSelectionChanged.connect(self.set_model_scene)
         self.treewidget.itemDoubleClicked.connect(self.set_spawn_obj)
 
