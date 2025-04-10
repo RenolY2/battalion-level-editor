@@ -1,0 +1,5 @@
+<Object type="cGameScriptResource" id="50011313">
+	<Attribute name="mName" type="cFxString8" elements="1">
+		<Item>PlaceHolder</Item>
+	</Attribute>
+</Object>
