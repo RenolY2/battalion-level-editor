@@ -2,6 +2,7 @@ import subprocess
 import os
 import io
 import platform
+import shutil
 import sys
 from io import BytesIO
 
@@ -199,8 +200,21 @@ class LuaWorkbench(object):
         except FileExistsError:
             pass 
 
-    def script_exists(self, script_name):
-        return os.path.exists(os.path.join(self.workdir, script_name+".lua"))
+    def script_exists(self, script_name, withsuffix=False):
+        # With suffix = name includes suffix
+        if withsuffix:
+            return os.path.exists(os.path.join(self.workdir, script_name))
+        else:
+            return os.path.exists(os.path.join(self.workdir, script_name+".lua"))
+
+    def copy_script_into_workshop(self, scriptpath):
+        base = os.path.basename(scriptpath)
+        dest = os.path.join(self.workdir, base)
+
+        try:
+            shutil.copy(scriptpath, dest)
+        except shutil.SameFileError:
+            pass
 
     def rename(self, old_name, new_name):
         oldpath = os.path.join(self.workdir, old_name+".lua")

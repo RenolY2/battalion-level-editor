@@ -13,6 +13,7 @@ from lib.game_visualizer import DebugInfoWIndow
 from widgets.editor_widgets import open_message_dialog, open_yesno_box
 from configuration import save_cfg
 from widgets.lua_search_widgets import LuaFindWindow
+from lib.BattalionXMLLib import create_object
 
 if TYPE_CHECKING:
     import bw_editor
@@ -22,7 +23,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
     def __init__(self, editor):
         super().__init__()
         self.editor: bw_editor.LevelEditor = editor
-
+        self.last_import_path = None
         self.search_window = None
         self.debug_window = None
         self.lua_find_menu = None
@@ -92,6 +93,10 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.lua_menu.addSeparator()
         self.lua_reload_scripts_action = self.lua_menu.add_action("Reload Scripts from Resource",
                                                                     self.lua_reload_scripts)
+
+        self.lua_import_script_action = self.lua_menu.add_action("Import Lua Script",
+                                                                 self.lua_import_script)
+
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
         #self.addAction(self.collision_menu.menuAction())
@@ -108,6 +113,45 @@ class EditorMenuBar(QtWidgets.QMenuBar):
 
 
         self.last_obj_select_pos = 0
+
+    def lua_import_script(self):
+        if self.last_import_path is None:
+            self.last_import_path = self.editor.pathsconfig["xml"]
+
+        filepath, chosentype = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Choose Lua Script",
+            self.last_import_path,
+            "Lua script (*.lua);;All files (*)",
+            None)
+
+        if filepath and filepath.endswith(".lua"):
+            fname = os.path.basename(filepath)
+            if self.editor.lua_workbench.script_exists(fname, withsuffix=True):
+                result = open_yesno_box(f"Script {fname} already exists, do you want to replace it?",
+                                        sidemsg="")
+                if not result:
+                    return
+
+            script_name = fname.removesuffix(".lua")
+            self.editor.lua_workbench.copy_script_into_workshop(filepath)
+            for scriptid, obj in self.editor.file_menu.level_data.scripts.items():
+                if obj.mName == script_name:
+                    open_message_dialog("Script has been imported. GameScriptResource already exists.")
+                    return
+
+            gamescript = create_object("BW1",
+                                       "cGameScriptResource",
+                                       self.editor.level_file,
+                                       self.editor.preload_file)
+
+            gamescript.mName = script_name
+            self.editor.file_menu.level_data.add_object_new(gamescript)
+            self.editor.set_has_unsaved_changes(True)
+            self.editor.leveldatatreeview.set_objects(self.editor.level_file,
+                                                      self.editor.preload_file,
+                                                      remember_position=True)
+            self.last_import_path = filepath
+            open_message_dialog(f"Script has been imported as GameScriptResource {gamescript.name}")
 
     def lua_open_find(self):
         self.lua_find_menu = LuaFindWindow(None, self.editor.lua_workbench)
