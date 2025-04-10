@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (QWidget, QListWidget, QListWidgetItem, QDialog, QMe
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtOpenGLWidgets as QtOpenGLWidgets
 import PyQt6.QtCore as QtCore
+import PyQt6.QtGui as QtGui
 from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
 from PyQt6.QtCore import Qt
 
@@ -203,30 +204,38 @@ class CustomText(QtWidgets.QLabel):
         font.setFamily("Consolas")
         font.setStyleHint(QFont.StyleHint.Monospace)
         font.setFixedPitch(True)
-        font.setPointSize(15)
+        font.setPointSize(16)
         font.setBold(True)
+        self.font = font
 
-        self.setFont(font)
+        font = QFont()
+        font.setFamily("Consolas")
+        font.setStyleHint(QFont.StyleHint.Monospace)
+        font.setFixedPitch(True)
+        font.setPointSize(16)
+        font.setBold(False)
+        self.font2 = font
+
+        self.setFont(self.font)
 
         self.setText("        ")
         self.text_categories = []
     
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        # Get the bounding rectangle and expand it to fit the outline, and shift it 10 pixels to the right
-        rect = self.rect().adjusted(10, -2, 2, 2)  # Offset 10 pixels to the right, expand slightly vertically
+        rect = self.rect()
 
         # Draw the outline with a shift of 1 pixel in each direction
         outline_color = QColor(255, 255, 255)
         painter.setPen(outline_color)
 
-        # Draw the text with shifts of 1 pixel in all directions
-        for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
+        # Draw the text with a shift of d pixels in all directions
+        d = 1
+        for dx, dy in [(-d, -d), (-d, 0), (-d, d), (0, -d), (0, d), (d, -d), (d, 0), (d, d)]:
             painter.drawText(rect.adjusted(dx, dy, dx, dy), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                              self.text())
 
+        self.setFont(self.font2)
         text_color = QColor(0, 0, 0)
         painter.setPen(text_color)
         painter.drawText(rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, self.text())
@@ -264,8 +273,7 @@ class CustomText(QtWidgets.QLabel):
         full_text = "\n".join(entry[1] for entry in self.text_categories)
 
         self.setText(full_text)
-        hint = self.sizeHint()
-        self.setFixedSize(int(hint.width()*1.1), int(hint.height()*1.1))
+        self.adjustSize()
 
     def remove_text(self, textid):
         for i in range(len(self.text_categories)):
