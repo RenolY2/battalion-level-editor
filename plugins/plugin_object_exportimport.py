@@ -61,19 +61,64 @@ class LabeledWidget(QtWidgets.QWidget):
             self.layout.addWidget(self.text_label)
 
 
+def os_walk(path):
+    for entry in os.listdir(path):
+        fullpath = os.path.join(path, entry)
+        if os.path.isdir(fullpath):
+            if os.path.exists(os.path.join(fullpath, "bundle.xml")):
+                continue
+
+            yield fullpath
+            yield from os_walk(fullpath)
+
+
+class CategorySelection(QtWidgets.QComboBox):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setEditable(True)
+
+    def fill_category(self, path):
+        paths = []
+        """for dirpath, dirnames, filenames in os.walk(path):
+            for dir in dirnames:
+                fullpath = os.path.join(dirpath, dir)
+                if not os.path.exists(os.path.join(fullpath, "bundle.xml")):
+                    paths.append(fullpath)"""
+        for dirpath in os_walk(path):
+            paths.append(os.path.relpath(dirpath, path))
+
+        paths.sort()
+        self.addItem("--NONE--")
+        self.addItems(paths)
+
+    def get_category(self):
+        if self.currentText() == "--NONE--":
+            return None
+        else:
+            result = self.currentText().strip()
+            if result:
+                return result
+            else:
+                return None
+
+
 class ExportSettings(QDialog):
     def __init__(self, path):
         super().__init__()
         self.path = path
+        self.bundle_path = None
         self.layout = QtWidgets.QVBoxLayout(self)
         self.name_widget = LabeledWidget(self, "Object Bundle name:",
                                          QtWidgets.QLineEdit)
+        self.category_widget = LabeledWidget(self, "Category:",
+                                             CategorySelection)
         self.include_passengers = QtWidgets.QCheckBox(self, text="Include Passengers")
         #self.include_mpscript = QtWidgets.QCheckBox(self, text="Include MpScript")
         self.include_startwaypoint = QtWidgets.QCheckBox(self, text="Include Start Waypoint")
         self.clear_instance_flags = QtWidgets.QCheckBox(self, text="Clear Instance Flags")
 
         self.layout.addWidget(self.name_widget)
+        self.layout.addWidget(self.category_widget)
         self.layout.addWidget(self.include_passengers)
         #self.layout.addWidget(self.include_mpscript)
         self.layout.addWidget(self.include_startwaypoint)
@@ -90,6 +135,14 @@ class ExportSettings(QDialog):
         self.ok.pressed.connect(self.confirm)
         self.cancel.pressed.connect(self.deny)
 
+    def set_current_category(self, category):
+        if category is not None:
+            self.category_widget.widget: CategorySelection
+            self.category_widget.widget.setCurrentText(category)
+
+    def fill_category(self, path):
+        self.category_widget.widget.fill_category(path)
+
     def get_name(self):
         return self.name_widget.widget.text()
 
@@ -101,11 +154,31 @@ class ExportSettings(QDialog):
             open_error_dialog("Invalid characters in bundle name!", self)
             return
 
-        folderpath = os.path.join(self.path, bundlename)
+        self.category_widget.widget: CategorySelection
+        path = self.category_widget.widget.get_category()
+        if path is None:
+            folderpath = os.path.join(self.path, bundlename)
+        else:
+            full_category_path = os.path.join(self.path, path)
+            if os.path.exists(
+                    os.path.join(full_category_path, "bundle.xml")
+            ):
+                open_error_dialog("An object uses this category name! Please choose a different category name.", self)
+                return
 
+            try:
+                os.makedirs(full_category_path, exist_ok=True)
+            except Exception as error:
+                open_error_dialog(f"Unable to create category: \n{str(error)}", self)
+                return
+
+            folderpath = os.path.join(full_category_path, bundlename)
+
+        self.bundle_path = folderpath
+        print(folderpath)
         if os.path.exists(folderpath):
             msgbox = YesNoQuestionDialog(self,
-                                         "The Object bundle name already exists.",
+                                         f"The Object bundle name already exists at path: \n{folderpath}",
                                          "Do you want to replace it? (All files in the existing bundle will be deleted!)")
             result = msgbox.exec()
             if result == QMessageBox.StandardButton.Yes:
@@ -187,6 +260,10 @@ class Plugin(object):
                         ("Quick Import", self.importobject),
                         ("Remove Objects and Assets", self.remove_selected_object)]
         print("I have been initialized")
+        self.last_category = None
+
+    def after_load(self):
+        self.last_category = None
 
     def remove_selected_object(self, editor: "bw_editor.LevelEditor"):
         deleted = set()
@@ -328,10 +405,6 @@ class Plugin(object):
         open_message_dialog("Operation successful!",
                             f"Removed {len(to_be_deleted)} object(s), {resources} resource(s) and {lua_deletions} EntityInitialise entries", None)
 
-
-
-
-
     def initiate_object_folder(self, editor):
         try:
             os.mkdir(
@@ -376,7 +449,10 @@ class Plugin(object):
             game)
 
         dialog = ExportSettings(basepath)
+        dialog.fill_category(basepath)
+        dialog.set_current_category(self.last_category)
         a = dialog.exec()
+        self.last_category = dialog.category_widget.widget.get_category()
         if not a:
             return
 
@@ -387,7 +463,7 @@ class Plugin(object):
         bundle_name = dialog.get_name()
 
         try:
-            bundle_path = os.path.join(basepath, bundle_name)
+            bundle_path = dialog.bundle_path #os.path.join(basepath, bundle_name)
             print(include_passenger, include_mpscript)
             skip = []
             if not include_passenger:
