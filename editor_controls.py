@@ -422,6 +422,9 @@ class Select3D(ClickDragAction):
         editor.do_redraw()
 
     def just_released(self, editor, buttons, event):
+        if self.first_click is None:
+            return
+
         selectstartx, selectstartz = self.first_click.x, self.first_click.y
         selectendx, selectendz = event.position().x(), event.position().y()
 
