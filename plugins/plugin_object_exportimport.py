@@ -105,6 +105,7 @@ class CategorySelection(QtWidgets.QComboBox):
 class ExportSettings(QDialog):
     def __init__(self, path):
         super().__init__()
+        self.setWindowTitle("Object Export")
         self.path = path
         self.bundle_path = None
         self.layout = QtWidgets.QVBoxLayout(self)
