@@ -7,8 +7,8 @@ from io import BytesIO
 from pathlib import Path
 from collections import UserDict
 import traceback
-
-from PyQt6.QtWidgets import QDialog, QMessageBox
+from widgets.menu.file_menu import LoadingBar
+from PyQt6.QtWidgets import QDialog, QMessageBox, QApplication
 from collections import namedtuple
 
 import lib.lua.bwarchivelib as bwarchivelib
@@ -101,6 +101,62 @@ class CategorySelection(QtWidgets.QComboBox):
             else:
                 return None
 
+
+class ExportSettingsFullLevel(QDialog):
+    def __init__(self, path, levelname):
+        super().__init__()
+        self.setWindowTitle("Mass Object Export")
+        self.path = path
+        self.bundle_path = None
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.name_widget = LabeledWidget(self, "Level Name",
+                                         QtWidgets.QLineEdit)
+        self.name_widget.widget.setText(levelname)
+        self.include_passengers = QtWidgets.QCheckBox(self, text="Include Passengers")
+        self.clear_instance_flags = QtWidgets.QCheckBox(self, text="Clear Instance Flags")
+
+        self.layout.addWidget(self.name_widget)
+        self.layout.addWidget(self.include_passengers)
+        self.layout.addWidget(self.clear_instance_flags)
+
+        self.ok = QtWidgets.QPushButton(self, text="OK")
+        self.cancel = QtWidgets.QPushButton(self, text="Cancel")
+
+        self.buttons = QtWidgets.QHBoxLayout(self)
+        self.buttons.addWidget(self.ok)
+        self.buttons.addWidget(self.cancel)
+        self.layout.addLayout(self.buttons)
+
+        self.ok.pressed.connect(self.confirm)
+        self.cancel.pressed.connect(self.deny)
+
+    def get_level_name(self):
+        return self.name_widget.widget.text()
+
+    def confirm(self):
+        self.name_widget.widget: QtWidgets.QLineEdit
+        levelname = self.name_widget.widget.text()
+
+        if "/" in levelname or "\\" in levelname:
+            open_error_dialog("Invalid characters in level name!", self)
+            return
+
+        folderpath = os.path.join(self.path, levelname)
+        print(folderpath)
+        if os.path.exists(folderpath) and os.path.isdir(folderpath):
+            msgbox = YesNoQuestionDialog(self,
+                                         f"The level name is already in use at path: \n{folderpath}",
+                                         "Do you still want to use it? (files in the existing folder may be overwritten)")
+            result = msgbox.exec()
+            if result == QMessageBox.StandardButton.Yes:
+                self.accept()
+        elif os.path.exists(folderpath) and os.path.isfile(folderpath):
+            open_error_dialog("Level name is used by a file. Please use a different name.", None)
+        else:
+            self.accept()
+
+    def deny(self):
+        self.reject()
 
 class ExportSettings(QDialog):
     def __init__(self, path):
@@ -258,6 +314,7 @@ class Plugin(object):
     def __init__(self):
         self.name = "Object Export/Import"
         self.actions = [("Quick Export", self.exportobject),
+                        ("Mass Export", self.export_all_level_objects),
                         ("Quick Import", self.importobject),
                         ("Remove Objects and Assets", self.remove_selected_object)]
         print("I have been initialized")
@@ -462,9 +519,144 @@ class Plugin(object):
         reset_instance_flags = dialog.clear_instance_flags.isChecked()
         include_startwaypoint = dialog.include_startwaypoint.isChecked()
         bundle_name = dialog.get_name()
+        bundle_path = dialog.bundle_path  # os.path.join(basepath, bundle_name)
+
+        selected = editor.level_view.selected
 
         try:
-            bundle_path = dialog.bundle_path #os.path.join(basepath, bundle_name)
+            self.export_objects(selected,
+                                editor,
+                                include_passenger,
+                                include_mpscript,
+                                reset_instance_flags,
+                                include_startwaypoint,
+                                bundle_name,
+                                bundle_path)
+        except Exception as err:
+            traceback.print_exc()
+            errormsg = (f"An error appeared during object export: \n"
+                        f"{str(err)}\n"
+                        f"Check console log for more details.\nThe exported object '{bundle_name}' might be incomplete.")
+            open_error_dialog(errormsg, None)
+
+    def export_all_level_objects(self, editor: "bw_editor.LevelEditor"):
+        self.initiate_object_folder(editor)
+
+        if editor.level_file.bw2:
+            game = "bw2"
+        else:
+            game = "bw1"
+
+        basepath = os.path.join(
+            editor.get_editor_folder(),
+            "battalion_objects",
+            game)
+
+        level_name = os.path.basename(editor.pathsconfig["xml"]).removesuffix(".xml")
+        dialog = ExportSettingsFullLevel(basepath, level_name)
+
+        a = dialog.exec()
+        if not a:
+            return
+
+        level_folder = os.path.join(basepath, level_name)
+        level_name = dialog.get_level_name()
+        try:
+            os.mkdir(level_folder)
+        except FileExistsError:
+            print(level_folder, "already exists")
+
+        include_passenger = dialog.include_passengers.isChecked()
+        reset_instance_flags = dialog.clear_instance_flags.isChecked()
+
+        categories = {
+            "cAirVehicle": "Air Vehicles",
+            "cGroundVehicle": "Ground Vehicles",
+            "cTroop": "Troops",
+            "cWaterVehicle": "Water Vehicles",
+            "cBuilding": "Buildings",
+            "cCapturePoint": "Capture Points",
+            "cDestroyableObject": "Environment Objects",
+            "cSceneryCluster": "Scenery Objects",
+            "cMorphingBuilding": "Morphing Buildings"
+        }
+
+        total_work_objects = set()
+        for objid, object in editor.file_menu.level_data.objects_with_positions.items():
+            if object.type in categories:
+                if object.type == "cMorphingBuilding":
+                    represent_id = object.id
+                else:
+                    represent_id = object.mBase.id
+
+                total_work_objects.add(represent_id)
+
+
+        total = len(total_work_objects)
+        object_represented = []
+
+        loading_bar = LoadingBar(editor)
+        loading_bar.setWindowTitle("Exporting...")
+        loading_bar.show()
+
+        i = 0
+        for objid, object in editor.file_menu.level_data.objects_with_positions.items():
+            if object.type in categories:
+                category_folder = os.path.join(level_folder,
+                                               categories[object.type])
+
+                try:
+                    os.mkdir(category_folder)
+                except FileExistsError:
+                    pass
+
+                if object.type == "cMorphingBuilding":
+                    represent_id = object.id
+                else:
+                    represent_id = object.mBase.id
+
+                if represent_id in object_represented:
+                    continue  # Object has already been represented
+
+                name = ""
+                allegiance = object.faction
+                if allegiance is not None:
+                    name += allegiance + "_"
+
+                if object.modelname is not None:
+                    name += object.modelname + "_" + object.id
+                else:
+                    name += object.type + "_" + object.id
+
+                print("exporting", object.name)
+                self.export_objects(
+                    [object],
+                    editor,
+                    include_passenger,
+                    False,
+                    reset_instance_flags,
+                    False,
+                    os.path.join(category_folder, name),
+                    showinfo=False
+                )
+                loading_bar.progress = (i/total)
+                QApplication.processEvents()
+                object_represented.append(represent_id)
+                i += 1
+
+        loading_bar.force_close()
+        open_message_dialog(f"Done! {total} object(s) exported.", instructiontext="")
+
+    def export_objects(self,
+                       selected,
+                       editor,
+                       include_passenger,
+                       include_mpscript,
+                       reset_instance_flags,
+                       include_startwaypoint,
+                       bundle_path,
+                       showinfo=True):
+
             print(include_passenger, include_mpscript)
             skip = []
             if not include_passenger:
@@ -474,7 +666,7 @@ class Plugin(object):
             if not include_startwaypoint:
                 skip.append("mStartWaypoint")
 
-            selected = editor.level_view.selected
+
             export = BattalionLevelFile()
             to_be_exported = []
             selected_ids = []
@@ -591,10 +783,6 @@ class Plugin(object):
                                 export.add_object_new(texobj)
 
 
-
-
-
-
             # Doing a re-export to have a new set of objects we can modify without affecting
             # the objects in the editor
             tmp = BytesIO()
@@ -697,18 +885,15 @@ class Plugin(object):
             except Exception as err:
                 traceback.print_exc()
                 open_error_dialog(f"Wasn't able to create a preview render: \n{str(err)}\nCheck console log for more details.", None)
-            message = f"{len(re_export.objects)} XML object(s) and {resource_count} resource(s) have been exported for '{bundle_name}'!"
-            if script_stuff_skipped > 0:
-                message += f"{script_stuff_skipped} script objects have been skipped."
-            open_message_dialog(message,
-                                parent=editor)
 
-        except Exception as err:
-            traceback.print_exc()
-            errormsg = (f"An error appeared during object export: \n"
-                        f"{str(err)}\n"
-                        f"Check console log for more details.\nThe exported object '{bundle_name}' might be incomplete.")
-            open_error_dialog(errormsg, None)
+            if showinfo:
+                message = f"{len(re_export.objects)} XML object(s) and {resource_count} resource(s) have been exported for '{os.path.basename(bundle_path)}'!"
+                if script_stuff_skipped > 0:
+                    message += f"{script_stuff_skipped} script objects have been skipped."
+                open_message_dialog(message,
+                                    parent=editor)
+
+
 
     def importobject(self, editor: "bw_editor.LevelEditor"):
         self.initiate_object_folder(editor)
