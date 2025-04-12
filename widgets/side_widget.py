@@ -130,11 +130,18 @@ class PikminSideWidget(QWidget):
     def update_main_edit_window(self):
         if self.main_window is not None:
             obj = self.parent.get_selected_obj()
-            if obj is not None and self.main_window.object != obj:
+            if obj is not None and self.main_window.object != obj and self.main_window.is_autoupdate:
                 QtWidgets.QApplication.setOverrideCursor(
                     QtCore.Qt.CursorShape.WaitCursor)
                 self.main_window.change_object(obj)
                 QtWidgets.QApplication.restoreOverrideCursor()
+
+    def change_main_window(self, new_main):
+        self.main_window = new_main
+        for window in self.editwindows:
+            if window is not new_main:
+                window: NewEditWindow
+                window.autoupdate_checkbox.setChecked(False)
 
     def set_comment_label(self, text):
         self.comment_label.setText(text)
@@ -174,7 +181,6 @@ class PikminSideWidget(QWidget):
         obj.choose_unique_id(level_file, preload)
         newid = obj.id
 
-
         mtx = obj.getmatrix()
         if mtx is not None:
             mtx.mtx[12] += offsetx
@@ -192,12 +198,10 @@ class PikminSideWidget(QWidget):
 
             self.parent.lua_workbench.create_empty_if_not_exist(obj.mName)
 
-
         if obj.is_preload():
             preload.add_object_new(obj)
         else:
             level_file.add_object_new(obj)
-
 
         return obj
 
@@ -313,6 +317,7 @@ class PikminSideWidget(QWidget):
                 break
         else:
             editwindow = NewEditWindow(None, currobj, editor, self.make_window)
+            editwindow.main_window_changed.connect(self.change_main_window)
             editwindow.show()
             self.editwindows.append(editwindow)
 
