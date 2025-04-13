@@ -499,6 +499,32 @@ class PikminSideWidget(QWidget):
                 if obj.modelname is not None:
                     text += f"\nModel: {obj.modelname}"
 
+                if hasattr(obj, "mPassenger"):
+                    passengers = 0
+                    for passenger in obj.mPassenger:
+                        if passenger is not None:
+                            passengers += 1
+
+                    text += f"\nHas {passengers} passenger(s)"
+
+                if hasattr(obj.mBase, "mSeatData"):
+                    soldier_seats = []
+                    active_seats = []
+                    for i, seat in enumerate(obj.mBase.mSeatData):
+                        if seat is not None:
+                            if seat.SeatFlags & 2:  # Seatflag Soldier
+                                soldier_seats.append(str(i+1))
+                            if seat.SeatFlags & 1:  # Seatflag Active
+                                active_seats.append(str(i+1))
+
+                    if active_seats:
+                        active_seats_text = ", ".join(active_seats)
+                        text += f"\nActive seats: {active_seats_text}"
+
+                    if soldier_seats:
+                        soldier_seats_text = ", ".join(soldier_seats)
+                        text += f"\nSoldier seats: {soldier_seats_text}"
+
             self.name_label.setText(text)
 
 
