@@ -2002,6 +2002,9 @@ class FlagBox(QtWidgets.QWidget):
         self.get_value = get_value
         self.set_value = set_value
 
+        self.value = QtWidgets.QLabel(self)
+        self.flag_layout.addWidget(self.value)
+
         i = 0
         for flagname, value in items:
             checkbutton = QtWidgets.QCheckBox(self)
@@ -2009,7 +2012,7 @@ class FlagBox(QtWidgets.QWidget):
 
             self.flags.append((checkbutton, value))
 
-            row = i // 2
+            row = i // 2 + 1
             column = i % 2
             self.flag_layout.addWidget(checkbutton, row, column)
             checkbutton.stateChanged.connect(self.change)
@@ -2026,6 +2029,8 @@ class FlagBox(QtWidgets.QWidget):
             button.blockSignals(False)
             checked += value
 
+        self.value.setText(f"Combined flag value: {val}")
+
         if (val & ~checked) != 0:
             raise RuntimeError(f"WARNING: Bits unaccounted for with value {val} vs {checked}")
 
@@ -2034,7 +2039,7 @@ class FlagBox(QtWidgets.QWidget):
         for button, value in self.flags:
             if button.isChecked():
                 newval |= value
-
+        self.value.setText(f"Combined flag value: {newval}")
         self.set_value(newval)
         self.changed.emit()
 
@@ -2213,6 +2218,7 @@ class ReferenceEdit(QtWidgets.QWidget):
 
                 items = item_cache[self.type]
                 self.object_combo_box.addItems([x[0] for x in items])
+                self.items = items
 
                 try:
                     currindex = items.index(curritem)
