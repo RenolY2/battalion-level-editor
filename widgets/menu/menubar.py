@@ -29,7 +29,9 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.lua_find_menu = None
 
         self.visibility_menu = FilterViewMenu(self.editor, self)
-        self.visibility_menu.filter_update.connect(self.editor.update_render)
+        self.visibility_menu.filter_update.connect(
+            lambda: self.editor.level_view.do_redraw(force=True)
+        )
 
         # ------ Collision Menu
         #self.collision_menu = Menu(self, "Geometry")
