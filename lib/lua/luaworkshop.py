@@ -265,6 +265,7 @@ class LuaWorkbench(object):
             compiled_file = os.path.join(self.tmp, script_name + ".luap")
             decompiled_file = os.path.join(self.workdir, script_name + ".lua")
             decompile_unluac(compiled_file, decompiled_file)
+            self.record_file_change(script_name)
             hash = calc_script_hash(decompiled_file)
             if hash in DECOMP_FIXES:
                 files_to_be_fixed.append((decompiled_file, DECOMP_FIXES[hash]))
@@ -293,6 +294,7 @@ class LuaWorkbench(object):
             compiled_file = os.path.join(self.tmp, script_name + ".luap")
             decompiled_file = os.path.join(self.workdir, script_name + ".lua")
             decompile_unluac(compiled_file, decompiled_file)
+            self.record_file_change(script_name)
 
     def unpack_scripts(self, respath):
         if respath.endswith(".gz"):
@@ -310,6 +312,7 @@ class LuaWorkbench(object):
     def write_entity_initialization(self):
         self.entityinit.update_initialization(os.path.join(self.workdir, "EntityInitialise.lua"),
                                               os.path.join(self.workdir, "EntityInitialise.lua"))
+        self.record_file_change("EntityInitialise")
 
     def repack_scripts(self, res, scripts=[], delete_rest=True):
         script_sections = []
@@ -317,7 +320,11 @@ class LuaWorkbench(object):
             print("compiling", script_name)
             compiled_file = os.path.join(self.tmp_out, script_name+".luap")
             decompiled_file = os.path.join(self.workdir, script_name+".lua")
-            compile_lua(decompiled_file, compiled_file)
+            if not os.path.exists(compiled_file) or self.did_file_change(script_name):
+                compile_lua(decompiled_file, compiled_file)
+                self.record_file_change(script_name)
+            else:
+                print(script_name, "hasn't changed, compile skipped")
             
             script_section = bwarchivelib.LuaScript.from_filepath(compiled_file)
             script_sections.append(script_section)
