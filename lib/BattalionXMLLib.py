@@ -1,6 +1,7 @@
 import json
 import typing
 import hashlib
+import os
 
 from functools import partial
 from collections.abc import MutableSequence, Iterable
@@ -539,7 +540,7 @@ class BattalionObject(object):
     def __init__(self, level: BattalionLevelFile, node: etree.Element):
         self._node: etree.Element = node
         self._level = level
-        self.getmatrix: typing.Callable[[], BWMatrix] = lambda: None
+        self.getmatrix: typing.Callable[[], BWMatrix | None] = lambda: None
 
         self._attributes = {}
         self._custom_name = ""
@@ -554,7 +555,6 @@ class BattalionObject(object):
         self.deleted = False
 
         self.mtxoverride = None
-
 
     def choose_unique_id(self, level, preload):
         assert not self.deleted
@@ -639,16 +639,15 @@ class BattalionObject(object):
                             [convert_from(attr_node.attrib["type"], subnode.text) for subnode in attr_node])
                 #self._attributes[attr_node.attrib["name"]] = Attribute.from_node(attr_node, self._level)
 
-
         if hasattr(self, "Mat"):
             #setattr(self, "getmatrix", lambda: self.Mat)
-            self.getmatrix = lambda: self.Mat
+            self.getmatrix: typing.Callable[[], None | BWMatrix] = lambda: self.Mat
         elif hasattr(self, "mMatrix"):
             #setattr(self, "getmatrix", lambda: self.mMatrix)
-            self.getmatrix = lambda: self.mMatrix
+            self.getmatrix: typing.Callable[[], None | BWMatrix] = lambda: self.mMatrix
         else:
             #setattr(self, "getmatrix", lambda: None)
-            self.getmatrix = lambda: None
+            self.getmatrix: typing.Callable[[], None | BWMatrix] = lambda: None
 
     @property
     def references(self):
@@ -1267,3 +1266,14 @@ class BattalionObject(object):
                         same.append((path, val, otherval))
 
         return same
+
+
+def create_object(game, objname, level_data, preload_data):
+    obj = BattalionObject.create_from_path(
+        os.path.join("resources/basetemplates", game, objname+".xml"),
+        level_data,
+        preload_data
+    )
+    obj.choose_unique_id(level_data, preload_data)
+
+    return obj
