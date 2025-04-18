@@ -2655,10 +2655,16 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.keep_window_on_top = False
         self.setup_rows(object)
 
+        self.scheduled_scrollbar_pos = None
+        self.scroll_area.verticalScrollBar().rangeChanged.connect(self.scroll_area_bar_update)
+
     def closeEvent(self, event):
         self.closing.emit()
 
     def change_object(self, object):
+        remember_scrollbar = object.type == self.object.type
+        pos = self.scroll_area.verticalScrollBar().value()
+
         start = default_timer()
         self.content_holder.hide()
         self.content_holder.deleteLater()
@@ -2676,6 +2682,19 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.setWindowTitle(f"Edit Object: {object.name}")
         print("Edit reset in", default_timer()-start, "s")
         self.setup_rows(object)
+
+        if remember_scrollbar:
+            self.scheduled_scrollbar_pos = pos
+        else:
+            self.scheduled_scrollbar_pos = None
+
+    # Have to update the scrollbar position on range change, otherwise it takes no effect
+    def scroll_area_bar_update(self):
+        scrollbar = self.scroll_area.verticalScrollBar()
+        if scrollbar.maximum() > 0 and self.scheduled_scrollbar_pos is not None:
+            scrollbar.setValue(self.scheduled_scrollbar_pos)
+            self.scheduled_scrollbar_pos = None
+
 
     def change_window_on_top_state(self, state):
         self.keep_window_on_top = state
