@@ -6,7 +6,8 @@ if __name__ == "__main__":
 else:
     from lib.vectors import Matrix4x4, Vector4, Vector3
 
-from numpy import array, float32, shape, reshape, ndarray
+from numpy import array, float32, shape, reshape, ndarray, vectorize
+
 TYPES = []
 
 X = 12
@@ -24,6 +25,9 @@ class BWMatrix(object):
         #self.position = Vector3(self.mtx.d1, self.mtx.d2, self.mtx.d3)
         #self.mtx.d1 = self.mtx.d2 = self.mtx.d3 = 0
 
+    def copy(self):
+        return BWMatrix(*self.mtx)
+
     def to_array(self):
         return self.mtx
 
@@ -38,6 +42,18 @@ class BWMatrix(object):
             cos(deltay), 0.0, -sin(deltay), 0.0,
             0.0, 1.0, 0.0, 0.0,
             sin(deltay), 0.0, cos(deltay), 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]))
+        mtx = mymtx.dot(mtx)
+        flatten = mtx.flatten("F")
+        self.mtx[0:15] = flatten[0:15]
+
+    def scale(self, fac):
+        mymtx = self.mtx.reshape((4,4), order="F")
+        mtx = ndarray(shape=(4, 4), dtype=float, order="F", buffer=array([
+            fac, 0.0, 0.0, 0.0,
+            0.0, fac, 0.0, 0.0,
+            0.0, 0.0, fac, 0.0,
             0.0, 0.0, 0.0, 1.0
         ]))
         mtx = mymtx.dot(mtx)
@@ -75,6 +91,12 @@ class BWMatrix(object):
             newmtx = mymtx.dot(rotmtx)
         flatten = newmtx.flatten("F")
         mtx[0:15] = flatten[0:15]
+
+    def transform_vec(self, x, y, z, w=1.0):
+        vec = array((x, y, z, w))
+        mymtx = self.mtx.reshape((4, 4), order="F")
+
+        return mymtx @ vec
 
     @staticmethod
     def static_rotate_z(mtx, deltaz, flip=False):
@@ -135,6 +157,16 @@ class BWMatrix(object):
         self.mtx[12] = x
         self.mtx[13] = y
         self.mtx[14] = z
+
+    @classmethod
+    def unit_matrix(cls):
+        return cls(1.0, 0.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0, 0.0,
+                    0.0, 0.0, 0.0, 1.0)
+
+    def reset_translation(self):
+        self.mtx[12:16] = [0.0, 0.0, 0.0, 1.0]
 
     def reset_rotation(self):
         self.mtx[0:12] = [1.0, 0.0, 0.0, 0.0,
