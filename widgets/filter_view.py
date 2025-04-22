@@ -167,6 +167,13 @@ class FilterViewMenu(NonAutodismissibleMenu):
         self.addAction(self.hide_all)
         self.addSeparator()
 
+        self.show_full_scenery_action = QAction("Show Full Scenery", self)
+        self.show_full_scenery_action.setCheckable(True)
+        self.show_full_scenery_action.triggered.connect(self.show_full_scenery_changed)
+        self.addAction(self.show_full_scenery_action)
+
+        self.addSeparator()
+
         self.units_menu = SubGroup("Units", self)
         self.map_content = SubGroup("Map Objects", self)
         self.misc_content = SubGroup("Misc Objects", self)
@@ -295,6 +302,12 @@ class FilterViewMenu(NonAutodismissibleMenu):
 
         self.filter_rule = None
 
+    def show_full_scenery_changed(self):
+        self.filter_update.emit()
+
+    def show_full_scenery(self):
+        return self.show_full_scenery_action.isChecked()
+
     def show_only(self, toggle_group):
         self.handle_hide_all()
         toggle_group.show_all()
@@ -329,6 +342,9 @@ class FilterViewMenu(NonAutodismissibleMenu):
                 if toggle.option3d_exists:
                     toggle.action_select_toggle.setChecked(visible3d)
 
+        full_scenery = cfg["View Filter Toggles"].getboolean("full_scenery", fallback=False)
+        self.show_full_scenery_action.setChecked(full_scenery)
+
     def save(self, cfg):
         if "View Filter Toggles" not in cfg:
             cfg["View Filter Toggles"] = {}
@@ -336,6 +352,8 @@ class FilterViewMenu(NonAutodismissibleMenu):
             cfg["View Filter Toggles"][type] = str(toggle.is_visible())
             if toggle.option3d_exists:
                 cfg["View Filter Toggles"][type+"_3D"] = str(toggle.is_selectable())
+
+        cfg["View Filter Toggles"]["full_scenery"] = str(self.show_full_scenery_action.isChecked())
 
     def object_3d_visible(self, objtype):
         if self.visibility_override:
