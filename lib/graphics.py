@@ -7,6 +7,8 @@ from lib.vectors import Vector3
 from lib.render.model_renderingv2 import LineDrawing
 from typing import TYPE_CHECKING
 from lib.bw_types import BWMatrix
+from plugins.plugin_scenery_render import SceneryHandler, SceneryComponent
+
 if TYPE_CHECKING:
     from bw_widgets import BolMapViewer
     from widgets.filter_view import FilterViewMenu
@@ -100,6 +102,9 @@ class Graphics(object):
         self._dirty = True
 
         self.render_everything_once = True
+
+        self.scenery = SceneryHandler()
+        self.scenery_simple = False
 
     def set_dirty(self):
         self.rw.models.cubev2.mtxdirty = True
@@ -228,10 +233,23 @@ class Graphics(object):
 
             self.models_scene = []
 
+
             bwterrain = self.rw.bwterrain
             waterheight = self.rw.waterheight
             empty = True
             waypoints = []
+
+            if not self.scenery_simple and visible3d("cSceneryCluster"):
+                self.scenery.set_scenery(rw.level_file)
+                for component in self.scenery.components:
+                    if component.modeltype is not None:
+                        currmtx = component.mtx.mtx.copy()
+                        height = bwterrain.check_height(currmtx[12], currmtx[14])
+                        if height is not None:
+                            currmtx[13] = height
+                        self.scene.add_matrix(component.modeltype, currmtx)
+
+
             for obj in rw.level_file.objects_with_positions.values():
                 if not visible(obj.type, obj):
                     continue
@@ -292,7 +310,9 @@ class Graphics(object):
 
                 modelname = obj._modelname
                 if modelname is not None and visible3d(obj.type):
-                    self.scene.add_matrix(modelname, currmtx)
+                    if obj.type != "cSceneCluster" or self.scenery_simple:
+                        if self.scenery_simple:
+                            self.scene.add_matrix(modelname, currmtx)
 
                 flag = 0
                 if obj in selected:
