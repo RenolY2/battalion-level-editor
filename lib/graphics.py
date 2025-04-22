@@ -343,7 +343,7 @@ class Graphics(object):
 
                 modelname = obj._modelname
                 if modelname is not None and visible3d(obj.type):
-                    if (obj.type != "cSceneCluster"
+                    if (obj.type != "cSceneryCluster"
                             or scenery_simple and obj not in selected_scenery):
                         self.scene.add_matrix(modelname, currmtx)
 
