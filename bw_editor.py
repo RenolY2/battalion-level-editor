@@ -476,6 +476,14 @@ class LevelEditor(QMainWindow):
             elif obj.type == "cTextureResource":
                 self.mini_model_viewer.set_scene_texture(obj.mName)
                 self.mini_model_viewer.angle = 0
+            elif obj.type == "sSpriteBasetype":
+                if obj.texture is not None:
+                    self.mini_model_viewer.set_scene_texture(obj.texture.mName)
+                    self.mini_model_viewer.angle = 0
+            elif obj.type == "cSprite":
+                if obj.mBase is not None and obj.mBase.texture is not None:
+                    self.mini_model_viewer.set_scene_texture(obj.mBase.texture.mName)
+                    self.mini_model_viewer.angle = 0
 
         for obj in editor.level_view.selected:
             obj
