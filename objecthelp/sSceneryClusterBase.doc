@@ -1,0 +1,105 @@
+>BOTH:
+-CollideType:
+==INSERT INFO HERE==
+
+
+
+-MaxHealth:
+==INSERT INFO HERE==
+
+-MaxUsedTypes:
+Number of different models used, see model references in Element.
+
+-ScnComponentAngle:
+Starting rotation of each component.
+
+-mSurfaceType:
+==INSERT INFO HERE==
+
+-mfGroundLightFactor:
+==INSERT INFO HERE==
+
+-mfAlphaFadeDistBias:
+==INSERT INFO HERE==
+
+-mbHonourSpacingOverNumber:
+If set to 1, will stop spawning more scenery if 
+MinSep spacing cannot be guaranteed.
+
+-Element:
+Models spawned in this cluster.
+
+-DeadElement:
+Dead model spawned if broken. Untested.
+
+-MaxSize:
+Normal: Maximum radius of cluster.
+Rectangle mode: Maximum rectangle width.
+Line mode: Maximum line width.
+
+-MaxLength:
+Rectangle mode: Maximum rectangle length.
+Line mode: Maximum line length
+
+-MinSep:
+Minimum distance between all elements. Is not guaranteed if too 
+many elements are spawned.
+In Line mode, minimum distance between two neighbouring elements.
+
+-MaxSep:
+Maximum distance between two elements. Only used in Line mode.
+
+-MinScnComponentSize:
+Minimum scene component size.
+Used by the RANDOMSIZE flag.
+
+-MaxScnComponentSize:
+Maximum scene component size.
+Used by the RANDOMSIZE flag.
+
+-NumOfElement:
+Number of each model spawned. 
+Not used in Line mode.
+
+>BW1:
+-ObjFlags:
+Random angles: Randomizes the rotation of each element in the cluster.
+90 degree angles: Randomizes the angles in 90 degrees increments
+Random size: Randomizes the size of each element in the cluster.
+Straight line: Distributes elements along a line.
+Rectangle: Distributes elements in a rectangle.
+
+
+>BW2:
+-ObjFlags:
+Random angles: Randomizes the rotation of each element in the cluster.
+90 degree angles: Randomizes the angles in 90 degrees increments
+Random size: Randomizes the size of each element in the cluster.
+Straight line: Distributes elements along a line.
+Rectangle: Distributes elements in a rectangle.
+Align to terrain normal: Aligns scenery to direction of terrain.
+
+-mfGroundLightColourSaturation:
+==INSERT INFO HERE==
+
+-mfAlphaFadeDistMax:
+==INSERT INFO HERE==
+
+-meAlphaFadeCameraType:
+==INSERT INFO HERE==
+
+-meAlphaFadeDistanceType:
+==INSERT INFO HERE==
+
+-mbUseMatrix:
+If set to 1, rotate scenery components by object's rotation.
+
+-mShadowTexture:
+==INSERT INFO HERE==
+
+-mShadowScaleFactor:
+==INSERT INFO HERE==
+
+-mShadowPerNode:
+==INSERT INFO HERE==
+
