@@ -183,6 +183,8 @@ class FilterViewMenu(NonAutodismissibleMenu):
         self.map_content.show_all.connect(self.show_only)
         self.misc_content.show_all.connect(self.show_only)
         self.zones.show_all.connect(self.show_only)
+        self.zones.showhide.action_show.triggered.connect(self.emit_update)
+        self.zones.showhide.action_hide.triggered.connect(self.emit_update)
 
         self.addMenu(self.units_menu)
         self.addMenu(self.map_content)
