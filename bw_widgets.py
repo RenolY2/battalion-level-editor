@@ -487,6 +487,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.gizmo_visibility_widget.rotationbutton.pressed.connect(self.toggle_rotation_gizmo)
         self.gizmo_visibility_widget.cubebutton.pressed.connect(self.toggle_cube_visibility)
 
+        self.select_update.connect(lambda: self.do_redraw(force=True))
     def toggle_translation_gizmo(self):
         self.translation_visible = not self.translation_visible
         self.do_redraw(force=True)
