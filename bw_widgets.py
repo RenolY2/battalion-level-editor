@@ -906,6 +906,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             #self.update()
 
     def reset(self, keep_collision=False):
+        self.graphics.scenery.do_rebuild = True
         self.set_2d_selectionbox(None, None, None, None)
         self.highlight_colltype = None
         self.overlapping_wp_index = 0

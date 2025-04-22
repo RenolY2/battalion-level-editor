@@ -198,6 +198,18 @@ class Graphics(object):
 
         print("We queued up", len(objlist))
 
+    def is_active(self, obj: "BattalionObject"):
+        if obj in self.rw.selected:
+            return True
+        mtx = obj.getmatrix()
+        diffx = self.rw.offset_x - mtx.mtx[12]
+        diffz = self.rw.offset_z - mtx.mtx[14]
+
+        if diffx**2 + diffz**2 < 100**2:
+            return True
+        else:
+            return False
+
     def render_scene(self):
         rw = self.rw
 
@@ -238,9 +250,13 @@ class Graphics(object):
             waterheight = self.rw.waterheight
             empty = True
             waypoints = []
+            scenery_simple = vismenu.show_full_scenery() is False
+            selected_scenery = []
+            if not scenery_simple and visible3d("cSceneryCluster"):
+                self.scenery.set_scenery(rw.level_file,
+                                         vismenu.object_visible,
+                                         rw.level_file.is_bw2())
 
-            if not self.scenery_simple and visible3d("cSceneryCluster"):
-                self.scenery.set_scenery(rw.level_file)
                 for component in self.scenery.components:
                     if component.modeltype is not None:
                         currmtx = component.mtx.mtx.copy()
@@ -248,6 +264,23 @@ class Graphics(object):
                         if height is not None:
                             currmtx[13] = height
                         self.scene.add_matrix(component.modeltype, currmtx)
+            elif scenery_simple and visible3d("cSceneryCluster"):
+
+                for obj in selected:
+                    if obj.type == "cSceneryCluster":
+                        selected_scenery.append(obj)
+                if selected_scenery:
+                    self.scenery.set_scenery(selected_scenery,
+                                             vismenu.object_visible,
+                                             rw.level_file.is_bw2())
+
+                    for component in self.scenery.components:
+                        if component.modeltype is not None:
+                            currmtx = component.mtx.mtx.copy()
+                            height = bwterrain.check_height(currmtx[12], currmtx[14])
+                            if height is not None:
+                                currmtx[13] = height
+                            self.scene.add_matrix(component.modeltype, currmtx)
 
 
             for obj in rw.level_file.objects_with_positions.values():
@@ -310,9 +343,9 @@ class Graphics(object):
 
                 modelname = obj._modelname
                 if modelname is not None and visible3d(obj.type):
-                    if obj.type != "cSceneCluster" or self.scenery_simple:
-                        if self.scenery_simple:
-                            self.scene.add_matrix(modelname, currmtx)
+                    if (obj.type != "cSceneCluster"
+                            or scenery_simple and obj not in selected_scenery):
+                        self.scene.add_matrix(modelname, currmtx)
 
                 flag = 0
                 if obj in selected:

@@ -177,21 +177,41 @@ def get_angles(a_mtx):
 
 class SceneryHandler(object):
     def __init__(self):
-        self.components: list[SceneryComponent] = []
+        self.components: list[tuple[BattalionObject, list[SceneryComponent]]] = []
         self.rng = Random()
         self.rng2 = Random()
+        self.cluster_dirty = []
 
-    def set_scenery(self, level: "BattalionLevelFile"):
+        self.do_rebuild = True
+
+    def set_cluster_dirty(self, obj):
+        if obj not in self.cluster_dirty:
+            self.cluster_dirty.append(obj)
+
+    def set_scenery(self, level: "BattalionLevelFile", is_visible, is_bw2):
         self.components = []
-        if "cSceneryCluster" in level.category:
-            for obj in level.category["cSceneryCluster"].values():
-                obj: SceneryCluster
 
-                components = self.generate_components(
-                    level.is_bw2(),
-                    obj
-                )
-                self.components.extend(components)
+        if isinstance(level, list):
+            scenery = level
+        else:
+            if "cSceneryCluster" in level.category:
+                scenery = level.category["cSceneryCluster"].values()
+            else:
+                scenery = []
+
+        for obj in scenery:
+            obj: SceneryCluster
+
+            if True: #self.do_rebuild or obj in self.cluster_dirty or obj.mBase in self.cluster_dirty:
+                if is_visible(obj.type, obj):
+                    components = self.generate_components(
+                        is_bw2,
+                        obj
+                    )
+                    #obj._components = components
+                    self.components.extend(components)
+        self.do_rebuild = False
+        self.cluster_dirty = []
 
     def generate_components(self, is_bw2, bw_object: "SceneryCluster"):
         base: BattalionObject = bw_object.mBase
@@ -308,6 +328,7 @@ class SceneryHandler(object):
         objmtx = scenery.Mat
 
         self.rng.seed(scenery.Seed)
+        self.rng2.seed(scenery.Seed)
         total_components_count = 0
         base_angle = math.atan2(objmtx.mtx[8], objmtx.mtx[10])
 
