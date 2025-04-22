@@ -225,6 +225,9 @@ class PluginHolderWidget(QtWidgets.QScrollArea):
 
         self.plugin_widgets = {}
 
+    def is_empty(self):
+        return len(self.plugin_widgets) == 0
+
     def remove_plugin_widget(self, pluginname):
         if pluginname in self.plugin_widgets:
             widget = self.plugin_widgets[pluginname]
