@@ -14,6 +14,8 @@ from widgets.editor_widgets import open_error_dialog, open_message_dialog
 from widgets.menu.file_menu import PF2
 from typing import TYPE_CHECKING
 from configuration import read_config, make_default_config, save_cfg
+from plugins.plugin_object_exportimport import LabeledWidget
+
 if TYPE_CHECKING:
     import bw_editor
 
@@ -31,6 +33,45 @@ def open_yesno_box(mainmsg, sidemsg):
     msgbox.setWindowTitle("Warning")
     result = msgbox.exec()
     return result == QtWidgets.QMessageBox.StandardButton.Yes
+
+
+class SaveStateNameDialog(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Set Savestate Name")
+        self.bundle_path = None
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.name_widget = LabeledWidget(self, "Name (optional)",
+                                         QtWidgets.QLineEdit)
+
+        self.layout.addWidget(self.name_widget)
+
+        self.ok = QtWidgets.QPushButton(self, text="OK")
+        self.cancel = QtWidgets.QPushButton(self, text="Cancel")
+
+        self.buttons = QtWidgets.QHBoxLayout(self)
+        self.buttons.addWidget(self.ok)
+        self.buttons.addWidget(self.cancel)
+        self.layout.addLayout(self.buttons)
+
+        self.ok.pressed.connect(self.confirm)
+        self.cancel.pressed.connect(self.deny)
+
+    def get_name(self):
+        return self.name_widget.widget.text()
+
+    def confirm(self):
+        self.name_widget.widget: QtWidgets.QLineEdit
+        levelname = self.name_widget.widget.text()
+
+        if "/" in levelname or "\\" in levelname:
+            open_error_dialog("Invalid characters in level name!", self)
+            return
+
+        self.accept()
+
+    def deny(self):
+        self.reject()
 
 
 class LoadingBar(QtWidgets.QDialog):
@@ -332,7 +373,17 @@ class Plugin(object):
         fname = os.path.basename(editor.file_menu.current_path)
         with open(editor.file_menu.current_path) as f:
             levelpaths = BattalionFilePaths(f)
+
+        dialog = SaveStateNameDialog()
+
+        a = dialog.exec()
+        if not a:
+            return
+
         savestatename = "{0}_savestate_{1}".format(fname[:-4], int(time.time()))
+        if dialog.get_name():
+            savestatename += "_{0}".format(dialog.get_name())
+
         print(savestatename)
         savestatepath = os.path.join("savestates", savestatename)
         os.mkdir(savestatepath)
