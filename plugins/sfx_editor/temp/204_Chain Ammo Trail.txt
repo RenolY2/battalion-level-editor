@@ -1,0 +1,90 @@
+ParticleSystemEd_File_(C)2004_Kuju_Ltd
+File_Version 2.000000
+Num_Particle_Descriptors 3
+Particle_Descriptor_Type 5
+Particle_Descriptor_Name 204_(colour range) mid grey
+Start_Red NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Green NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Blue NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Red NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Green NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Blue NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Red NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Green NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Blue NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Use_End 0
+Use_Transition 0
+Transition_Point 0.500000
+*****************************************************************
+Particle_Descriptor_Type 8
+Particle_Descriptor_Name 204_(trail) ammo 1
+Blend_Mode 0
+Texture SFX_trails.ace
+Width 0.281410
+Start_Width 0.281410
+Num_Points 16
+Colour_Range 204_(colour range) mid grey
+Wiggle_Factor 1.016949
+Disperse_Rate 0.025763
+Gravity 0
+Life -2
+Taper_Start 0
+Width_With_Life -2
+Type 0
+Impact_Spawnee NONE
+Transmit_FoR 1
+Fade_Point 0
+Use_Segment_Length 0
+SegmentLength 10.000000
+Manual_Wiggle_Enabled 0
+Wiggle_Length NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Yaw_Length NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Flat 0
+Fade_Tail 0
+Trail_Tile 0
+X_Frame_Num 1
+X_Frame_Start 0
+X_Frame_Count 1
+Y_Frame_Num 8
+Y_Frame_Start 0
+Y_Frame_Count 1
+Anim_Speed 0.706093
+*****************************************************************
+Particle_Descriptor_Type 6
+Particle_Descriptor_Name 204_Chain Ammo Trail
+Num_Entries 1
+Particle_Descriptor 204_(trail) ammo 1
+Time 0
+Transmit_FoR 1
+*****************************************************************

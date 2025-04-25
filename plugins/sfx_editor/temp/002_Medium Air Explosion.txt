@@ -1,0 +1,1170 @@
+ParticleSystemEd_File_(C)2004_Kuju_Ltd
+File_Version 2.000000
+Num_Particle_Descriptors 33
+Particle_Descriptor_Type 5
+Particle_Descriptor_Name 002_(colour range) big shockwave
+Start_Red NUMBER_VERSION_2
+****1: 0.500000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Green NUMBER_VERSION_2
+****1: 0.500000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Blue NUMBER_VERSION_2
+****1: 0.500000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Red NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Green NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Blue NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Red NUMBER_VERSION_2
+****1: 0.250000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Green NUMBER_VERSION_2
+****1: 0.250000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Blue NUMBER_VERSION_2
+****1: 0.250000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Use_End 1
+Use_Transition 1
+Transition_Point 0.300000
+*****************************************************************
+Particle_Descriptor_Type 5
+Particle_Descriptor_Name 002_(colour range) fire
+Start_Red NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Green NUMBER_VERSION_2
+****1: 0.709804 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Blue NUMBER_VERSION_2
+****1: 0.035294 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Alpha NUMBER_VERSION_2
+****1: 0.800000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Red NUMBER_VERSION_2
+****1: 0.247059 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Green NUMBER_VERSION_2
+****1: 0.133333 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Blue NUMBER_VERSION_2
+****1: 0.121569 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Alpha NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Red NUMBER_VERSION_2
+****1: 0.701961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Green NUMBER_VERSION_2
+****1: 0.392157 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Blue NUMBER_VERSION_2
+****1: 0.050980 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Alpha NUMBER_VERSION_2
+****1: 0.800000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Use_End 1
+Use_Transition 1
+Transition_Point 0.500000
+*****************************************************************
+Particle_Descriptor_Type 5
+Particle_Descriptor_Name 002_(colour range) fire ball Bright
+Start_Red NUMBER_VERSION_2
+****1: 0.968628 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Green NUMBER_VERSION_2
+****1: 0.701961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Blue NUMBER_VERSION_2
+****1: 0.525490 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Red NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Green NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Blue NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Alpha NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Red NUMBER_VERSION_2
+****1: 0.647059 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Green NUMBER_VERSION_2
+****1: 0.392157 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Blue NUMBER_VERSION_2
+****1: 0.113725 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Use_End 1
+Use_Transition 1
+Transition_Point 0.750000
+*****************************************************************
+Particle_Descriptor_Type 5
+Particle_Descriptor_Name 002_(colour range) fire blob smoke
+Start_Red NUMBER_VERSION_2
+****1: 0.819608 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Green NUMBER_VERSION_2
+****1: 0.776471 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Blue NUMBER_VERSION_2
+****1: 0.686275 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Alpha NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Red NUMBER_VERSION_2
+****1: 0.501961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Green NUMBER_VERSION_2
+****1: 0.501961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Blue NUMBER_VERSION_2
+****1: 0.501961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Alpha NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Red NUMBER_VERSION_2
+****1: 0.501961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Green NUMBER_VERSION_2
+****1: 0.501961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Blue NUMBER_VERSION_2
+****1: 0.501961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Alpha NUMBER_VERSION_2
+****1: 0.700000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Use_End 1
+Use_Transition 1
+Transition_Point 0.500000
+*****************************************************************
+Particle_Descriptor_Type 5
+Particle_Descriptor_Name 002_(colour range) smoke plume
+Start_Red NUMBER_VERSION_2
+****1: 0.901961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Green NUMBER_VERSION_2
+****1: 0.737255 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Blue NUMBER_VERSION_2
+****1: 0.435294 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Red NUMBER_VERSION_2
+****1: 0.341176 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Green NUMBER_VERSION_2
+****1: 0.301961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Blue NUMBER_VERSION_2
+****1: 0.274510 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Alpha NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Red NUMBER_VERSION_2
+****1: 0.501961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Green NUMBER_VERSION_2
+****1: 0.501961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Blue NUMBER_VERSION_2
+****1: 0.501961 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Alpha NUMBER_VERSION_2
+****1: 0.800000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Use_End 1
+Use_Transition 1
+Transition_Point 0.500000
+*****************************************************************
+Particle_Descriptor_Type 5
+Particle_Descriptor_Name 002_(colour range) white to black
+Start_Red NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Green NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Blue NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Red NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Green NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Blue NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Red NUMBER_VERSION_2
+****1: 0.750000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Green NUMBER_VERSION_2
+****1: 0.750000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Blue NUMBER_VERSION_2
+****1: 0.750000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Use_End 1
+Use_Transition 1
+Transition_Point 0.300000
+*****************************************************************
+Particle_Descriptor_Type 2
+Particle_Descriptor_Name 002_(emitter) Distortion
+Emit_Per_Turn NUMBER_VERSION_2
+****1: 2.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Life 4
+Particle_Descriptor 002_(particle) distortion
+Initial_Velocity_X NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Y NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Z NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Velocity_Randomness NUMBER_VERSION_2
+****1: 0.300000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transmit_Life 0
+Transmit_FoR 0
+Transmit_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Interpolated_Emission 0
+Transmit_FoR_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Shape 002_(shape) smoke blobs
+Pass_Num_Particles 1
+Outward_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Mover NONE
+Emit_Per_Metre -1.000000
+Snap_To_Water 0
+*****************************************************************
+Particle_Descriptor_Type 2
+Particle_Descriptor_Name 002_(emitter) fire Ball
+Emit_Per_Turn NUMBER_VERSION_2
+****1: 5.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Life 2
+Particle_Descriptor 002_(particle) fire ball
+Initial_Velocity_X NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Y NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Z NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Velocity_Randomness NUMBER_VERSION_2
+****1: 0.700000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transmit_Life 0
+Transmit_FoR 0
+Transmit_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Interpolated_Emission 0
+Transmit_FoR_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Shape 002_(shape) fire blobs
+Pass_Num_Particles 1
+Outward_Velocity NUMBER_VERSION_2
+****1: 0.010000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Mover NONE
+Emit_Per_Metre -1.000000
+Snap_To_Water 0
+*****************************************************************
+Particle_Descriptor_Type 2
+Particle_Descriptor_Name 002_(emitter) fire Ball Bright
+Emit_Per_Turn NUMBER_VERSION_2
+****1: 5.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Life 2
+Particle_Descriptor 002_(particle) fire ball Bright
+Initial_Velocity_X NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Y NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Z NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Velocity_Randomness NUMBER_VERSION_2
+****1: 1.200000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transmit_Life 0
+Transmit_FoR 0
+Transmit_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Interpolated_Emission 0
+Transmit_FoR_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Shape 002_(shape) fire blobs
+Pass_Num_Particles 1
+Outward_Velocity NUMBER_VERSION_2
+****1: 0.020000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Mover NONE
+Emit_Per_Metre -1.000000
+Snap_To_Water 0
+*****************************************************************
+Particle_Descriptor_Type 2
+Particle_Descriptor_Name 002_(emitter) Smoke blob
+Emit_Per_Turn NUMBER_VERSION_2
+****1: 5.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Life 4
+Particle_Descriptor 002_(particle) fire blob smoke
+Initial_Velocity_X NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Y NUMBER_VERSION_2
+****1: 0.100000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Z NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Velocity_Randomness NUMBER_VERSION_2
+****1: 0.100000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transmit_Life 0
+Transmit_FoR 0
+Transmit_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Interpolated_Emission 0
+Transmit_FoR_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Shape 002_(shape) smoke blobs
+Pass_Num_Particles 1
+Outward_Velocity NUMBER_VERSION_2
+****1: 0.015000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Mover NONE
+Emit_Per_Metre -1.000000
+Snap_To_Water 0
+*****************************************************************
+Particle_Descriptor_Type 2
+Particle_Descriptor_Name 002_(emitter) Smoke Plume
+Emit_Per_Turn NUMBER_VERSION_2
+****1: 3.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Life 2
+Particle_Descriptor 002_(particle) Smoke Plume
+Initial_Velocity_X NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Y NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Z NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Velocity_Randomness NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transmit_Life 0
+Transmit_FoR 0
+Transmit_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Interpolated_Emission 0
+Transmit_FoR_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Shape 002_(shape) fire blobs
+Pass_Num_Particles 1
+Outward_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Mover NONE
+Emit_Per_Metre -1.000000
+Snap_To_Water 0
+*****************************************************************
+Particle_Descriptor_Type 12
+Particle_Descriptor_Name 002_(frame of reference) shockwaves
+Initial 002_(timeline) shockwaves
+Death NONE
+Mover 002_(mover) shockwave offset
+*****************************************************************
+Particle_Descriptor_Type 10
+Particle_Descriptor_Name 002_(function) flash radius
+Param_A NUMBER_VERSION_2
+****1: -0.700000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_B NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_C NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_D NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_Function 0
+Clip 0
+*****************************************************************
+Particle_Descriptor_Type 10
+Particle_Descriptor_Name 002_(function) flash shape
+Param_A NUMBER_VERSION_2
+****1: -3.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_B NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_C NUMBER_VERSION_2
+****1: -0.420000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_D NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_Function 1
+Clip 0
+*****************************************************************
+Particle_Descriptor_Type 10
+Particle_Descriptor_Name 002_(function) random fixed
+Param_A NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_B NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_C NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_D NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_Function 8
+Clip 0
+*****************************************************************
+Particle_Descriptor_Type 10
+Particle_Descriptor_Name 002_(function) SFX_shockwave
+Param_A NUMBER_VERSION_2
+****1: -0.600000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_B NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_C NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_D NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_Function 0
+Clip 0
+*****************************************************************
+Particle_Descriptor_Type 10
+Particle_Descriptor_Name 002_(function) SFX_shockwave growth
+Param_A NUMBER_VERSION_2
+****1: -1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_B NUMBER_VERSION_2
+****1: 5.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_C NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_D NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_Function 5
+Clip 0
+*****************************************************************
+Particle_Descriptor_Type 10
+Particle_Descriptor_Name 002_(function) sin
+Param_A NUMBER_VERSION_2
+****1: 0.700000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_B NUMBER_VERSION_2
+****1: 1.800000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_C NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_D NUMBER_VERSION_2
+****1: 0.200000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_Function 3
+Clip 0
+*****************************************************************
+Particle_Descriptor_Type 9
+Particle_Descriptor_Name 002_(mover) shockwave offset
+GravityPC NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+MoverVelocityDamp NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Orientation_Active 1
+Orientation_Add 0
+Yaw_Num NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Pitch_Num NUMBER_VERSION_2
+****1: 1.570000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Roll_Num NUMBER_VERSION_2
+****1: 1.570000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Pos_Active 0
+Pos_X NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Pos_Y NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Pos_Z NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+*****************************************************************
+Particle_Descriptor_Type 1
+Particle_Descriptor_Name 002_(particle) distortion
+Radius NUMBER_VERSION_2
+****1: 3.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Final_Radius 10.000000
+Life 20
+Life_Pct 0.000000
+GravityScalar 0.000000
+Blend_Mode 3
+Texture SFX_DISPfisheye.ace
+Bounce 0
+Fade_Col 1
+Modifier NONE
+Colour_Range NONE
+Texture_Number -1
+Texture_Size 2
+Velocity_Damp 1.000000
+Axis_Aligned 0
+Anim_Type 0
+End_Frame 0
+Anim_Speed 1.000000
+Random_Start_Frame 0
+Length NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+2D 0
+Rotation NUMBER_VERSION_2
+****1: 10.000000 002_(function) random fixed
+****2: 0 100.000000 0 1.000000 0 0.000000
+Position_From_Bottom 0
+Sorted 0
+Render_Order 0
+LOD_Bias 1.000000
+Fade_Large_Particles 0
+Wrapping_Box -1.000000
+Wrapping_Box_Alpha_Band 0.000000
+*****************************************************************
+Particle_Descriptor_Type 1
+Particle_Descriptor_Name 002_(particle) explosion flash
+Radius NUMBER_VERSION_2
+****1: 6.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Final_Radius 1.400000
+Life 14
+Life_Pct 1.000000
+GravityScalar 0.000000
+Blend_Mode 0
+Texture SFX_dmg_char.ace
+Bounce 0
+Fade_Col 1
+Modifier NONE
+Colour_Range 002_(colour range) white to black
+Texture_Number 1
+Texture_Size 3
+Velocity_Damp 1.000000
+Axis_Aligned 0
+Anim_Type 0
+End_Frame 0
+Anim_Speed 1.000000
+Random_Start_Frame 0
+Length NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+2D 0
+Rotation NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Position_From_Bottom 0
+Sorted 0
+Render_Order 0
+LOD_Bias 1.000000
+Fade_Large_Particles 1
+Wrapping_Box -1.000000
+Wrapping_Box_Alpha_Band 0.000000
+*****************************************************************
+Particle_Descriptor_Type 1
+Particle_Descriptor_Name 002_(particle) explosion flash big
+Radius NUMBER_VERSION_2
+****1: 9.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Final_Radius 3.000000
+Life 14
+Life_Pct 1.000000
+GravityScalar 0.000000
+Blend_Mode 0
+Texture SFX_dmg_char.ace
+Bounce 0
+Fade_Col 1
+Modifier NONE
+Colour_Range 002_(colour range) big shockwave
+Texture_Number 1
+Texture_Size 3
+Velocity_Damp 1.000000
+Axis_Aligned 0
+Anim_Type 0
+End_Frame 0
+Anim_Speed 1.000000
+Random_Start_Frame 0
+Length NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+2D 0
+Rotation NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Position_From_Bottom 0
+Sorted 0
+Render_Order 0
+LOD_Bias 1.000000
+Fade_Large_Particles 1
+Wrapping_Box -1.000000
+Wrapping_Box_Alpha_Band 0.000000
+*****************************************************************
+Particle_Descriptor_Type 1
+Particle_Descriptor_Name 002_(particle) fire ball
+Radius NUMBER_VERSION_2
+****1: 4.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Final_Radius 2.000000
+Life 40
+Life_Pct 1.000000
+GravityScalar -0.200000
+Blend_Mode 1
+Texture SFX_fireball.ace
+Bounce 0
+Fade_Col 0
+Modifier NONE
+Colour_Range 002_(colour range) fire
+Texture_Number -1
+Texture_Size 2
+Velocity_Damp 0.700000
+Axis_Aligned 0
+Anim_Type 0
+End_Frame 10
+Anim_Speed 0.400000
+Random_Start_Frame 0
+Length NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+2D 0
+Rotation NUMBER_VERSION_2
+****1: 20.000000 002_(function) random fixed
+****2: 0 350.000000 0 1.000000 0 0.000000
+Position_From_Bottom 0
+Sorted 0
+Render_Order 0
+LOD_Bias 1.000000
+Fade_Large_Particles 1
+Wrapping_Box -1.000000
+Wrapping_Box_Alpha_Band 0.000000
+*****************************************************************
+Particle_Descriptor_Type 1
+Particle_Descriptor_Name 002_(particle) fire ball Bright
+Radius NUMBER_VERSION_2
+****1: 3.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Final_Radius 2.000000
+Life 30
+Life_Pct 1.000000
+GravityScalar 0.000000
+Blend_Mode 0
+Texture SFX_fireball.ace
+Bounce 0
+Fade_Col 0
+Modifier NONE
+Colour_Range 002_(colour range) fire ball Bright
+Texture_Number -1
+Texture_Size 2
+Velocity_Damp 0.700000
+Axis_Aligned 0
+Anim_Type 0
+End_Frame 10
+Anim_Speed 0.400000
+Random_Start_Frame 0
+Length NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+2D 0
+Rotation NUMBER_VERSION_2
+****1: 20.000000 002_(function) random fixed
+****2: 0 350.000000 0 1.000000 0 0.000000
+Position_From_Bottom 0
+Sorted 0
+Render_Order 0
+LOD_Bias 1.000000
+Fade_Large_Particles 0
+Wrapping_Box -1.000000
+Wrapping_Box_Alpha_Band 0.000000
+*****************************************************************
+Particle_Descriptor_Type 1
+Particle_Descriptor_Name 002_(particle) fire blob smoke
+Radius NUMBER_VERSION_2
+****1: 2.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Final_Radius 5.000000
+Life 100
+Life_Pct 1.000000
+GravityScalar 0.010000
+Blend_Mode 1
+Texture SFX_smoke2.ace
+Bounce 0
+Fade_Col 0
+Modifier NONE
+Colour_Range 002_(colour range) fire blob smoke
+Texture_Number -1
+Texture_Size 2
+Velocity_Damp 0.950000
+Axis_Aligned 0
+Anim_Type 0
+End_Frame 16
+Anim_Speed 0.160000
+Random_Start_Frame 0
+Length NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+2D 0
+Rotation NUMBER_VERSION_2
+****1: -0.200000 002_(function) random fixed
+****2: 0 350.000000 0 1.000000 0 0.000000
+Position_From_Bottom 1
+Sorted 0
+Render_Order 0
+LOD_Bias 1.000000
+Fade_Large_Particles 0
+Wrapping_Box -1.000000
+Wrapping_Box_Alpha_Band 0.000000
+*****************************************************************
+Particle_Descriptor_Type 1
+Particle_Descriptor_Name 002_(particle) Smoke Plume
+Radius NUMBER_VERSION_2
+****1: 15.000000 002_(function) sin
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMin NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexUGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+TexVGenMax NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Final_Radius 1.000000
+Life 65
+Life_Pct 1.000000
+GravityScalar 0.000000
+Blend_Mode 1
+Texture SFX_SmokePlume.ace
+Bounce 0
+Fade_Col 0
+Modifier NONE
+Colour_Range 002_(colour range) smoke plume
+Texture_Number -1
+Texture_Size 2
+Velocity_Damp 1.000000
+Axis_Aligned 0
+Anim_Type 0
+End_Frame 10
+Anim_Speed 0.400000
+Random_Start_Frame 0
+Length NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+2D 0
+Rotation NUMBER_VERSION_2
+****1: 3.140000 002_(function) random fixed
+****2: 0 350.000000 0 1.000000 0 0.000000
+Position_From_Bottom 0
+Sorted 0
+Render_Order 0
+LOD_Bias 1.000000
+Fade_Large_Particles 0
+Wrapping_Box -1.000000
+Wrapping_Box_Alpha_Band 0.000000
+*****************************************************************
+Particle_Descriptor_Type 13
+Particle_Descriptor_Name 002_(pro mesh) flash
+Type 0
+Life 5
+Blend_Mode 0
+Texture SFX_muzz_shotgun.ace
+Colour_Range NONE
+Colour_Range2 NONE
+Tile_U NUMBER_VERSION_2
+****1: 2.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Tile_V NUMBER_VERSION_2
+****1: 0.050000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Scroll_U NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Scroll_V NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_NumPtsAxial 10
+Cylinder_NumPtsRadial 10
+Cylinder_Radius NUMBER_VERSION_2
+****1: 4.500000 002_(function) flash shape
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_Radius2 NUMBER_VERSION_2
+****1: 1.000000 002_(function) flash radius
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_Length NUMBER_VERSION_2
+****1: 8.000000 002_(function) flash radius
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_Centre 0
+Sphere_NumPtsAx 10
+Sphere_NumPtsRad 10
+Sphere_RadiusTime NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Latitude_Start NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Latitude_End NUMBER_VERSION_2
+****1: 180.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Longitude_Start NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Longitude_End NUMBER_VERSION_2
+****1: 360.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sorted 0
+Render_Order 0
+*****************************************************************
+Particle_Descriptor_Type 13
+Particle_Descriptor_Name 002_(pro mesh) shockwave
+Type 1
+Life 14
+Blend_Mode 0
+Texture SFX_shock.ace
+Colour_Range NONE
+Colour_Range2 002_(colour range) white to black
+Tile_U NUMBER_VERSION_2
+****1: 17.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Tile_V NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Scroll_U NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Scroll_V NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_NumPtsAxial 2
+Cylinder_NumPtsRadial 27
+Cylinder_Radius NUMBER_VERSION_2
+****1: 1.000000 002_(function) SFX_shockwave
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_Radius2 NUMBER_VERSION_2
+****1: 9.000000 002_(function) SFX_shockwave growth
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_Length NUMBER_VERSION_2
+****1: 0.150000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_Centre 0
+Sphere_NumPtsAx 18
+Sphere_NumPtsRad 10
+Sphere_RadiusTime NUMBER_VERSION_2
+****1: 9.000000 002_(function) SFX_shockwave growth
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Latitude_Start NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Latitude_End NUMBER_VERSION_2
+****1: 180.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Longitude_Start NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Longitude_End NUMBER_VERSION_2
+****1: 360.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sorted 0
+Render_Order 0
+*****************************************************************
+Particle_Descriptor_Type 13
+Particle_Descriptor_Name 002_(pro mesh) shockwave big
+Type 1
+Life 14
+Blend_Mode 0
+Texture SFX_shock.ace
+Colour_Range NONE
+Colour_Range2 002_(colour range) big shockwave
+Tile_U NUMBER_VERSION_2
+****1: 17.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Tile_V NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Scroll_U NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Scroll_V NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_NumPtsAxial 2
+Cylinder_NumPtsRadial 27
+Cylinder_Radius NUMBER_VERSION_2
+****1: 1.000000 002_(function) SFX_shockwave
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_Radius2 NUMBER_VERSION_2
+****1: 27.000000 002_(function) SFX_shockwave growth
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_Length NUMBER_VERSION_2
+****1: 0.150000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Cylinder_Centre 0
+Sphere_NumPtsAx 18
+Sphere_NumPtsRad 10
+Sphere_RadiusTime NUMBER_VERSION_2
+****1: 27.000000 002_(function) SFX_shockwave growth
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Latitude_Start NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Latitude_End NUMBER_VERSION_2
+****1: 180.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Longitude_Start NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sphere_Longitude_End NUMBER_VERSION_2
+****1: 360.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Sorted 0
+Render_Order 0
+*****************************************************************
+Particle_Descriptor_Type 7
+Particle_Descriptor_Name 002_(shape) fire blobs
+Type 1
+Ring_Axis 2
+Hemisphere 1
+Num_Particles 1
+Radius NUMBER_VERSION_2
+****1: 2.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Hollow 0
+RandomSX 1.000000
+RandomSY 1.000000
+RandomSZ 1.000000
+Pos_X NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Pos_Y NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Pos_Z NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+*****************************************************************
+Particle_Descriptor_Type 7
+Particle_Descriptor_Name 002_(shape) smoke blobs
+Type 1
+Ring_Axis 2
+Hemisphere 1
+Num_Particles 1
+Radius NUMBER_VERSION_2
+****1: 5.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Hollow 0
+RandomSX 1.000000
+RandomSY 1.000000
+RandomSZ 1.000000
+Pos_X NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Pos_Y NUMBER_VERSION_2
+****1: 3.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Pos_Z NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+*****************************************************************
+Particle_Descriptor_Type 6
+Particle_Descriptor_Name 002_(timeline) shockwaves
+Num_Entries 1
+Sorted 0
+Render_Order 0
+Particle_Descriptor 002_(pro mesh) shockwave big
+Time 2
+Transmit_FoR 1
+*****************************************************************
+Particle_Descriptor_Type 6
+Particle_Descriptor_Name 002_Medium Air Explosion
+Num_Entries 8
+Sorted 0
+Render_Order 0
+RenderInReflection 1
+Particle_Descriptor 002_(emitter) Distortion
+Time 0
+Transmit_FoR 1
+Particle_Descriptor 002_(emitter) Smoke Plume
+Time 0
+Transmit_FoR 1
+Particle_Descriptor 002_(emitter) fire Ball Bright
+Time 0
+Transmit_FoR 1
+Particle_Descriptor 002_(emitter) fire Ball
+Time 0
+Transmit_FoR 1
+Particle_Descriptor 002_(particle) explosion flash big
+Time 0
+Transmit_FoR 1
+Particle_Descriptor 002_(frame of reference) shockwaves
+Time 0
+Transmit_FoR 1
+Particle_Descriptor 002_(emitter) Smoke blob
+Time 5
+Transmit_FoR 1
+Particle_Descriptor 002_(particle) explosion flash
+Time 6
+Transmit_FoR 1
+*****************************************************************
