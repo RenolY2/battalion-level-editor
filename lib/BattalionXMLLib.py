@@ -749,11 +749,17 @@ class BattalionObject(object):
 
                 self._iconoffset = (x,y)
             elif self.type == "cPickupReflected":
-                healthtype = self.mBase.mType
-                if healthtype == "PICKUP_TYPE_TROOP_HEALTH":
-                    self._iconoffset = BWICONS["icon_health"]
-                elif healthtype == "PICKUP_TYPE_VEHICLE_HEALTH":
-                    self._iconoffset = BWICONS["icon_fuel"]
+                if self.mBase is not None:
+                    if self.mBase.mModel is not None:
+                        self._modelname = self.mBase.mModel.mName
+
+                    healthtype = self.mBase.mType
+                    if healthtype == "PICKUP_TYPE_TROOP_HEALTH":
+                        self._iconoffset = BWICONS["icon_health"]
+                    elif healthtype == "PICKUP_TYPE_VEHICLE_HEALTH":
+                        self._iconoffset = BWICONS["icon_fuel"]
+                else:
+                    self._iconoffset = (15, 15)
             elif self.type == "cCamera":
                 camtype = self.mCamType
                 insflags = self.mInstanceFlags
@@ -1169,7 +1175,7 @@ class BattalionObject(object):
             else:
                 return val.get_value(path[1:])
 
-    def get_dependencies(self, visited=None, skip=[]):
+    def get_dependencies(self, visited=None, skip=[]) -> list["BattalionObject"]:
         if visited is None:
             visited = {}
 
