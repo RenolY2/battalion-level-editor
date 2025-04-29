@@ -183,6 +183,8 @@ class FilterViewMenu(NonAutodismissibleMenu):
         self.map_content.show_all.connect(self.show_only)
         self.misc_content.show_all.connect(self.show_only)
         self.zones.show_all.connect(self.show_only)
+        self.zones.showhide.action_show.triggered.connect(self.emit_update)
+        self.zones.showhide.action_hide.triggered.connect(self.emit_update)
 
         self.addMenu(self.units_menu)
         self.addMenu(self.map_content)
@@ -342,7 +344,11 @@ class FilterViewMenu(NonAutodismissibleMenu):
                 if toggle.option3d_exists:
                     toggle.action_select_toggle.setChecked(visible3d)
 
-        full_scenery = cfg["View Filter Toggles"].getboolean("full_scenery", fallback=False)
+        if "View Filter Toggles" in cfg:
+            full_scenery = cfg["View Filter Toggles"].getboolean("full_scenery", fallback=False)
+        else:
+            full_scenery = False
+
         self.show_full_scenery_action.setChecked(full_scenery)
 
     def save(self, cfg):

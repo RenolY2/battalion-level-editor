@@ -278,6 +278,8 @@ class ImportObject(QtWidgets.QWidget):
 
         game = "bw1" if editor.level_file.is_bw1() else "bw2"
         dirpath = os.path.join("battalion_objects", game)
+        if not os.path.exists(dirpath):
+            os.makedirs(dirpath, exist_ok=True)
 
         self.dir_list = DirectoryList(self, dirpath)
         self.layout.addWidget(self.dir_list)
@@ -285,9 +287,9 @@ class ImportObject(QtWidgets.QWidget):
         self.list = QtWidgets.QListWidget(self)
         self.list.setIconSize(QtCore.QSize(128, 128))
         self.layout.addWidget(self.list)
-        self.no_icon = load_icon("battalion_objects/no_icon.png")
+        self.no_icon = load_icon("resources/no_icon.png")
 
-        assert self.no_icon is not None, "battalion_objects/no_icon.png is missing"
+        assert self.no_icon is not None, "resources/no_icon.png is missing"
 
         self.layout.setStretch(0, 1)
         self.layout.setStretch(1, 3)

@@ -1,7 +1,7 @@
 import cProfile
 import pstats
 import traceback
-__version__ = '1.6.0'
+__version__ = '2.0.1'
 
 import os
 from timeit import default_timer
@@ -393,6 +393,7 @@ class LevelEditor(QMainWindow):
         plugin_sidewidget = self.plugin_handler.create_plugin_sidewidget(self.centralwidget)
         self.horizontalLayout.addWidget(plugin_sidewidget)
 
+
         self.leveldatatreeview.resize(200, self.leveldatatreeview.height())
         spacerItem = QSpacerItem(10, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         #self.horizontalLayout.addItem(spacerItem)
@@ -409,6 +410,15 @@ class LevelEditor(QMainWindow):
         self.setStatusBar(self.statusbar)
 
         self.connect_actions()
+        if plugin_sidewidget.is_empty():
+            plugin_sidewidget.setFixedSize(0, 0)
+            self.horizontalLayout.setStretchFactor(0, 2)
+            self.horizontalLayout.setStretchFactor(1, 3)
+            self.horizontalLayout.setStretchFactor(3, 2)
+            self.horizontalLayout.setSizes([self.leveldatatreeview.width(),
+                                            self.level_view.width(),
+                                            0,
+                                            self.pik_control.width()])
 
     def action_hook_into_dolphion(self):
         error = self.dolphin.initialize()
@@ -466,6 +476,14 @@ class LevelEditor(QMainWindow):
             elif obj.type == "cTextureResource":
                 self.mini_model_viewer.set_scene_texture(obj.mName)
                 self.mini_model_viewer.angle = 0
+            elif obj.type == "sSpriteBasetype":
+                if obj.texture is not None:
+                    self.mini_model_viewer.set_scene_texture(obj.texture.mName)
+                    self.mini_model_viewer.angle = 0
+            elif obj.type == "cSprite":
+                if obj.mBase is not None and obj.mBase.texture is not None:
+                    self.mini_model_viewer.set_scene_texture(obj.mBase.texture.mName)
+                    self.mini_model_viewer.angle = 0
 
         for obj in editor.level_view.selected:
             obj

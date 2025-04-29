@@ -158,6 +158,7 @@ class ExportSettingsFullLevel(QDialog):
     def deny(self):
         self.reject()
 
+
 class ExportSettings(QDialog):
     def __init__(self, path):
         super().__init__()
@@ -232,7 +233,7 @@ class ExportSettings(QDialog):
             folderpath = os.path.join(full_category_path, bundlename)
 
         self.bundle_path = folderpath
-        print(folderpath)
+        print(folderpath, "SAVE PATH")
         if os.path.exists(folderpath):
             msgbox = YesNoQuestionDialog(self,
                                          f"The Object bundle name already exists at path: \n{folderpath}",
@@ -530,7 +531,6 @@ class Plugin(object):
                                 include_mpscript,
                                 reset_instance_flags,
                                 include_startwaypoint,
-                                bundle_name,
                                 bundle_path)
         except Exception as err:
             traceback.print_exc()
