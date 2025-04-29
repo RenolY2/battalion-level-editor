@@ -2629,6 +2629,7 @@ class TooltippedLabel(QtWidgets.QLabel):
 class NewEditWindow(QtWidgets.QMdiSubWindow):
     closing = QtCore.pyqtSignal()
     main_window_changed = QtCore.pyqtSignal(object)
+    object_edited = QtCore.pyqtSignal(object)
 
     def __init__(self, parent, object: BattalionObject, editor: "bw_editor.LevelEditor", makewindow):
         super().__init__(parent)
@@ -2657,6 +2658,8 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
 
         self.scheduled_scrollbar_pos = None
         self.scroll_area.verticalScrollBar().rangeChanged.connect(self.scroll_area_bar_update)
+
+        self.object_edited.connect(self.update_water_level)
 
     def closeEvent(self, event):
         self.closing.emit()
@@ -2694,7 +2697,6 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         if scrollbar.maximum() > 0 and self.scheduled_scrollbar_pos is not None:
             scrollbar.setValue(self.scheduled_scrollbar_pos)
             self.scheduled_scrollbar_pos = None
-
 
     def change_window_on_top_state(self, state):
         self.keep_window_on_top = state
@@ -2752,6 +2754,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                                       "A user-decided object name for reference in the editor."),
                                      customname_edit)
         customname_edit.update_value()
+        customname_edit.textChanged.connect(self.refresh_editor)
 
         # Add Lua name field
         def getter():
@@ -2771,6 +2774,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         luaname_edit.update_value()
         for tag, name, type, elements in object.fields():
             field = FieldEdit(self.content_holder, editor, object, tag, name, type, elements, item_cache)
+            field.editor_refresh.connect(self.object_was_updated)
             field.editor_refresh.connect(self.refresh_editor)
             field.edit_obj.connect(self.open_window)
             self.fields.append(field)
@@ -2782,8 +2786,14 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                     self.add_row(None, field.lines[i])
         print("Added widgets in", default_timer()-start, "s")
 
+    def object_was_updated(self):
+        self.object_edited.emit(self.object)
+
+    def update_water_level(self, obj):
+        if obj is not None and obj.type == "cRenderParams":
+            self.editor.level_view.waterheight = obj.mWaterHeight
+
     def refresh_editor(self):
-        print("Refresh...")
         self.editor.level_view.do_redraw(forcelightdirty=True)
         self.editor.leveldatatreeview.updatenames()
         self.editor.set_has_unsaved_changes(True)
