@@ -13,6 +13,7 @@ import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
 from lib.BattalionXMLLib import BattalionObject, BattalionLevelFile
+from widgets.editor_widgets import SearchBar
 
 ICONS = {"COPY": None}
 
@@ -1609,6 +1610,9 @@ class DecimalInputNormal(QtWidgets.QLineEdit):
         self.setValidator(QtGui.QDoubleValidator(min, max, 6, self))
         self.textChanged.connect(self.changed_value)
 
+    def get_searchable_values(self):
+        return [self.text()]
+
     def update_value(self):
         val = self.get_value()
         self.blockSignals(True)
@@ -1640,6 +1644,9 @@ class DecimalInput(QtWidgets.QLineEdit):
         self.scaling_factor = 1
         self.scale_down = False
         self.currvalue = None
+
+    def get_searchable_values(self):
+        return [self.text()]
 
     def keyPressEvent(self, a0: typing.Optional[QtGui.QKeyEvent]) -> None:
         super().keyPressEvent(a0)
@@ -1716,6 +1723,9 @@ class IntegerInput(QtWidgets.QLineEdit):
         self.setValidator(PythonIntValidator(self.min, self.max, self))
         self.textChanged.connect(self.changed_value)
 
+    def get_searchable_values(self):
+        return [self.text()]
+
     def update_value(self):
         value = int(self.get_value())
         if value < self.min:
@@ -1748,6 +1758,9 @@ class StrongFocusComboBox(QtWidgets.QComboBox):
         self.callback = lambda: True
         if editable:
             self.setEditable(True)
+
+    def get_searchable_values(self):
+        return [self.currentText()]
 
     def full_callback(self, func):
         self.callback = func
@@ -1784,6 +1797,9 @@ class EnumBox(StrongFocusComboBox):
         self.set_value = set_value
         self.currentTextChanged.connect(self.change)
         self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+
+    def get_searchable_values(self):
+        return [self.currentText()]
 
     def update_value(self):
         value = self.get_value()
@@ -1848,6 +1864,9 @@ class DecimalVector4Edit(QtWidgets.QWidget):
 
             decimal_edit.changed.connect(lambda x: self.changed.emit())
 
+    def get_searchable_values(self):
+        return [x.text() for x in self.edits]
+
     def update_value(self) -> None:
         for edit in self.edits:
             edit.update_value()
@@ -1867,6 +1886,42 @@ class ColorView(QtWidgets.QWidget):
         painter = QtGui.QPainter(self)
         h = self.height()
         painter.fillRect(0, 0, h, h, self.color)
+
+    def change_color(self, r, g, b, a):
+        self.color = QtGui.QColor(r, g, b, a)
+
+
+class HighlightArrow(QtWidgets.QWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.color = QtGui.QColor(0, 0, 0, 255)
+        self.setMinimumSize(32, 32)
+        sizepolicy = self.sizePolicy()
+        sizepolicy.setVerticalPolicy(QtWidgets.QSizePolicy.Policy.Fixed)
+        sizepolicy.setHorizontalPolicy(QtWidgets.QSizePolicy.Policy.Fixed)
+        self.setSizePolicy(sizepolicy)
+
+    def paintEvent(self, a0) -> None:
+        painter = QtGui.QPainter(self)
+        h = self.height()
+        w = self.width()
+
+        painter.setPen(self.color)
+        painter.setBrush(self.color)
+        """upper = h//4
+        lower = upper*3
+        mid = h//2
+        painter.drawPolygon([
+            QtCore.QPoint(0, upper),
+            QtCore.QPoint(0, lower),
+            QtCore.QPoint(mid, lower),
+            QtCore.QPoint(mid, h),
+            QtCore.QPoint(h, mid),
+            QtCore.QPoint(mid, 0),
+            QtCore.QPoint(mid, upper)],
+            QtCore.Qt.FillRule.WindingFill
+            )"""
+        painter.fillRect(0, 0, w, h, self.color)
 
     def change_color(self, r, g, b, a):
         self.color = QtGui.QColor(r, g, b, a)
@@ -1917,6 +1972,9 @@ class MatrixEdit(QtWidgets.QWidget):
                 index_edit = DecimalInput(self, getter, setter)
                 self.grid_layout.addWidget(index_edit, ix, iy)
                 self.edits.append(index_edit)"""
+
+    def get_searchable_values(self):
+        return [x.text() for x in self.edits] + ["Position", "Scale", "Angle", "x", "y", "z"]
 
     def update_value(self):
         for edit in self.edits:
@@ -1982,6 +2040,9 @@ class Vector4Edit(QtWidgets.QWidget):
         else:
             self.color = None
 
+    def get_searchable_values(self):
+        return [x.text() for x in self.edits]
+
     def update_color(self):
         if self.color is not None:
             col = self.get_value()
@@ -2022,6 +2083,13 @@ class FlagBox(QtWidgets.QWidget):
             self.flag_layout.addWidget(checkbutton, row, column)
             checkbutton.stateChanged.connect(self.change)
             i += 1
+
+    def get_searchable_values(self):
+        out = []
+        for button, value in self.flags:
+            out.append(button.text())
+
+        return out
 
     def update_value(self):
         val = self.get_value()
@@ -2133,6 +2201,18 @@ class ReferenceEdit(QtWidgets.QWidget):
         # self.gridlayout.addWidget(line_1_holder, 0, 0)
         # self.gridlayout.addWidget(line_2_holder, 1, 0)
         self.setLayout(line_1)
+
+    def get_searchable_values(self):
+        obj = self.get_value()
+
+        if obj is None:
+            return []
+        else:
+            return [obj.id, obj.name]
+
+    def install_filter(self, filt):
+        self.installEventFilter(filt)
+        self.object_combo_box.installEventFilter(filt)
 
     def change_object_text(self, *args, **kwargs):
         print("text changed", self.object_combo_box.currentText())
@@ -2456,6 +2536,30 @@ class FieldEdit(QtCore.QObject):
 
         self.edit_button = None
 
+    def find_text(self, text, case_sensitive):
+        target = text if case_sensitive else text.lower()
+
+        if case_sensitive:
+            if target in self.name.text():
+                return True, self.name
+        else:
+            if target in self.name.text().lower():
+                return True, self.name
+
+        for line, content in zip(self.lines, self.contents):
+            if hasattr(content, "get_searchable_values"):
+                values = content.get_searchable_values()
+
+                for val in values:
+                    if case_sensitive:
+                        if target in val:
+                            return True, content
+                    else:
+                        if target in val.lower():
+                            return True, content
+
+        return False, None
+
     def add_field(self, editor: "bw_editor.LevelEditor", parent, name, tag, type, element, item_cache=None):
         line = QtWidgets.QWidget(parent)
         #line.setContentsMargins(0, 0, 0, 0)
@@ -2591,6 +2695,12 @@ class StringEdit(QtWidgets.QLineEdit):
         self.textChanged.connect(self.change_value)
         self.editingFinished.connect(self.emit_change)
 
+    def install_filter(self, filt):
+        self.installEventFilter(filt)
+
+    def get_searchable_values(self):
+        return [self.text()]
+
     def update_value(self):
         val = self.get_value()
         if val is None:
@@ -2613,6 +2723,12 @@ class CustomNameEdit(QtWidgets.QLineEdit):
         self.get_value = get_value
         self.set_value = set_value
         self.textChanged.connect(self.change_value)
+
+    def find_text(self, value, case_sensitive):
+        if case_sensitive:
+            return value in self.text(), self
+        else:
+            return value.lower() in self.text().lower(), self
 
     def update_value(self):
         val = self.get_value()
@@ -2646,6 +2762,15 @@ class LuaNameEdit(QtWidgets.QWidget):
         self.name_usages = name_usages
         self.textinput.textChanged.connect(self.change_value)
         self.object = obj
+    
+    def find_text(self, value, case_sensitive):
+        if case_sensitive:
+            return value in self.textinput.text(), self
+        else:
+            return value.lower() in self.textinput.text(), self
+
+    def get_searchable_values(self):
+        return [self.textinput.text()]
 
     def display_already_exists(self):
         self.already_exists.setVisible(True)
@@ -2691,6 +2816,11 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.resize(900, 500)
         self.setMinimumSize(QtCore.QSize(300, 300))
 
+        self.highlight = HighlightArrow(self)
+        self.highlight.setAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.highlight.change_color(255, 255, 0, 50)
+        self.highlight.hide()
+        self.installEventFilter(self)
         if ICONS["COPY"] is None:
             ICONS["COPY"] = load_icon("resources/Copy-32x32.png")
 
@@ -2718,6 +2848,61 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.scroll_area.verticalScrollBar().rangeChanged.connect(self.scroll_area_bar_update)
 
         self.object_edited.connect(self.update_water_level)
+        self.object_edited.connect(self.reset_highlight)
+
+        self.search_curr_row = 0
+
+        self.find_shortcut = QtGui.QShortcut("Ctrl+F", self)
+        self.find_shortcut.activated.connect(self.goto_find_box)
+
+    def eventFilter(self, object, event) -> bool:
+        result = super().eventFilter(object, event)
+        if (event.type() == QtCore.QEvent.Type.MouseButtonPress):
+            self.reset_highlight()
+        return result
+
+    def changeEvent(self, changeEvent: QtCore.QEvent) -> None:
+        super().changeEvent(changeEvent)
+        print(changeEvent.type())
+        if changeEvent.type() == QtCore.QEvent.Type.ActivationChange:
+            self.reset_highlight()
+
+    def mousePressEvent(self, mouseEvent: typing.Optional[QtGui.QMouseEvent]) -> None:
+        super().mousePressEvent(mouseEvent)
+        self.highlight.hide()
+        self.search_curr_row = 0
+
+    def attach_highlight(self, widget):
+        self.highlight.setParent(widget)
+        self.highlight.setFixedSize(widget.width(), widget.height())
+        self.highlight.show()
+
+    def reset_highlight(self):
+        self.highlight.hide()
+        self.search_curr_row = 0
+
+    def goto_find_box(self):
+        self.search_bar.textinput.setFocus()
+        self.scroll_area.ensureWidgetVisible(self.search_bar)
+
+    def search(self, text):
+        maxrows = len(self.fields)
+
+        if self.search_curr_row >= maxrows:
+            self.search_curr_row = 0
+
+        for i in range(self.search_curr_row, maxrows):
+            field = self.fields[i]
+
+            found, widget = field.find_text(text, False)
+
+            if found:
+                self.attach_highlight(widget)
+                self.scroll_area.ensureWidgetVisible(widget)
+                self.search_curr_row = i+1
+                break
+        else:
+            self.search_curr_row = 0
 
     def closeEvent(self, event):
         self.closing.emit()
@@ -2739,6 +2924,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.content_holder.setLayout(self.area_layout)
 
         self._curr_row = 0
+        self.search_curr_row = 0
         self.object = object
         self.setWindowTitle(f"Edit Object: {object.name}")
         print("Edit reset in", default_timer()-start, "s")
@@ -2778,6 +2964,12 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         parent = None
 
         self._curr_row = 0
+
+
+        self.search_bar = SearchBar(self.content_holder)
+        self.add_row(name=QtWidgets.QLabel("Search"),
+                     widget=self.search_bar)
+        self.search_bar.find.connect(self.search)
 
         getter = make_getter(object, "customname")
         setter = lambda x: object.set_custom_name(x)
@@ -2827,6 +3019,8 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                 editor.lua_workbench.entityinit.set_name(object.id, x)
         item_cache = {}
         luaname_edit = LuaNameEdit(self.content_holder, getter, setter, editor.lua_workbench.entityinit.name_usages, object)
+        luaname_edit.textinput.installEventFilter(self)
+
         self.fields.append(luaname_edit)
         self.add_row(TooltippedLabel("Lua Name", parent, "Lua variable which references this object."), luaname_edit)
         luaname_edit.update_value()
