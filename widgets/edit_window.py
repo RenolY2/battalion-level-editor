@@ -6,12 +6,15 @@ from functools import partial
 from lib.bw_types import BWMatrix, decompose, recompose
 from timeit import default_timer
 from widgets.editor_widgets import open_message_dialog
+from builtin_plugins.plugin_feature_test import load_icon
 from itertools import chain
 
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
 from lib.BattalionXMLLib import BattalionObject, BattalionLevelFile
+
+ICONS = {"COPY": None}
 
 
 ENUMS = {
@@ -1734,7 +1737,7 @@ class IntegerInput(QtWidgets.QLineEdit):
 
 
 class StrongFocusComboBox(QtWidgets.QComboBox):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, editable=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
         self.view().setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -1743,6 +1746,8 @@ class StrongFocusComboBox(QtWidgets.QComboBox):
         self.items_total = []
         self.optimize = False
         self.callback = lambda: True
+        if editable:
+            self.setEditable(True)
 
     def full_callback(self, func):
         self.callback = func
@@ -2105,16 +2110,22 @@ class ReferenceEdit(QtWidgets.QWidget):
         # line_1.setContentsMargins(0, 0, 0, 0)
         # line_2.setContentsMargins(0, 0, 0, 0)
 
-        self.object_combo_box = StrongFocusComboBox(self)
+        self.object_combo_box = StrongFocusComboBox(self, editable=True)
         self.object_combo_box.optimize_large_sets()
         self.object_combo_box.setMaxVisibleItems(20)
         self.edit_button = QtWidgets.QPushButton("Edit", self)
         self.set_to_selected_button = QtWidgets.QPushButton("Set To Selected", self)
         self.goto_button = QtWidgets.QPushButton("Goto/Select", self)
         self.object_combo_box.currentIndexChanged.connect(self.change_object)
+        self.object_combo_box.lineEdit().editingFinished.connect(self.change_object_text)
+
+        self.copy_button = QtWidgets.QPushButton(parent=self, icon=ICONS["COPY"])
+        self.copy_button.setToolTip("Copy ID into Clipboard")
+        self.copy_button.pressed.connect(self.copy_id_into_clipboard)
 
         self.object_combo_box.setMinimumWidth(200)
         line_1.addWidget(self.object_combo_box)
+        line_1.addWidget(self.copy_button)
         line_1.addWidget(self.edit_button)
         line_1.addWidget(self.set_to_selected_button)
         line_1.addWidget(self.goto_button)
@@ -2122,6 +2133,50 @@ class ReferenceEdit(QtWidgets.QWidget):
         # self.gridlayout.addWidget(line_1_holder, 0, 0)
         # self.gridlayout.addWidget(line_2_holder, 1, 0)
         self.setLayout(line_1)
+
+    def change_object_text(self, *args, **kwargs):
+        print("text changed", self.object_combo_box.currentText())
+        curr = self.get_value()
+        default = "None" if curr is None else curr.name
+
+        id = self.object_combo_box.currentText()
+        if id in self.objects.objects:
+            obj = self.objects.objects[id]
+        elif id in self.preload.objects:
+            obj = self.preload.objects[id]
+        else:
+            obj = None
+
+        if obj is not None:
+            check_types = [self.type]
+            if self.type in SUBSETS:
+                check_types.extend(SUBSETS[self.type])
+
+            if obj.type not in check_types:
+                open_message_dialog(
+                    f"Warning!\n"
+                    f"Object {obj.name} cannot be used because it has incompatible type {obj.type})")
+                self.object_combo_box.setCurrentText(default)
+            else:
+                self.set_value(obj)
+                self.object_combo_box.setCurrentText(obj.name)
+                self.changed.emit()
+        elif id == "0":
+            self.set_value(None)
+            self.object_combo_box.setCurrentIndex(0)
+            self.changed.emit()
+        else:
+            self.object_combo_box.setCurrentText(default)
+
+    def copy_id_into_clipboard(self):
+        obj = self.get_value()
+        if obj is None:
+            value = 0
+        else:
+            value = obj.id
+
+        clipboard = QtGui.QGuiApplication.clipboard()
+        clipboard.setText(str(value))
 
     def update_value(self, item_cache=None, large_set_optimize=False):
         self.object_combo_box.blockSignals(True)
@@ -2629,11 +2684,15 @@ class TooltippedLabel(QtWidgets.QLabel):
 class NewEditWindow(QtWidgets.QMdiSubWindow):
     closing = QtCore.pyqtSignal()
     main_window_changed = QtCore.pyqtSignal(object)
+    object_edited = QtCore.pyqtSignal(object)
 
     def __init__(self, parent, object: BattalionObject, editor: "bw_editor.LevelEditor", makewindow):
         super().__init__(parent)
         self.resize(900, 500)
         self.setMinimumSize(QtCore.QSize(300, 300))
+
+        if ICONS["COPY"] is None:
+            ICONS["COPY"] = load_icon("resources/Copy-32x32.png")
 
         self.is_autoupdate = False
         self.editor = editor
@@ -2657,6 +2716,8 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
 
         self.scheduled_scrollbar_pos = None
         self.scroll_area.verticalScrollBar().rangeChanged.connect(self.scroll_area_bar_update)
+
+        self.object_edited.connect(self.update_water_level)
 
     def closeEvent(self, event):
         self.closing.emit()
@@ -2694,7 +2755,6 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         if scrollbar.maximum() > 0 and self.scheduled_scrollbar_pos is not None:
             scrollbar.setValue(self.scheduled_scrollbar_pos)
             self.scheduled_scrollbar_pos = None
-
 
     def change_window_on_top_state(self, state):
         self.keep_window_on_top = state
@@ -2752,6 +2812,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                                       "A user-decided object name for reference in the editor."),
                                      customname_edit)
         customname_edit.update_value()
+        customname_edit.textChanged.connect(self.refresh_editor)
 
         # Add Lua name field
         def getter():
@@ -2771,6 +2832,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         luaname_edit.update_value()
         for tag, name, type, elements in object.fields():
             field = FieldEdit(self.content_holder, editor, object, tag, name, type, elements, item_cache)
+            field.editor_refresh.connect(self.object_was_updated)
             field.editor_refresh.connect(self.refresh_editor)
             field.edit_obj.connect(self.open_window)
             self.fields.append(field)
@@ -2782,8 +2844,14 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                     self.add_row(None, field.lines[i])
         print("Added widgets in", default_timer()-start, "s")
 
+    def object_was_updated(self):
+        self.object_edited.emit(self.object)
+
+    def update_water_level(self, obj):
+        if obj is not None and obj.type == "cRenderParams":
+            self.editor.level_view.waterheight = obj.mWaterHeight
+
     def refresh_editor(self):
-        print("Refresh...")
         self.editor.level_view.do_redraw(forcelightdirty=True)
         self.editor.leveldatatreeview.updatenames()
         self.editor.set_has_unsaved_changes(True)
