@@ -3004,7 +3004,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                                       "A user-decided object name for reference in the editor."),
                                      customname_edit)
         customname_edit.update_value()
-        customname_edit.textChanged.connect(self.refresh_editor)
+        customname_edit.editingFinished.connect(self.refresh_editor)
 
         # Add Lua name field
         def getter():
