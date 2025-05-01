@@ -72,6 +72,8 @@ def os_walk(path):
             yield from os_walk(fullpath)
 
 
+
+
 class CategorySelection(QtWidgets.QComboBox):
     def __init__(self, parent):
         super().__init__(parent)
@@ -157,6 +159,8 @@ class ExportSettingsFullLevel(QDialog):
 
     def deny(self):
         self.reject()
+
+
 
 
 class ExportSettings(QDialog):
@@ -311,6 +315,25 @@ def get_all_parents(objid, parents, end_ids=None):
     return all_parents
 
 
+def get_sound_name(obj):
+    if obj.type != "cSoundBase":
+        return None
+
+    soundbase = obj.mSoundBase
+    if soundbase is None:
+        soundbase = obj.mLoopingSoundBase
+        if soundbase is None:
+            return None
+
+    sound_name = None
+    for sample in obj.mSoundBase.mSample:
+        if sample is not None:
+            sound_name = sample.mName
+            break
+
+    return sound_name
+
+
 class Plugin(object):
     def __init__(self):
         self.name = "Object Export/Import"
@@ -329,6 +352,7 @@ class Plugin(object):
         parent = {}
 
         texture_lookup = {}
+        mesh_lookup = {}
         for objid, obj in editor.level_file.objects.items():
             if obj.type == "cTextureResource":
                 texture_lookup[obj.mName.lower()] = obj
@@ -341,6 +365,7 @@ class Plugin(object):
                 parent[ref.id].append(obj.id)
 
             if obj.type == "cNodeHierarchyResource":
+                mesh_lookup[obj.mName.lower()] = obj
                 textures = editor.level_view.bwmodelhandler.models[obj.mName].all_textures
                 for texname in textures:
                     texobj = texture_lookup.get(texname.lower(), None)
@@ -349,6 +374,33 @@ class Plugin(object):
                             parent[texobj.id] = []
 
                         parent[texobj.id].append(obj.id)
+
+            if obj.type == "cTequilaEffectResource":
+                resource = editor.file_menu.resource_archive.get_resource(b"FEQT", obj.mName)
+                effects_file = io.StringIO(str(resource.data, encoding="ascii"))
+                for line in effects_file:
+                    line = line.strip()
+                    result = line.split(" ", maxsplit=2)
+                    if len(result) == 2:
+                        command, arg = result
+                        arg: str
+                        if command == "Texture":
+                            texname = arg.removesuffix(".ace")
+                            texobj = texture_lookup.get(texname.lower())
+                            if texobj is not None:
+                                parent[texobj.id] = obj.id
+                            else:
+                                print("Warning: Special Effect", obj.mName,"references non-existing texture", texname)
+
+                        elif command == "Mesh":
+                            modelname, _ = arg.rsplit(".", maxsplit=2)
+                            modelobj = mesh_lookup.get(modelname.lower())
+                            if modelobj is not None:
+                                parent[modelobj.id] = obj.id
+                            else:
+                                print("Warning: Special Effect", obj.mName,"references non-existing model", modelname)
+
+
         dialog = DeleteSettings()
         a = dialog.exec()
         if not a:
@@ -578,7 +630,9 @@ class Plugin(object):
             "cCapturePoint": "Capture Points",
             "cDestroyableObject": "Environment Objects",
             "cSceneryCluster": "Scenery Objects",
-            "cMorphingBuilding": "Morphing Buildings"
+            "cMorphingBuilding": "Morphing Buildings",
+            "cAmbientAreaPointSoundBox": "Environment Sounds",
+            "cAmbientAreaPointSoundSphere": "Environment Sounds",
         }
 
         total_work_objects = set()
@@ -610,7 +664,10 @@ class Plugin(object):
                 except FileExistsError:
                     pass
 
-                if object.type == "cMorphingBuilding":
+                if object.type in (
+                        "cMorphingBuilding",
+                        "cAmbientAreaPointSoundBox",
+                        "cAmbientAreaPointSoundSphere"):
                     represent_id = object.id
                 else:
                     represent_id = object.mBase.id
@@ -625,8 +682,15 @@ class Plugin(object):
 
                 if object.modelname is not None:
                     name += object.modelname + "_" + object.id
+                elif object.type in ("cAmbientAreaPointSoundBox", "cAmbientAreaPointSoundSphere"):
+                    sound_name = get_sound_name(object)
+                    if sound_name is not None:
+                        name += sound_name + "_" + object.id
+                    else:
+                        name += object.type + "_" + object.id
                 else:
                     name += object.type + "_" + object.id
+
 
                 print("exporting", object.name)
                 self.export_objects(
