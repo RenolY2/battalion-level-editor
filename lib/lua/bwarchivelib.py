@@ -122,6 +122,13 @@ class TextureBW1(Section):
 
         return cls(name, texname, data)
 
+    @classmethod
+    def from_file_headerless(cls, f):
+        texname = str(f.read(0x10).strip(b"\x00"), encoding="ascii")
+        data = f.read()
+
+        return cls(b"TXET", texname, data)
+
     def dump_to_directory(self, dirpath):
         fname = self.name+".texture"
         encoded_name = bytes(self.name, "ascii").ljust(0x10, b"\x00")
@@ -169,6 +176,13 @@ class TextureBW2(Section):
         data = f.read(size-0x20)
 
         return cls(name, texname, data)
+
+    @classmethod
+    def from_file_headerless(cls, f):
+        texname = str(f.read(0x20).strip(b"\x00"), encoding="ascii")
+        data = f.read()
+
+        return cls(b"DXTG", texname, data)
 
     def dump_to_directory(self, dirpath):
         fname = self.name+".texture"
