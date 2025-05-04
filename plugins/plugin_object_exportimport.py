@@ -316,7 +316,8 @@ def get_all_parents(objid, parents, end_ids=None):
 
 
 def get_sound_name(obj):
-    if obj.type != "cSoundBase":
+    if obj.type not in ("cAmbientAreaPointSoundBox",
+                        "cAmbientAreaPointSoundSphere"):
         return None
 
     soundbase = obj.mSoundBase
@@ -326,7 +327,7 @@ def get_sound_name(obj):
             return None
 
     sound_name = None
-    for sample in obj.mSoundBase.mSample:
+    for sample in soundbase.mSample:
         if sample is not None:
             sound_name = sample.mName
             break
@@ -638,7 +639,10 @@ class Plugin(object):
         total_work_objects = set()
         for objid, object in editor.file_menu.level_data.objects_with_positions.items():
             if object.type in categories:
-                if object.type == "cMorphingBuilding":
+                if object.type in (
+                        "cMorphingBuilding",
+                        "cAmbientAreaPointSoundBox",
+                        "cAmbientAreaPointSoundSphere"):
                     represent_id = object.id
                 else:
                     represent_id = object.mBase.id
@@ -652,6 +656,8 @@ class Plugin(object):
         loading_bar = LoadingBar(editor)
         loading_bar.setWindowTitle("Exporting...")
         loading_bar.show()
+
+        failed_export = False
 
         i = 0
         for objid, object in editor.file_menu.level_data.objects_with_positions.items():
@@ -691,25 +697,41 @@ class Plugin(object):
                 else:
                     name += object.type + "_" + object.id
 
-
                 print("exporting", object.name)
-                self.export_objects(
-                    [object],
-                    editor,
-                    include_passenger,
-                    False,
-                    reset_instance_flags,
-                    False,
-                    os.path.join(category_folder, name),
-                    showinfo=False
-                )
+
+                try:
+                    self.export_objects(
+                        [object],
+                        editor,
+                        include_passenger,
+                        False,
+                        reset_instance_flags,
+                        False,
+                        os.path.join(category_folder, name),
+                        showinfo=False
+                    )
+                except Exception as err:
+                    print("Error on object", object.name)
+
+                    traceback.print_exc()
+
+                    failed_export = True
+
+                    msgbox = YesNoQuestionDialog(editor,
+                        f"Error appeared during export of {object.name}.\n{str(err)}",
+                             "Object might be incomplete. Do you want to continue export?")
+                    if msgbox.exec() != QMessageBox.StandardButton.Yes:
+                        loading_bar.force_close()
+                        break
+
                 loading_bar.progress = (i/total)
                 QApplication.processEvents()
                 object_represented.append(represent_id)
                 i += 1
 
         loading_bar.force_close()
-        open_message_dialog(f"Done! {total} object(s) exported.", instructiontext="")
+        instructiontext = "Some objects weren't exported correctly." if failed_export else ""
+        open_message_dialog(f"Done! {i} object(s) exported to {level_name}.", instructiontext=instructiontext)
 
     def export_objects(self,
                        selected,
@@ -730,7 +752,7 @@ class Plugin(object):
             if not include_startwaypoint:
                 skip.append("mStartWaypoint")
 
-
+            print("Skipping...", skip)
             export = BattalionLevelFile()
             to_be_exported = []
             selected_ids = []
