@@ -104,6 +104,7 @@ class TextureArchive(Section):
                 return tex
         return None
 
+
 class TextureBW1(Section):
     def __init__(self, secname, texname, data):
         super().__init__(secname, b"")
@@ -121,6 +122,13 @@ class TextureBW1(Section):
 
         return cls(name, texname, data)
 
+    @classmethod
+    def from_file_headerless(cls, f):
+        texname = str(f.read(0x10).strip(b"\x00"), encoding="ascii")
+        data = f.read()
+
+        return cls(b"TXET", texname, data)
+
     def dump_to_directory(self, dirpath):
         fname = self.name+".texture"
         encoded_name = bytes(self.name, "ascii").ljust(0x10, b"\x00")
@@ -128,6 +136,11 @@ class TextureBW1(Section):
         with open(os.path.join(dirpath, fname), "wb") as f:
             f.write(encoded_name)
             f.write(self.data)
+
+    def dump_to_file(self, f):
+        encoded_name = bytes(self.name, "ascii").ljust(0x10, b"\x00")
+        f.write(encoded_name)
+        f.write(self.data)
 
     @classmethod
     def from_filepath(cls, filepath):
@@ -164,6 +177,13 @@ class TextureBW2(Section):
 
         return cls(name, texname, data)
 
+    @classmethod
+    def from_file_headerless(cls, f):
+        texname = str(f.read(0x20).strip(b"\x00"), encoding="ascii")
+        data = f.read()
+
+        return cls(b"DXTG", texname, data)
+
     def dump_to_directory(self, dirpath):
         fname = self.name+".texture"
         encoded_name = bytes(self.name, "ascii").ljust(0x20, b"\x00")
@@ -171,6 +191,11 @@ class TextureBW2(Section):
         with open(os.path.join(dirpath, fname), "wb") as f:
             f.write(encoded_name)
             f.write(self.data)
+
+    def dump_to_file(self, f):
+        encoded_name = bytes(self.name, "ascii").ljust(0x20, b"\x00")
+        f.write(encoded_name)
+        f.write(self.data)
 
     @classmethod
     def from_filepath(cls, filepath):

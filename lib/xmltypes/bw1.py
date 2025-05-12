@@ -2,6 +2,10 @@ from lib.BattalionXMLLib import BattalionObject
 from lib.bw_types import BWMatrix
 
 
+class Resource(BattalionObject):
+    mName: str
+
+
 class SceneryCluster(BattalionObject):
     mBase: "SceneryClusterBase"
     Seed: int

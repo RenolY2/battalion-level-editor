@@ -1196,11 +1196,11 @@ class BattalionObject(object):
                                     pass
                                 else:
                                     dependencies.append(val[i])
-                                    dependencies.extend(val[i].get_dependencies(visited))
+                                    dependencies.extend(val[i].get_dependencies(visited, skip))
                         else:
                             if val is not None:
                                 dependencies.append(val)
-                                dependencies.extend(val.get_dependencies(visited))
+                                dependencies.extend(val.get_dependencies(visited, skip))
 
         return dependencies
 

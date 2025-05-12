@@ -45,6 +45,7 @@ from lib.dolreader import DolFile, read_float, write_float, read_load_immediate_
 from widgets.file_select import FileSelect
 from PyQt6.QtWidgets import QTreeWidgetItem
 from lib.game_visualizer import Game
+from lib.BattalionXMLLib import BattalionObject
 
 from widgets.menu.file_menu import EditorFileMenu
 from widgets.graphics_widgets import UnitViewer
@@ -137,14 +138,29 @@ class LevelEditor(QMainWindow):
         self.timer.timeout.connect(self.read_entityinit_if_changed)
         self.timer.start()
 
-    def get_selected_obj(self):
+    def get_selected_obj(self) -> BattalionObject:
         if len(self.level_view.selected) == 1:
             return self.level_view.selected[0]
         else:
             return None
 
-    def get_selected_objs(self):
-        return self.level_view.selected
+    def get_selected_objs(self, type_filter=None) -> list[BattalionObject]:
+        if type_filter is None:
+            return self.level_view.selected
+        else:
+            filtered = filter(lambda x: x.type == type_filter,
+                              self.level_view.selected)
+
+            return list(filtered)
+
+    def get_level_object_by_id(self, id):
+        if id in self.level_file.objects:
+            return self.level_file.objects[id]
+
+        if id in self.preload_file.objects:
+            return self.preload_file.objects[id]
+
+        return None
 
     def get_editor_folder(self):
         return EDITOR_ROOT
