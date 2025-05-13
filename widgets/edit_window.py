@@ -391,6 +391,29 @@ class ColorView(QtWidgets.QWidget):
         self.color = QtGui.QColor(r, g, b, a)
 
 
+class Line(QtWidgets.QWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.color = QtGui.QColor(0, 0, 0, 255)
+        self.setMinimumHeight(10)
+        #self.setMinimumSize(32, 32)
+        #sizepolicy = self.sizePolicy()
+        #sizepolicy.setVerticalPolicy(QtWidgets.QSizePolicy.Policy.Fixed)
+        #sizepolicy.setHorizontalPolicy(QtWidgets.QSizePolicy.Policy.Fixed)
+        #self.setSizePolicy(sizepolicy)
+
+    def paintEvent(self, a0) -> None:
+        painter = QtGui.QPainter(self)
+        painter.setPen(self.color)
+        w = self.width()
+        mid = self.height()//2
+        #painter.fillRect(0, mid, w, mid, self.color)
+        painter.drawLine(0, mid, w, mid)
+
+    def change_color(self, r, g, b, a):
+        self.color = QtGui.QColor(r, g, b, a)
+
+
 class HighlightArrow(QtWidgets.QWidget):
     def __init__(self, parent):
         super().__init__(parent)
@@ -1252,6 +1275,7 @@ class LuaNameEdit(QtWidgets.QWidget):
 
         self.textinput = QtWidgets.QLineEdit(self)
         self.vbox = QtWidgets.QVBoxLayout(self)
+        self.vbox.setContentsMargins(0, 0, 0, 0)
         self.already_exists = QtWidgets.QLabel("Lua name already exists! Please use a different one.", self)
         self.vbox.addWidget(self.textinput)
         self.vbox.addWidget(self.already_exists)
@@ -1298,6 +1322,33 @@ class LuaNameEdit(QtWidgets.QWidget):
             else:
                 self.hide_already_exists()
                 self.set_value(val)
+
+
+class MiscEdit(QtWidgets.QWidget):
+    def __init__(self,
+                 parent,
+                 get_setters_custom,
+                 get_setters_lua,
+                 name_usages,
+                 obj):
+        super().__init__(parent)
+        self.hbox = QtWidgets.QHBoxLayout(self)
+        self.hbox.setContentsMargins(0, 0, 0, 0)
+        self.custom_name = CustomNameEdit(self,
+                                          get_setters_custom[0],
+                                          get_setters_custom[1])
+        self.lua_name = LuaNameEdit(self,
+                                    get_setters_lua[0],
+                                    get_setters_lua[1],
+                                    name_usages,
+                                    obj)
+
+        self.hbox.addWidget(make_labeled_widget(self, "Lua name", self.lua_name))
+        self.hbox.addWidget(make_labeled_widget(self, "Custom name", self.custom_name))
+
+    def update_value(self):
+        self.custom_name.update_value()
+        self.lua_name.update_value()
 
 
 class TooltippedLabel(QtWidgets.QLabel):
@@ -1496,15 +1547,17 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         # Add custom name field
         getter = make_getter(object, "customname")
         setter = lambda x: object.set_custom_name(x)
+        custom_getsetters = (getter, setter)
 
-        customname_edit = CustomNameEdit(self.content_holder, getter, setter)
-        self.fields.append(customname_edit)
-        self.add_row(TooltippedLabel("Custom Name",
-                                      parent,
-                                      "A user-decided object name for reference in the editor."),
-                                     customname_edit)
-        customname_edit.update_value()
-        customname_edit.editingFinished.connect(self.refresh_editor)
+
+        #customname_edit = CustomNameEdit(self.content_holder, getter, setter)
+        #self.fields.append(customname_edit)
+        #self.add_row(TooltippedLabel("Custom Name",
+        #                              parent,
+        #                              "A user-decided object name for reference in the editor."),
+        #                             customname_edit)
+        #customname_edit.update_value()
+        #customname_edit.editingFinished.connect(self.refresh_editor)
 
         # Add Lua name field
         def getter():
@@ -1517,13 +1570,36 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                 editor.lua_workbench.entityinit.delete_name(object.id)
             else:
                 editor.lua_workbench.entityinit.set_name(object.id, x)
-        item_cache = {}
-        luaname_edit = LuaNameEdit(self.content_holder, getter, setter, editor.lua_workbench.entityinit.name_usages, object)
-        luaname_edit.textinput.installEventFilter(self)
 
-        self.fields.append(luaname_edit)
-        self.add_row(TooltippedLabel("Lua Name", parent, "Lua variable which references this object."), luaname_edit)
-        luaname_edit.update_value()
+        lua_getsetters = (getter, setter)
+        item_cache = {}
+        #luaname_edit = LuaNameEdit(self.content_holder, getter, setter, editor.lua_workbench.entityinit.name_usages, object)
+        #luaname_edit.textinput.installEventFilter(self)
+
+        misc_edit = MiscEdit(self.content_holder,
+                             custom_getsetters,
+                             lua_getsetters,
+                             editor.lua_workbench.entityinit.name_usages,
+                             object)
+        misc_edit.custom_name.editingFinished.connect(self.refresh_editor)
+        misc_edit.lua_name.textinput.installEventFilter(self)
+        misc_edit.update_value()
+        self.fields.append(misc_edit)
+        self.add_row(
+            TooltippedLabel("Misc",
+                            parent,
+                            (
+                                "Lua name: Lua variable which references this object.\n"
+                                "Custom name: A user-decided object name for reference in the editor."
+                            )),
+                            misc_edit
+        )
+
+        self.add_row(Line(self), Line(self))
+
+        #self.fields.append(luaname_edit)
+        #self.add_row(TooltippedLabel("Lua Name", parent, "Lua variable which references this object."), luaname_edit)
+        #luaname_edit.update_value()
         for tag, name, type, elements in object.fields():
             field = FieldEdit(self.content_holder, editor, object, tag, name, type, elements, item_cache)
             field.editor_refresh.connect(self.object_was_updated)
