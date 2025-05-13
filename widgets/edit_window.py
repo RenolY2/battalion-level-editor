@@ -1346,6 +1346,13 @@ class MiscEdit(QtWidgets.QWidget):
         self.hbox.addWidget(make_labeled_widget(self, "Lua name", self.lua_name))
         self.hbox.addWidget(make_labeled_widget(self, "Custom name", self.custom_name))
 
+    def find_text(self, value, case_sensitive):
+        result, ref = self.lua_name.find_text(value, case_sensitive)
+        if not result:
+            result, ref = self.custom_name.find_text(value, case_sensitive)
+
+        return result, ref
+
     def update_value(self):
         self.custom_name.update_value()
         self.lua_name.update_value()
