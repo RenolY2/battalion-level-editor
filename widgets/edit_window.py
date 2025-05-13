@@ -83,13 +83,19 @@ class PythonIntValidator(QtGui.QValidator):
         pass
 
 
+class SelectableLabel(QtWidgets.QLabel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
+
+
 def make_labeled_widget(parent, text, widget: QtWidgets.QWidget):
     labelwidget = QtWidgets.QWidget(parent)
     layout = QtWidgets.QHBoxLayout(labelwidget)
     layout.setContentsMargins(0, 0, 0, 0)
     labelwidget.setLayout(layout)
-    label = QtWidgets.QLabel(labelwidget)
-    label.setText(text)
+    label = SelectableLabel(labelwidget)
+    label.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
     layout.addWidget(label)
     layout.addWidget(widget)
 
@@ -354,7 +360,7 @@ class DecimalVector4Edit(QtWidgets.QWidget):
             labeled_widget.setLayout(label_layout)
             label_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
 
-            label = QtWidgets.QLabel(i, self)
+            label = SelectableLabel(i, self)
             decimal_edit = DecimalInput(self, getter, setter)
             label_layout.addWidget(label)
             label_layout.addWidget(decimal_edit)
@@ -464,9 +470,9 @@ class MatrixEdit(QtWidgets.QWidget):
         self.edits = []
         self.decomposed = list(decompose(matrix))
 
-        self.grid_layout.addWidget(QtWidgets.QLabel("Position", self), 0, 0)
-        self.grid_layout.addWidget(QtWidgets.QLabel("Scale", self), 1, 0)
-        self.grid_layout.addWidget(QtWidgets.QLabel("Angle", self), 2, 0)
+        self.grid_layout.addWidget(SelectableLabel("Position", self), 0, 0)
+        self.grid_layout.addWidget(SelectableLabel("Scale", self), 1, 0)
+        self.grid_layout.addWidget(SelectableLabel("Angle", self), 2, 0)
 
         for iy in range(3):
             for ix in range(3):
@@ -540,11 +546,11 @@ class Vector4Edit(QtWidgets.QWidget):
             label_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
 
             if vtype == "sVector4" or vtype == "sVectorXZ":
-                label = QtWidgets.QLabel(i, self)
+                label = SelectableLabel(i, self)
                 decimal_edit = DecimalInput(self, getter, setter)
             elif vtype == "sU8Color" or vtype == "cU8Color":
                 comp = {"x": "Red", "y": "Green", "z": "Blue", "w": "Alpha"}[i]
-                label = QtWidgets.QLabel(comp, self)
+                label = SelectableLabel(comp, self)
                 decimal_edit = IntegerInput(self, "sUInt8", getter, setter)
 
             label_layout.addWidget(label)
@@ -591,7 +597,7 @@ class FlagBox(QtWidgets.QWidget):
         self.get_value = get_value
         self.set_value = set_value
 
-        self.value = QtWidgets.QLabel(self)
+        self.value = SelectableLabel(self)
         self.flag_layout.addWidget(self.value)
 
         i = 0
@@ -1030,7 +1036,7 @@ class FieldEdit(QtCore.QObject):
         super().__init__()
         self.object = object
         #self.edit_layout = QtWidgets.QVBoxLayout(self)
-        self.name = QtWidgets.QLabel(name, parent)
+        self.name = SelectableLabel(name, parent)
         tooltip = "Data Type: {}".format(type)
         doc = BW_DOCUMENTATION
 
@@ -1276,7 +1282,7 @@ class LuaNameEdit(QtWidgets.QWidget):
         self.textinput = QtWidgets.QLineEdit(self)
         self.vbox = QtWidgets.QVBoxLayout(self)
         self.vbox.setContentsMargins(0, 0, 0, 0)
-        self.already_exists = QtWidgets.QLabel("Lua name already exists! Please use a different one.", self)
+        self.already_exists = SelectableLabel("Lua name already exists! Please use a different one.", self)
         self.vbox.addWidget(self.textinput)
         self.vbox.addWidget(self.already_exists)
         self.already_exists.setVisible(False)
@@ -1346,6 +1352,13 @@ class MiscEdit(QtWidgets.QWidget):
         self.hbox.addWidget(make_labeled_widget(self, "Lua name", self.lua_name))
         self.hbox.addWidget(make_labeled_widget(self, "Custom name", self.custom_name))
 
+    def find_text(self, value, case_sensitive):
+        result, ref = self.lua_name.find_text(value, case_sensitive)
+        if not result:
+            result, ref = self.custom_name.find_text(value, case_sensitive)
+
+        return result, ref
+
     def update_value(self):
         self.custom_name.update_value()
         self.lua_name.update_value()
@@ -1354,6 +1367,7 @@ class MiscEdit(QtWidgets.QWidget):
 class TooltippedLabel(QtWidgets.QLabel):
     def __init__(self, name, parent, tooltip):
         super().__init__(name, parent)
+        self.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
         self.setToolTip(tooltip)
 
 
@@ -1518,7 +1532,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
 
 
         self.search_bar = SearchBar(self.content_holder)
-        self.add_row(name=QtWidgets.QLabel("Search"),
+        self.add_row(name=SelectableLabel("Search"),
                      widget=self.search_bar)
         self.search_bar.find.connect(self.search)
 
