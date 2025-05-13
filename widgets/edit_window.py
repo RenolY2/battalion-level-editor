@@ -674,7 +674,7 @@ class ReferenceEdit(QtWidgets.QWidget):
         # line_1_holder.setLayout(line_1)
         # line_2_holder.setLayout(line_2)
 
-        self.gridlayout = QtWidgets.QGridLayout(self)
+        line_1.setContentsMargins(0, 0, 0, 0)
         # line_1.setContentsMargins(0, 0, 0, 0)
         # line_2.setContentsMargins(0, 0, 0, 0)
 
