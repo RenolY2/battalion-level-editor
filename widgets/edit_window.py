@@ -1372,6 +1372,20 @@ class TooltippedLabel(QtWidgets.QLabel):
         self.setToolTip(tooltip)
 
 
+class HorizWidgetHolder(QtWidgets.QWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.hbox = QtWidgets.QHBoxLayout(self)
+        self.hbox.setContentsMargins(0, 0, 0, 0)
+
+    def add_widget(self, widget: QtWidgets.QWidget):
+        self.hbox.addWidget(widget)
+        widget.setParent(self)
+
+    def add_stretch(self, value):
+        self.hbox.addStretch(value)
+
+
 class NewEditWindow(QtWidgets.QMdiSubWindow):
     closing = QtCore.pyqtSignal()
     main_window_changed = QtCore.pyqtSignal(object)
@@ -1540,24 +1554,39 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         getter = make_getter(object, "customname")
         setter = lambda x: object.set_custom_name(x)
 
+        checkbox_holder = HorizWidgetHolder(self)
+        self.add_row(TooltippedLabel("Window Settings",
+                                     parent,
+                                     "Keep Window On Top: If set, this window will stay on top of other windows no matter which one is in focus.\n"
+                                     "Change Context to Selected Object: If set, selecting an object in the editor will change this edit window to show that object's data."),
+                     checkbox_holder)
+
+
         checkbox_widget = QtWidgets.QCheckBox(self.content_holder)
-        self.add_row(TooltippedLabel("Keep Window On Top",
+        checkbox_widget.setText("Keep Window On Top")
+        """self.add_row(TooltippedLabel("Keep Window On Top",
                                      parent,
                                      "If set, this window will stay on top of other windows no matter which one is in focus."),
-                    checkbox_widget)
+                    checkbox_widget)"""
+
         checkbox_widget.setChecked(self.keep_window_on_top==QtCore.Qt.CheckState.Checked)
         checkbox_widget.checkStateChanged.connect(self.change_window_on_top_state)
 
         self.autoupdate_checkbox = QtWidgets.QCheckBox(self.content_holder)
-        self.add_row(TooltippedLabel(
+        self.autoupdate_checkbox.setText("Change Context to Selected Object")
+        """self.add_row(TooltippedLabel(
             "Change Context to Selected Object",
             parent,
             "If set, selecting an object in the editor will change this edit window to show that object's data."
 
-        ), self.autoupdate_checkbox)
+        ), self.autoupdate_checkbox)"""
         self.autoupdate_checkbox.setChecked(self.is_autoupdate)
         self.autoupdate_checkbox.checkStateChanged.connect(self.store_autoupdate_status)
         self.autoupdate_checkbox.checkStateChanged.connect(lambda x: self.main_window_changed.emit(self))
+        checkbox_holder.add_widget(checkbox_widget)
+        checkbox_holder.add_widget(self.autoupdate_checkbox)
+        checkbox_holder.add_stretch(1)
+
 
         # Add custom name field
         getter = make_getter(object, "customname")
