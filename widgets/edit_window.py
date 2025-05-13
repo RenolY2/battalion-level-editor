@@ -95,6 +95,7 @@ def make_labeled_widget(parent, text, widget: QtWidgets.QWidget):
     layout.setContentsMargins(0, 0, 0, 0)
     labelwidget.setLayout(layout)
     label = SelectableLabel(labelwidget)
+    label.setText(text)
     label.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
     layout.addWidget(label)
     layout.addWidget(widget)
