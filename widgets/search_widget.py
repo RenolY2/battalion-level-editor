@@ -72,6 +72,11 @@ class AutocompleteDropDown(QtWidgets.QComboBox):
         print(self.currentIndex(), self.currentText())
 
 
+def to_clipboard(text):
+    clipboard = QtWidgets.QApplication.clipboard()
+    clipboard.setText(text)
+
+
 class SearchTreeView(LevelDataTreeView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -79,6 +84,53 @@ class SearchTreeView(LevelDataTreeView):
         self.setColumnCount(2)
         self.setHeaderLabels(["XML Object", "Searched Values"])
         self.items = []
+
+        self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.run_context_menu)
+
+    def run_context_menu(self, pos):
+        item = self.itemAt(pos)
+        context_menu = QtWidgets.QMenu(self)
+
+        if item.bound_to is not None:
+            copy_id = QtGui.QAction("Copy ID")
+            results = QtGui.QAction("Copy Values")
+
+            def copy_id_to_clipboard():
+                to_clipboard(item.bound_to.id)
+
+            def copy_results_to_clipboard():
+                to_clipboard(item.text(1))
+
+            copy_id.triggered.connect(copy_id_to_clipboard)
+            context_menu.addAction(copy_id)
+
+            results.triggered.connect(copy_results_to_clipboard)
+            context_menu.addAction(results)
+
+            if hasattr(item, "results"):
+                if len(item.results) > 1:
+                    result_first = QtGui.QAction("Copy First Value")
+
+                    def copy_first_result():
+                        to_clipboard(item.results[0])
+
+                    result_first.triggered.connect(copy_first_result)
+                    context_menu.addAction(result_first)
+
+                if len(item.results) > 2:
+                    result_second = QtGui.QAction("Copy Second Value")
+
+                    def copy_second_result():
+                        to_clipboard(item.results[1])
+
+                    result_second.triggered.connect(copy_second_result)
+                    context_menu.addAction(result_second)
+
+        if context_menu.actions():
+            context_menu.exec(self.mapToGlobal(pos))
+            context_menu.destroy()
+            del context_menu
 
     def set_objects(self, objects):
         self.reset()
@@ -106,6 +158,7 @@ class SearchTreeView(LevelDataTreeView):
                 else:
                     writtenvalues.append(str(val))
             max = 15
+            item.results = writtenvalues[:10]
             if len(writtenvalues) > max:
                 item.setText(1, ", ".join(writtenvalues[:max]) + " and {0} more".format(len(writtenvalues)-15))
             else:
