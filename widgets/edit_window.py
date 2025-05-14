@@ -1349,7 +1349,8 @@ class MiscEdit(QtWidgets.QWidget):
                                     get_setters_lua[1],
                                     name_usages,
                                     obj)
-
+        self.object_id = SelectableLabel(f"Object ID: {obj.id}", self)
+        self.hbox.addWidget(self.object_id)
         self.hbox.addWidget(make_labeled_widget(self, "Lua name", self.lua_name))
         self.hbox.addWidget(make_labeled_widget(self, "Custom name", self.custom_name))
 
