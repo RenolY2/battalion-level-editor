@@ -118,7 +118,6 @@ class SearchTreeView(LevelDataTreeView):
                     result_first.triggered.connect(copy_first_result)
                     context_menu.addAction(result_first)
 
-                if len(item.results) > 2:
                     result_second = QtGui.QAction("Copy Second Value")
 
                     def copy_second_result():
