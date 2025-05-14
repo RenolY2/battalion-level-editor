@@ -1,10 +1,15 @@
+import typing
+
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem
+import PyQt6.QtWidgets as QtWidgets
+import PyQt6.QtCore as QtCore
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QMenu
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
 from collections import OrderedDict
 from PyQt6.QtGui import QClipboard, QGuiApplication, QAction
 from itertools import chain
+
 
 class BolHeader(QTreeWidgetItem):
     def __init__(self):
@@ -187,6 +192,13 @@ class MGEntry(NamedItem):
         self.setText(0, "MG")
 
 
+class ReadOnlyDelegate(QtWidgets.QItemDelegate):
+    def createEditor(self, parent, option, index) -> typing.Optional[QtWidgets.QWidget]:
+        editor = super().createEditor(parent, option, index)
+        editor.setReadOnly(True)
+        return editor
+
+
 class LevelDataTreeView(QTreeWidget):
     select_all = pyqtSignal(ObjectGroup)
     reverse = pyqtSignal(ObjectGroup)
@@ -201,6 +213,8 @@ class LevelDataTreeView(QTreeWidget):
         self.setColumnCount(2)
         self.setHeaderLabels(["XML Objects", "Details"])
 
+        self.setItemDelegate(ReadOnlyDelegate(self))
+        self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.SelectedClicked)
 
         #self.bolheader = BolHeader()
         #self.addTopLevelItem(self.bolheader)
@@ -412,8 +426,10 @@ class LevelDataTreeView(QTreeWidget):
                     if levelsettings.mDamageArmourBonus.id != object.id:
                         unused = True
 
-
             item = NamedItem(parent, name, object)
+            itemflag = QtCore.Qt.ItemFlag
+            item.setFlags(itemflag.ItemIsEnabled | itemflag.ItemIsSelectable | itemflag.ItemIsEditable)
+
             if unused:
                 item.update_details_unused()
 
@@ -442,6 +458,8 @@ class LevelDataTreeView(QTreeWidget):
         damagesettings = []
 
         category: QTreeWidgetItem
+
+
         for category in (self.units, self.components, self.mapobjects, self.scenery, self.assets, self.hud,
                          self.scripts, self.effects, self.preload, self.other):
             for i in range(category.childCount()):

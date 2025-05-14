@@ -77,13 +77,6 @@ def to_clipboard(text):
     clipboard.setText(text)
 
 
-class ReadOnlyDelegate(QtWidgets.QItemDelegate):
-    def createEditor(self, parent: typing.Optional[QtWidgets.QWidget], option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> typing.Optional[QtWidgets.QWidget]:
-        editor = super().createEditor(parent, option, index)
-        editor.setReadOnly(True)
-        return editor
-
-
 class SearchTreeView(LevelDataTreeView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -94,8 +87,6 @@ class SearchTreeView(LevelDataTreeView):
 
         self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.run_context_menu)
-        self.setItemDelegate(ReadOnlyDelegate(self))
-        self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.SelectedClicked)
 
     def run_context_menu(self, pos):
         item = self.itemAt(pos)
