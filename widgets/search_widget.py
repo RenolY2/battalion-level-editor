@@ -382,7 +382,7 @@ Possible comparison operations: = (equal), != (unequal), > (bigger than), >= (bi
 Possible string content search operations: contains, excludes
 Additional fields of interest: 
 modelname (name of 3D model of the object regardless of type)
-references (example: self.references = 50032934 matches all objects that have any pointer pointing to object with id 50032934)
+references (example: self.references.id = 50032934 matches all objects that have any pointer pointing to object with id 50032934)
 enums (example: self.enums = DAMAGE_NO_DAMAGE matches all objects that have DAMAGE_NO_DAMAGE as any of their enums)
 
 
