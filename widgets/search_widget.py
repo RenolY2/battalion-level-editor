@@ -13,7 +13,7 @@ from widgets.tree_view import LevelDataTreeView, ObjectGroup, NamedItem
 from widgets.menu.menubar import Menu
 from lib.searchquery import create_query, find_best_fit, autocompletefull, QueryDepthTooDeepError
 from lib.BattalionXMLLib import BattalionObject
-
+import typing
 
 class LabeledRadioBox(QtWidgets.QWidget):
     def __init__(self, text, parent):
@@ -77,6 +77,13 @@ def to_clipboard(text):
     clipboard.setText(text)
 
 
+class ReadOnlyDelegate(QtWidgets.QItemDelegate):
+    def createEditor(self, parent: typing.Optional[QtWidgets.QWidget], option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> typing.Optional[QtWidgets.QWidget]:
+        editor = super().createEditor(parent, option, index)
+        editor.setReadOnly(True)
+        return editor
+
+
 class SearchTreeView(LevelDataTreeView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -87,6 +94,8 @@ class SearchTreeView(LevelDataTreeView):
 
         self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.run_context_menu)
+        self.setItemDelegate(ReadOnlyDelegate(self))
+        self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.SelectedClicked)
 
     def run_context_menu(self, pos):
         item = self.itemAt(pos)
@@ -150,6 +159,8 @@ class SearchTreeView(LevelDataTreeView):
 
             parent = extra_categories[objecttype]
             item = NamedItem(parent, object.name, object)
+            itemflag = QtCore.Qt.ItemFlag
+            item.setFlags(itemflag.ItemIsEnabled | itemflag.ItemIsSelectable | itemflag.ItemIsEditable)
             writtenvalues = []
             for val in values:
                 if isinstance(val, BattalionObject):
