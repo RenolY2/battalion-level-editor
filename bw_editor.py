@@ -1220,12 +1220,13 @@ class LevelEditor(QMainWindow):
 
     @catch_exception
     def mapview_showcontextmenu(self, position):
-        context_menu = QMenu(self)
-        action = QAction("Copy Coordinates", self)
-        action.triggered.connect(self.action_copy_coords_to_clipboard)
-        context_menu.addAction(action)
-        context_menu.exec(self.level_view.mapToGlobal(position))
-        context_menu.destroy()
+        if self.level_view.is_topdown():
+            context_menu = QMenu(self)
+            action = QAction("Copy Coordinates", self)
+            action.triggered.connect(self.action_copy_coords_to_clipboard)
+            context_menu.addAction(action)
+            context_menu.exec(self.level_view.mapToGlobal(position))
+            context_menu.destroy()
 
     def action_copy_coords_to_clipboard(self):
         if self.current_coordinates is not None:
