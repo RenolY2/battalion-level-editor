@@ -378,6 +378,10 @@ This search term finds objects whose type isn't cAirVehicle and that either have
 self.mPassenger.id = 50033037
 This search finds objects with a passenger that has the id 50033037. With lists of references/values, the comparison is done for each reference/value in the list, e.g. each passenger, and is true if at least one comparison is true.
 
+self.Seed & self.mBase.MaxSize != 18
+This will record the seed of every object whose mBase has a MaxSize that is not equal to 18 in the "Searched Result" column, in addition to the MaxSize value.
+This can be used to output additional info about objects whose data match your query into the search results.
+
 Possible comparison operations: = (equal), != (unequal), > (bigger than), >= (bigger than or equal), < (less than), <= (less than or equal).
 Possible string content search operations: contains, excludes
 Additional fields of interest: 

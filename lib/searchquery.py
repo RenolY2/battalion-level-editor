@@ -54,6 +54,12 @@ class Field(List):
         else:
             return self._evaluate_recursive(obj, self)
 
+    def get_values(self, obj):
+        return self.evaluate(obj)
+
+    def action(self):
+        return True
+
     def __str__(self):
         if len(self) == 0:
             return "self"
@@ -331,7 +337,7 @@ class Comparison(List):
 
 
 class AndOrUnit(List):
-    grammar = Comparison, maybe_some(maybe_some(whitespace), [And, Or], maybe_some(whitespace), Comparison)
+    grammar = [Comparison, Field], maybe_some(maybe_some(whitespace), [And, Or], maybe_some(whitespace), [Comparison, Field])
 
     def evaluate(self, obj):
         if len(self) == 1:
@@ -390,20 +396,7 @@ class QueryGrammar(AndOrUnit):
     grammar = [BracketedUnit, AndOrUnit], maybe_some(maybe_some(whitespace), [And, Or], maybe_some(whitespace), [BracketedUnit, AndOrUnit])
 
 
-"""tests = ["self.a.B.adsjaAKJD >= 25",
-         "self.a.B.adsjaAKJD >= 25",
-         "(self.a.B.adsjaAKJD >= 25)",
-         "(self.a.B.adsjaAKJD != 25)",
-         "(self.a.B.adsjaAKJD >= 25)",
-         "self.a.B.adsjaAKJD >= 25 & self.a.B.adsjaAKJD >= 25",
-         "(self.a.B.adsjaAKJD >= 25) & self.a.B.adsjaAKJD >= 25 & self.a.B.adsjaAKJD >= 40"]
-for test in tests:
-    try:
-        a = parse(test, QueryGrammar)
-        print(a)
-    except Exception as err:
-        print(err)
-        raise"""
+
 
 
 class TextObjectOther2(object):
@@ -488,13 +481,14 @@ def find_best_fit(name, bw2=False, values=False, max=10):
     return results[:max]
 
 
-"""
-for parser in [EqualOperator, UnequalOperator, Less, LessEqual, Greater, GreaterEqual]:
-    parser.test()
-    print(parser, "successful")
+if __name__ == "__main__":
+    for parser in [EqualOperator, UnequalOperator, Less, LessEqual, Greater, GreaterEqual]:
+        parser.test()
+        print(parser, "successful")
 
-parse("self.d.a.b >= 25", NumberCompare)
-testobject = TestObject()
+    parse("self.d.a.b >= 25", NumberCompare)
+    testobject = TestObject()
 
-fieldresult = parse("(self.a != 1 & self.a != 1) & self.a = 1 | self.a != 1", QueryGrammar)
-print(fieldresult.evaluate(testobject))"""
+    fieldresult = parse("(self.b & self.a != 1 & self.a != 1) & self.a = 1 | self.a != 1", QueryGrammar)
+    print(fieldresult.evaluate(testobject))
+    print(fieldresult.get_values(testobject))
