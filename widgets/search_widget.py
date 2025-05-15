@@ -220,6 +220,8 @@ def find_rightmost(collection, text, start, end):
 
 
 class AutocompleteTextEdit(QtWidgets.QTextEdit):
+    trigger_search = pyqtSignal()
+
     def __init__(self, parent, editor):
         super().__init__(parent)
         self.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.NoWrap)
@@ -227,6 +229,7 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
 
         self.editor: bw_editor.LevelEditor = editor
         self.autocomplete: AutocompleteDropDown = None
+        self.enter_presses = 0
 
     def get_last_field(self):
         text = self.toPlainText()
@@ -294,10 +297,8 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
             del self.autocomplete
             self.autocomplete: AutocompleteDropDown = None
 
-        if e.key() not in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right): #(e.key() == Qt.Key_Tab):
-            if e.key() == Qt.Key.Key_Return:
-                pass
-            elif e.key() != Qt.Key.Key_Tab:
+        if e.key() not in (Qt.Key.Key_Return, Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right): #(e.key() == Qt.Key_Tab):
+            if e.key() != Qt.Key.Key_Tab:
                 super().keyPressEvent(e)
 
             text = self.toPlainText()
@@ -344,6 +345,14 @@ class AutocompleteTextEdit(QtWidgets.QTextEdit):
                 else:
                     super().keyPressEvent(e)
                 surpressenter = False
+
+            if self.enter_presses == 0 and e.key() == Qt.Key.Key_Return:
+                self.enter_presses = 1
+            elif self.enter_presses == 1:
+                if e.key() == Qt.Key.Key_Return:
+                    self.trigger_search.emit()
+                else:
+                    self.enter_presses = 0
 
 
 class HelpWindow(QtWidgets.QMdiSubWindow):
@@ -440,6 +449,7 @@ class SearchWidget(QtWidgets.QMainWindow):
 
         self.searchbutton = QtWidgets.QPushButton("Find", self)
         self.searchbutton.pressed.connect(self.do_search)
+        self.queryinput.trigger_search.connect(self.do_search)
 
         self.textmodebutton = LabeledRadioBox("Text Search", self)
 
