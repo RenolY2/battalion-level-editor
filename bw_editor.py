@@ -33,6 +33,7 @@ import widgets.tree_view as tree_view
 from configuration import read_config, make_default_config, save_cfg
 from widgets.editor_widgets import open_yesno_box
 from widgets.menu.plugin import PluginHandler
+from widgets.lua_search_widgets import LuaSearchResultItem
 
 import bw_widgets # as mkddwidgets
 from widgets.side_widget import PikminSideWidget
@@ -325,27 +326,31 @@ class LevelEditor(QMainWindow):
 
     @catch_exception_with_dialog
     def do_goto_action(self, item, index):
-        print(item, index)
-        self.tree_select_object(item)
-        print(self.level_view.selected_positions)
-        obj = item.bound_to
-        bwmatrix = None
-
-        if obj is None:
-            return
-
-        bwmatrix = obj.getmatrix()
-
-        if bwmatrix is not None:
-           self.goto_object(obj)
-        elif obj.type == "cGameScriptResource" and obj.mName != "":
-            self.lua_workbench.open_script(obj.mName)
-        elif (obj.type in ("cGlobalScriptEntity", "cInitialisationScriptEntity")
-              and obj.mpScript is not None
-              and obj.mpScript.mName != ""):
-            self.lua_workbench.open_script(obj.mpScript.mName)
+        if isinstance(item, LuaSearchResultItem):
+            lua_script_name = item.script.removesuffix(".lua")
+            self.lua_workbench.open_script(lua_script_name)
         else:
-            self.pik_control.action_open_edit_object()
+            print(item, index)
+            self.tree_select_object(item)
+            print(self.level_view.selected_positions)
+            obj = item.bound_to
+            bwmatrix = None
+
+            if obj is None:
+                return
+
+            bwmatrix = obj.getmatrix()
+
+            if bwmatrix is not None:
+               self.goto_object(obj)
+            elif obj.type == "cGameScriptResource" and obj.mName != "":
+                self.lua_workbench.open_script(obj.mName)
+            elif (obj.type in ("cGlobalScriptEntity", "cInitialisationScriptEntity")
+                  and obj.mpScript is not None
+                  and obj.mpScript.mName != ""):
+                self.lua_workbench.open_script(obj.mpScript.mName)
+            else:
+                self.pik_control.action_open_edit_object()
 
     def tree_select_arrowkey(self):
         current = self.leveldatatreeview.selectedItems()

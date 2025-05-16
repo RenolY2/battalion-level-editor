@@ -1,3 +1,4 @@
+import os
 import PyQt6.QtGui as QtGui
 import PyQt6.QtWidgets as QtWidgets
 from PyQt6.QtCore import QSize, pyqtSignal, QPoint, QRect
@@ -13,6 +14,7 @@ from widgets.tree_view import LevelDataTreeView, ObjectGroup, NamedItem
 from widgets.menu.menubar import Menu
 from lib.searchquery import create_query, find_best_fit, autocompletefull, QueryDepthTooDeepError
 from lib.BattalionXMLLib import BattalionObject
+from widgets.lua_search_widgets import LuaSearchResultItem
 import typing
 
 class LabeledRadioBox(QtWidgets.QWidget):
@@ -76,19 +78,47 @@ def to_clipboard(text):
     clipboard = QtWidgets.QApplication.clipboard()
     clipboard.setText(text)
 
+OBJECTS = 0
+LUA = 1
+
 
 class SearchTreeView(LevelDataTreeView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setMaximumWidth(9999)
-        self.setColumnCount(2)
-        self.setHeaderLabels(["XML Object", "Searched Values"])
+
         self.items = []
 
         self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.run_context_menu)
 
+        self.mode = OBJECTS
+        self.lua_scripts = None
+
+    def set_objects_mode(self):
+        if not self.mode == OBJECTS:
+            self.setColumnCount(2)
+            self.setHeaderLabels(["XML Object", "Searched Values"])
+            self.invisibleRootItem().takeChildren()
+            self.setup_groups()
+        self.mode = OBJECTS
+
+    def set_lua_mode(self):
+        if not self.mode == LUA:
+            self.setColumnCount(3)
+            self.setHeaderLabels(["File", "Line", "Content"])
+            self.invisibleRootItem().takeChildren()
+            self.setup_lua_group()
+
+        self.mode = LUA
+
+    def setup_lua_group(self):
+        self.lua_scripts = self._add_group("Lua Scripts")
+
     def run_context_menu(self, pos):
+        if self.mode == LUA:
+            return
+
         item = self.itemAt(pos)
         context_menu = QtWidgets.QMenu(self)
 
@@ -130,6 +160,18 @@ class SearchTreeView(LevelDataTreeView):
             context_menu.exec(self.mapToGlobal(pos))
             context_menu.destroy()
             del context_menu
+
+    def set_lua_scripts(self, script_results):
+        self.lua_scripts.remove_children()
+        for name, line, content in script_results:
+            item = LuaSearchResultItem(self.lua_scripts, name, str(line), content.strip())
+            itemflag = QtCore.Qt.ItemFlag
+            item.setFlags(itemflag.ItemIsEnabled | itemflag.ItemIsSelectable | itemflag.ItemIsEditable)
+
+        if script_results:
+            self.lua_scripts.setExpanded(True)
+            self.resizeColumnToContents(0)
+            self.resizeColumnToContents(1)
 
     def set_objects(self, objects):
         self.reset()
@@ -426,6 +468,13 @@ class SearchMenubar(QtWidgets.QMenuBar):
         self.helpwindow = None
 
 
+class SplitterWithLayouts(QtWidgets.QSplitter):
+    def add_layout(self, layout):
+        layout_holder = QtWidgets.QWidget(self)
+        layout_holder.setLayout(layout)
+        self.addWidget(layout_holder)
+
+
 class SearchWidget(QtWidgets.QMainWindow):
     closing = pyqtSignal()
 
@@ -435,14 +484,17 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.setWindowTitle("Object Search")
         self.resize(900, 500)
         self.setMinimumSize(QSize(300, 300))
-        self.basewidget = QtWidgets.QWidget(self)
+        #self.basewidget = QtWidgets.QWidget(self)
 
-        self.setCentralWidget(self.basewidget)
+        #self.setCentralWidget(self.basewidget)
         self.menubar = SearchMenubar(self)
         self.setMenuBar(self.menubar)
 
-        self.vlayout = QtWidgets.QVBoxLayout(self)
-        self.basewidget.setLayout(self.vlayout)
+        self.splitter = SplitterWithLayouts(self)
+        self.splitter.setOrientation(Qt.Orientation.Vertical)
+        self.setCentralWidget(self.splitter)
+        #self.vlayout = QtWidgets.QVBoxLayout(self)
+        #self.basewidget.setLayout(self.vlayout)
 
 
         self.queryinput = AutocompleteTextEdit(self, self.editor)
@@ -452,6 +504,18 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.queryinput.trigger_search.connect(self.do_search)
 
         self.textmodebutton = LabeledRadioBox("Text Search", self)
+        self.luamodebutton = LabeledRadioBox("Lua Search", self)
+
+        def toggle_textmode_off(x):
+            if x:
+                self.textmodebutton.radio.setChecked(False)
+
+        def toggle_luamode_off(x):
+            if x:
+                self.luamodebutton.radio.setChecked(False)
+
+        self.textmodebutton.radio.toggled.connect(toggle_luamode_off)
+        self.luamodebutton.radio.toggled.connect(toggle_textmode_off)
 
         self.select_all = QtWidgets.QPushButton("Select All")
         self.save_query = QtWidgets.QPushButton("Save Query")
@@ -461,15 +525,21 @@ class SearchWidget(QtWidgets.QMainWindow):
         self.save_query.pressed.connect(self.action_save_query)
         self.load_query.pressed.connect(self.action_load_query)
 
-        self.vlayout.addWidget(self.queryinput)
+        #self.vlayout.addWidget(self.queryinput)
+        self.splitter.addWidget(self.queryinput)
 
         self.hlayout = QtWidgets.QHBoxLayout(self)
         self.hlayout12 = QtWidgets.QHBoxLayout(self)
 
         self.hlayout12.addWidget(self.searchbutton)
         self.hlayout12.addWidget(self.textmodebutton)
+        self.hlayout12.addWidget(self.luamodebutton)
         self.hlayout.addLayout(self.hlayout12)
-        self.vlayout.addLayout(self.hlayout)
+        #self.vlayout.addLayout(self.hlayout)
+        self.button_and_searchresults_layout = QtWidgets.QVBoxLayout(self)
+        self.button_and_searchresults_layout.setContentsMargins(0, 0, 0, 0)
+        self.button_and_searchresults_layout.addLayout(self.hlayout)
+        #self.splitter.add_layout(self.hlayout)
 
         self.hlayout2 = QtWidgets.QHBoxLayout(self)
         self.hlayout2.addWidget(self.select_all)
@@ -480,7 +550,9 @@ class SearchWidget(QtWidgets.QMainWindow):
 
 
         self.treeview = SearchTreeView(self)
-        self.vlayout.addWidget(self.treeview)
+        self.button_and_searchresults_layout.addWidget(self.treeview)
+        #self.vlayout.addWidget(self.treeview)
+        self.splitter.add_layout(self.button_and_searchresults_layout)
         self.treeview.itemDoubleClicked.connect(self.editor.do_goto_action)
         self.treeview.itemSelectionChanged.connect(self.tree_select)
 
@@ -514,71 +586,89 @@ class SearchWidget(QtWidgets.QMainWindow):
             self.editor.tree_select_object(current[0])
 
     def do_search(self):
-        objects = []
-        if self.textmodebutton.checked():
+        searchtext = self.queryinput.toPlainText()
+        if not searchtext:
+            return
+
+        if self.luamodebutton.checked():
+            self.treeview.set_lua_mode()
             searchtext = self.queryinput.toPlainText()
-            searchtextlower = searchtext.lower()
-            if not searchtext:
-                return
+            results = []
 
-            for object in self.editor.level_file.objects.values():
-                orig = object.tostring()
-                resultlower = orig.lower()
-                if searchtextlower in resultlower:
-                    pos = resultlower.find(searchtextlower)
-                    origtext = orig[pos:pos+len(searchtext)]
-                    if len(origtext) > 100:
-                        origtext = origtext[:100]+"..."
-                    objects.append((object, [origtext]))
-            print("searched all level file objects")
-            for object in self.editor.preload_file.objects.values():
-                orig = object.tostring()
-                resultlower = orig.lower()
-                if searchtextlower in resultlower:
-                    pos = resultlower.find(searchtextlower)
-                    origtext = orig[pos:pos + len(searchtext)]
-                    if len(origtext) > 100:
-                        origtext = origtext[:100] + "..."
-                    objects.append((object, [origtext]))
-            print("searched all preload objects")
+            for script_path in self.editor.lua_workbench.get_lua_script_paths():
+                with open(script_path, "r") as f:
+                    for i, line in enumerate(f):
+                        if searchtext in line:
+                            results.append((os.path.basename(script_path), i + 1, line))
+
+            self.treeview.set_lua_scripts(results)
         else:
-            searchquery = self.queryinput.toPlainText().replace("\n", "")
-            try:
-                query = create_query(searchquery)
-            except Exception as err:
-                open_error_dialog("Cannot save: Search query has syntax errors.", self)
-                return
+            self.treeview.set_objects_mode()
+            objects = []
+            if self.textmodebutton.checked():
+                searchtext = self.queryinput.toPlainText()
+                searchtextlower = searchtext.lower()
+                if not searchtext:
+                    return
 
-            try:
                 for object in self.editor.level_file.objects.values():
-                    if query.evaluate(object):
-                        values = query.get_values(object)
-                        objects.append((object, values))
+                    orig = object.tostring()
+                    resultlower = orig.lower()
+                    if searchtextlower in resultlower:
+                        pos = resultlower.find(searchtextlower)
+                        origtext = orig[pos:pos+len(searchtext)]
+                        if len(origtext) > 100:
+                            origtext = origtext[:100]+"..."
+                        objects.append((object, [origtext]))
                 print("searched all level file objects")
                 for object in self.editor.preload_file.objects.values():
-                    if query.evaluate(object):
-                        values = query.get_values(object)
-                        objects.append((object, values))
+                    orig = object.tostring()
+                    resultlower = orig.lower()
+                    if searchtextlower in resultlower:
+                        pos = resultlower.find(searchtextlower)
+                        origtext = orig[pos:pos + len(searchtext)]
+                        if len(origtext) > 100:
+                            origtext = origtext[:100] + "..."
+                        objects.append((object, [origtext]))
                 print("searched all preload objects")
-            except QueryDepthTooDeepError as err:
-                open_error_dialog(str(err), self)
-                return
+            else:
+                searchquery = self.queryinput.toPlainText().replace("\n", "")
+                try:
+                    query = create_query(searchquery)
+                except Exception as err:
+                    open_error_dialog("Cannot save: Search query has syntax errors.", self)
+                    return
 
-        self.treeview.set_objects(objects)
-        print("set objects")
-        if len(objects) > 300:
-            model = self.treeview.model()
-            for i in range(model.rowCount(self.treeview.rootIndex())):
-                index = model.index(i, 0)
-                item = self.treeview.itemFromIndex(index)
-                if item.objectcount < 300:
-                    self.treeview.expandRecursively(index)
-                QtWidgets.QApplication.processEvents()
-        else:
-            self.treeview.expandAll()
-        print("expanded")
-        self.treeview.resizeColumnToContents(0)
-        print("resized")
+                try:
+                    for object in self.editor.level_file.objects.values():
+                        if query.evaluate(object):
+                            values = query.get_values(object)
+                            objects.append((object, values))
+                    print("searched all level file objects")
+                    for object in self.editor.preload_file.objects.values():
+                        if query.evaluate(object):
+                            values = query.get_values(object)
+                            objects.append((object, values))
+                    print("searched all preload objects")
+                except QueryDepthTooDeepError as err:
+                    open_error_dialog(str(err), self)
+                    return
+
+            self.treeview.set_objects(objects)
+            print("set objects")
+            if len(objects) > 300:
+                model = self.treeview.model()
+                for i in range(model.rowCount(self.treeview.rootIndex())):
+                    index = model.index(i, 0)
+                    item = self.treeview.itemFromIndex(index)
+                    if item.objectcount < 300:
+                        self.treeview.expandRecursively(index)
+                    QtWidgets.QApplication.processEvents()
+            else:
+                self.treeview.expandAll()
+            print("expanded")
+            self.treeview.resizeColumnToContents(0)
+            print("resized")
 
     def action_load_query(self):
         filepath, choosentype = QtWidgets.QFileDialog.getOpenFileName(

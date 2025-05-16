@@ -219,6 +219,24 @@ class LevelDataTreeView(QTreeWidget):
         #self.bolheader = BolHeader()
         #self.addTopLevelItem(self.bolheader)
 
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.run_context_menu)
+        self.expanded.connect(self.resizeheader)
+
+        self.units = None
+        self.components = None
+        self.mapobjects = None
+        self.scenery = None
+        self.assets = None
+        self.hud = None
+        self.scripts = None
+        self.effects = None
+        self.preload = None
+        self.other: ObjectGroup = None
+
+        self.setup_groups()
+
+    def setup_groups(self):
         self.units = self._add_group("Units")
         self.components = self._add_group("Components")
         self.mapobjects = self._add_group("Map")
@@ -229,19 +247,6 @@ class LevelDataTreeView(QTreeWidget):
         self.effects = self._add_group("Effects")
         self.preload = self._add_group("Preload")
         self.other: ObjectGroup = self._add_group("Other")
-        """self.checkpointgroups = self._add_group("Checkpoint groups")
-        self.objectroutes = self._add_group("Object point groups")
-        self.objects = self._add_group("Objects", ObjectGroupObjects)
-        self.kartpoints = self._add_group("Kart start points")
-        self.areas = self._add_group("Areas")
-        self.cameras = self._add_group("Cameras")
-        self.respawnpoints = self._add_group("Respawn points")
-        self.lightparams = self._add_group("Light param entries")
-        self.mgentries = self._add_group("MG entries")"""
-
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.run_context_menu)
-        self.expanded.connect(self.resizeheader)
 
         categorydistributionreverse = {
             "mapobjects":
