@@ -272,7 +272,7 @@ class LuaWorkbench(object):
     def is_initialized(self):
         return os.path.exists(os.path.join(self.workdir, "EntityInitialise.lua"))
 
-    def unpack_scripts_archive(self, res):
+    def unpack_scripts_archive(self, res, progress_update=None):
         script_names = []
 
         files_to_be_fixed = []
@@ -282,7 +282,7 @@ class LuaWorkbench(object):
             script.dump_to_directory(self.tmp)
             script_names.append(script.name)
 
-        for script_name in script_names:
+        for i, script_name in enumerate(script_names):
             print("decompiling", script_name)
             compiled_file = os.path.join(self.tmp, script_name + ".luap")
             decompiled_file = os.path.join(self.workdir, script_name + ".lua")
@@ -291,6 +291,9 @@ class LuaWorkbench(object):
             hash = calc_script_hash(decompiled_file)
             if hash in DECOMP_FIXES:
                 files_to_be_fixed.append((decompiled_file, DECOMP_FIXES[hash]))
+
+            if progress_update is not None:
+                progress_update(i/len(script_names))
 
         self.save_filechanges()
 
@@ -322,7 +325,7 @@ class LuaWorkbench(object):
 
         self.save_filechanges()
 
-    def unpack_scripts(self, respath):
+    def unpack_scripts(self, respath, progress_update=None):
         if respath.endswith(".gz"):
             with gzip.open(respath, "rb") as f:
                 res = bwarchivelib.BattalionArchive.from_file(f)
@@ -330,7 +333,7 @@ class LuaWorkbench(object):
             with open(respath, "rb") as f:
                 res = bwarchivelib.BattalionArchive.from_file(f)
 
-        self.unpack_scripts_archive(res)
+        self.unpack_scripts_archive(res, progress_update)
     
     def read_entity_initialization(self):
         self.entityinit.read_initialization(os.path.join(self.workdir, "EntityInitialise.lua"))

@@ -16,6 +16,7 @@ from widgets.editor_widgets import open_message_dialog, open_yesno_box
 from configuration import save_cfg
 from widgets.lua_search_widgets import LuaFindWindow
 from lib.BattalionXMLLib import create_object
+from widgets.menu.file_menu import LoadingBar
 
 if TYPE_CHECKING:
     import bw_editor
@@ -216,13 +217,23 @@ class EditorMenuBar(QtWidgets.QMenuBar):
             resname = self.editor.file_menu.level_paths.resourcepath
             self.editor.statusbar.showMessage("Reloading scripts...")
 
+            loading_bar = LoadingBar(self.editor)
+            loading_bar.setWindowTitle("Reloading scripts...")
+            loading_bar.show()
+
+            def update_progress(value):
+                loading_bar.progress = value
+                QtWidgets.QApplication.processEvents()
+
             print("reloading scripts from", os.path.join(basepath, resname))
             try:
-                self.editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname))
+                self.editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname),
+                                                         update_progress)
             except Exception as err:
                 traceback.print_exc()
                 open_error_dialog(str(err), None)
 
+            loading_bar.force_close()
             self.editor.statusbar.showMessage("Finished reloading scripts!")
             print("finished reloading")
 
