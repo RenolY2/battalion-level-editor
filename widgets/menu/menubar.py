@@ -1,5 +1,7 @@
 import subprocess
 import os
+import traceback
+
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtGui as QtGui
 import PyQt6.QtCore as QtCore
@@ -218,7 +220,9 @@ class EditorMenuBar(QtWidgets.QMenuBar):
             try:
                 self.editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname))
             except Exception as err:
+                traceback.print_exc()
                 open_error_dialog(str(err), None)
+
             self.editor.statusbar.showMessage("Finished reloading scripts!")
             print("finished reloading")
 
