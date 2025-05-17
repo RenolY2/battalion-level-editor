@@ -58,6 +58,9 @@ class LoadingBar(QtWidgets.QDialog):
         self.last_time = None
         self.force = False
 
+    def update_progress(self, progress):
+        self.progress = progress
+
     def closeEvent(self, closeevent):
         self.timer.stop()
         if not self.force:
@@ -327,10 +330,11 @@ class EditorFileMenu(QMenu):
                     progressbar.set(30)
 
 
-
+                    print("Reloading models...")
                     self.editor.level_view.reloadModels(resource_archive, partial(progressbar.callback, 30))
                     progressbar.set(60)
 
+                    print("Reloading terrain...")
                     if levelpaths.terrainpath.endswith(".gz"):
                         with gzip.open(os.path.join(base, levelpaths.terrainpath), "rb") as g:
                             self.editor.level_view.reloadTerrain(g, partial(progressbar.callback, 30))
@@ -339,7 +343,7 @@ class EditorFileMenu(QMenu):
                             self.editor.level_view.reloadTerrain(g, partial(progressbar.callback, 30))
 
                     progressbar.set(100)
-
+                    print("Done")
                     self.level_paths = levelpaths
                     self.level_data: BattalionLevelFile = level_data
                     self.preload_data: BattalionLevelFile = preload_data
@@ -769,13 +773,13 @@ class PF2(object):
                         for imgy in range(aabb_min_y, aabb_max_y+1):
                             color = temptarget.getpixel((imgx, imgy))
                             if color[0] > 128:
-                                terrheight = terrain.pointdata[imgx*2][imgy*2]
-                                if terrheight is None:
+                                terrheight = terrain.pointdata[imgx*2, imgy*2]
+                                if terrheight == -1:
                                     intended_target.point([imgx, imgy], fill=color)
                                 else:
-                                    terr2height = terrain.pointdata[imgx*2+1][imgy*2]
-                                    terr3height = terrain.pointdata[imgx * 2+1][imgy * 2+1]
-                                    terr4height = terrain.pointdata[imgx * 2][imgy * 2 + 1]
+                                    terr2height = terrain.pointdata[imgx*2+1, imgy*2]
+                                    terr3height = terrain.pointdata[imgx * 2+1, imgy * 2+1]
+                                    terr4height = terrain.pointdata[imgx * 2, imgy * 2 + 1]
                                     count = 1
                                     for h in (terr2height, terr3height, terr4height):
                                         if h is not None:

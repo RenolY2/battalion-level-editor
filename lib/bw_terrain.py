@@ -1,8 +1,9 @@
+import timeit
 from dataclasses import dataclass
 from struct import pack, unpack, unpack_from, Struct
-from lib.vectors import Triangle, Vector3, Quad, Line
+from lib.vectors import Triangle, Vector3, Quad, Line, PlanarQuad
 from OpenGL import *
-from numpy import array
+from numpy import array, ndarray, zeros
 from math import inf
 
 
@@ -96,16 +97,16 @@ class AABB(object):
         corner24 = Vector3(max.x, min.y, max.z)
 
         # Top
-        self.quads.append(Quad(corner11, corner12, corner13, corner14))
+        self.quads.append(PlanarQuad(corner11, corner12, corner13, corner14))
 
         # Sides
-        self.quads.append(Quad(corner13, corner14, corner23, corner24))
-        self.quads.append(Quad(corner11, corner13, corner21, corner23))
-        self.quads.append(Quad(corner12, corner11, corner22, corner21))
-        self.quads.append(Quad(corner14, corner12, corner24, corner22))
+        self.quads.append(PlanarQuad(corner13, corner14, corner23, corner24))
+        self.quads.append(PlanarQuad(corner11, corner13, corner21, corner23))
+        self.quads.append(PlanarQuad(corner12, corner11, corner22, corner21))
+        self.quads.append(PlanarQuad(corner14, corner12, corner24, corner22))
 
         # Bottom
-        self.quads.append(Quad(corner21, corner22, corner23, corner24))
+        self.quads.append(PlanarQuad(corner21, corner22, corner23, corner24))
 
     def ray_hits_box(self, line: Line, d_filter=inf):
         for quad in self.quads:
@@ -156,24 +157,26 @@ class TileModel(object):
         aabb_max = Vector3(-inf, -inf, -inf)
         aabb_min = Vector3(inf, inf, inf)
 
-
         for y in range(4):
+            y_comp = (y+offsety)*4*(4/3)-2048
+            fy = y / 3.0
+
             for x in range(4):
                 fx = x/3.0
-                fy = y/3.0
+
                 u = fy*(fx*tl.x + (1-fx)*tr.x) + (1-fy)*(fx*bl.x + (1-fx)*br.x)
                 v = fy*(fx*tl.y + (1-fx)*tr.y) + (1-fy)*(fx*bl.y + (1-fx)*br.y)
 
                 index = 4*y + x
-                height = tile.heights[index]/16.0
-                position = array([(x+offsetx)*4*(4/3)-2048, height, (y+offsety)*4*(4/3)-2048])
+                height = tile.heights[index]
+                position = array([(x+offsetx)*4*(4/3)-2048, height, y_comp])
                 uv1 = UVPoint(u, v)
                 uv2 = tile.detail_coordinates[index]
                 color = tile.vertex_colors[index]
 
                 self.vertices.append(Vertex(position, color, uv1, uv2))
 
-                if x < 3 and y < 3:
+                if x != 3 and y != 3:
                     indexr = 4*y + x+1
                     indexb = 4*(y+1) + x
                     indexbr = 4*(y+1) + x+1
@@ -217,7 +220,7 @@ class TileModel(object):
             dist = d_filter
             point = None
             for quad in quads:#self.quads_collision:
-                result = line.collide_quad(quad, dist)
+                result = line.collide_quad_nonplanar(quad, dist)
                 if result is not False:
                     p, d = result
                     if d < dist:
@@ -244,7 +247,7 @@ class Tile:
     def from_array(cls, array, i):
         tiledata = array[i*cls.size:(i+1)*cls.size]
         offset = 0
-        heights = list(unpack_from(">16H", tiledata, offset))
+        heights = list(x/16.0 for x in unpack_from(">16H", tiledata, offset))
         offset += 16*2
 
         vertex_colors = initiate_from_section(Color, tiledata[offset:offset+16*4])
@@ -391,33 +394,61 @@ class AABBGroup(object):
             return False
 
 
+class Timer():
+    def __init__(self):
+        self.last = None
+
+    def time(self, text):
+        if self.last is not None:
+            print(f"{text}: Time passed: {timeit.default_timer()-self.last}s")
+        else:
+            print(text)
+
+        self.last = timeit.default_timer()
+
+
 class BWTerrainV2(BWSectionedFile):
     def __init__(self, f):
         super().__init__(f)
+        timer = Timer()
+        timer.time("Start")
         #width, height, unk1, unk2 = unpack("IIII", self.sections[b"RRET"])
         self.terrain_data = TerrainData.from_section(self.sections[b"RRET"])
         self.chunks = initiate_from_section(Chunk, self.sections[b"KNHC"])
         self.map = initiate_from_section(MapChunkReference, self.sections[b"PAMC"])
         self.materials = initiate_from_section(MapMaterial, self.sections[b"LTAM"])
-
+        timer.time("Data parsed")
         assert self.terrain_data.chunks_x == self.terrain_data.chunks_y == 64
 
-        self.pointdata = [[None for y in range(self.terrain_data.chunks_y * 16 + 1)] for x in range(self.terrain_data.chunks_y * 16 + 1)]
+        points_x = self.terrain_data.chunks_y * 16 + 1
+        points_y = self.terrain_data.chunks_y * 16 + 1
 
+        self.pointdata = zeros(shape=[points_x, points_y]) #[[None for y in range(self.terrain_data.chunks_y * 16 + 1)] for x in range(self.terrain_data.chunks_y * 16 + 1)]
+        self.pointdata[True] = -1
         self.grids = []
         chunk_group = []
 
         self.meshes: dict[TileModel] = {}
+
+        timer.time("Data initialized")
+
         for chunkx in range(64):
+            chunk_xx = chunkx*16
+
             for chunky in range(64):
+                chunk_yy = chunky*16
+
                 mapchunk = self.map[chunky*64 + chunkx]
                 if mapchunk.b == 1:
                     chunk = self.chunks[mapchunk.chunkindex]
 
-                    chunk_tiles = []
+                    #chunk_tiles = []
 
                     for tilex in range(4):
+                        tile_xx = chunk_xx + tilex*4
+
                         for tiley in range(4):
+                            tile_yy = chunk_yy + tiley*4
                             tile = chunk.tiles[tiley*4+tilex]
 
                             if tile.material_index not in self.meshes:
@@ -426,33 +457,44 @@ class BWTerrainV2(BWSectionedFile):
                             for x in range(4):
                                 for y in range(4):
                                     index = y*4 + x
-                                    self.pointdata[chunkx*16 + tilex*4 + x][chunky*16+tiley*4+y] = tile.heights[index]/16.0
+                                    #self.pointdata[chunkx*16 + tilex*4 + x][chunky*16+tiley*4+y] = tile.heights[index]/16.0
+                                    self.pointdata[tile_xx+x, tile_yy+y] = tile.heights[index]# / 16.0
 
-                            tilemodel = TileModel(tile, self.materials, chunkx*16 + tilex*4 - tilex -chunkx*4, chunky*16 + tiley*4 - tiley - chunky*4)
+                            tilemodel = TileModel(tile,
+                                                  self.materials,
+                                                  tile_xx - tilex - chunkx*4,
+                                                  tile_yy - tiley - chunky*4)
                             self.meshes[tile.material_index].append(tilemodel)
-                            chunk_tiles.append(tilemodel)
+                            #chunk_tiles.append(tilemodel)
                             chunk_group.append(tilemodel)
-                            
+        timer.time("Chunks created")
         self.chunk_group = AABBGroup(chunk_group)
         self.chunk_group.subdivide(5)
+        timer.time("AABBs generated")
 
     def check_height(self, x, y):
         mapx = int((x + 2048)*0.25)
         mapy = int((y + 2048)*0.25)
         if 0 <= mapx < 1024 and 0 <= mapy < 1024:
-            if self.pointdata[mapx][mapy] is None:
+            if self.pointdata[mapx, mapy] == -1:
                 return None
-            return self.pointdata[mapx][mapy]
+            return self.pointdata[mapx, mapy]
         else:
             return None
 
+
     def ray_collide(self, line: Line):
+        timer = Timer()
+        timer.time("Ray collide start")
         point, dist = None, inf
         result = self.chunk_group.ray_collide(line)
         if result is not False:
             p, d = result
             dist = d
             point = p
+
+
+        timer.time(f"Ray collide end with result {str(point)}")
 
         if point is not None:
             return point, dist
