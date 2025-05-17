@@ -432,9 +432,9 @@ class BWTerrainV2(BWSectionedFile):
                             self.meshes[tile.material_index].append(tilemodel)
                             chunk_tiles.append(tilemodel)
                             chunk_group.append(tilemodel)
-
-            self.chunk_group = AABBGroup(chunk_group)
-            self.chunk_group.subdivide(5)
+                            
+        self.chunk_group = AABBGroup(chunk_group)
+        self.chunk_group.subdivide(5)
 
     def check_height(self, x, y):
         mapx = int((x + 2048)*0.25)
