@@ -3,7 +3,9 @@ import os
 import io
 import platform
 import shutil
+import json
 import sys
+import traceback
 from io import BytesIO
 
 import lib.lua.bwarchivelib as bwarchivelib
@@ -160,7 +162,7 @@ class EntityInitialization(object):
     def delete_name(self, id):
         if id in self.reflection_ids:
             del self.reflection_ids[id]
-        
+
         
 class LuaWorkbench(object):
     def __init__(self, workdir):
@@ -173,8 +175,28 @@ class LuaWorkbench(object):
         self.setup_workdir()
         
         self.last_file_change = {}
+        self.load_filechanges()
 
         java_version()
+
+    def save_filechanges(self):
+        filechangepath = os.path.join(self.workdir, "file_changes.json")
+        with open(filechangepath, "w") as f:
+            json.dump(self.last_file_change, f, indent=4)
+
+        print("Recorded file change times")
+
+    def load_filechanges(self):
+        filechangepath = os.path.join(self.workdir, "file_changes.json")
+        try:
+            with open(filechangepath, "r") as f:
+                self.last_file_change = json.load(f)
+            print("Loaded file change times")
+        except FileNotFoundError:
+            print("No existing file change times found")
+        except Exception as err:
+            traceback.print_exc()
+            print("File changes file corrupted, skipping...")
 
     def reset(self):
         self.entityinit.reset()
@@ -270,6 +292,8 @@ class LuaWorkbench(object):
             if hash in DECOMP_FIXES:
                 files_to_be_fixed.append((decompiled_file, DECOMP_FIXES[hash]))
 
+        self.save_filechanges()
+
         if len(files_to_be_fixed) > 0:
             result = open_yesno_box("The following files are known to have been decompiled incorrectly:\n"
                                     +", ".join(os.path.basename(x[0]) for x in files_to_be_fixed),
@@ -295,6 +319,8 @@ class LuaWorkbench(object):
             decompiled_file = os.path.join(self.workdir, script_name + ".lua")
             decompile_unluac(compiled_file, decompiled_file)
             self.record_file_change(script_name)
+
+        self.save_filechanges()
 
     def unpack_scripts(self, respath):
         if respath.endswith(".gz"):
@@ -328,7 +354,9 @@ class LuaWorkbench(object):
             
             script_section = bwarchivelib.LuaScript.from_filepath(compiled_file)
             script_sections.append(script_section)
-            
+
+        self.save_filechanges()
+
         if delete_rest:
             scripts = [x for x in res.scripts()]
             for script in scripts:
