@@ -262,9 +262,7 @@ class Gizmo2DMoveX(ClickDragAction):
 
     def just_clicked(self, editor, buttons, event):
         super().just_clicked(editor, buttons, event)
-        editor.selectionqueue.queue_selection(event.position().x(), event.position().y(), 1, 1,
-                                              editor.shift_is_pressed, do_gizmo=True)
-        editor.do_redraw(forceselected=True)
+
         self.start_state = editor.history.stash_selected()
         self.moved = False
 
@@ -393,12 +391,12 @@ class Select3D(ClickDragAction):
     def just_clicked(self, editor, buttons, event):
         super().just_clicked(editor, buttons, event)
 
-        editor.select_objects(event.position().x(), event.position().y(), shift=editor.shift_is_pressed)
+        #editor.select_objects(event.position().x(), event.position().y(), shift=editor.shift_is_pressed)
         #editor.selectionqueue.queue_selection(
         #    event.x(), event.y(), 1, 1,
         #    editor.shift_is_pressed)
         #print("WE HAVE SENT A REQUEST")
-        editor.do_redraw(forceselected=True)
+        #editor.do_redraw(forceselected=True)
 
 
         editor.camera_direction.normalize()
@@ -714,6 +712,10 @@ class UserControl(object):
     def handle_press_topdown(self, event):
         editor = self._editor_widget
 
+        editor.selectionqueue.queue_selection(event.position().x(), event.position().y(), 1, 1,
+                                              editor.shift_is_pressed, do_gizmo=True)
+        editor.do_redraw(forceselected=True)
+
         for key in key_enums.keys():
             if self.buttons.just_pressed(event, key):
                 for action in self.clickdragactions[key]:
@@ -741,6 +743,10 @@ class UserControl(object):
 
     def handle_press_3d(self, event):
         editor = self._editor_widget
+
+        editor.selectionqueue.queue_selection(event.position().x(), event.position().y(), 1, 1,
+                                              editor.shift_is_pressed, do_gizmo=True)
+        editor.do_redraw(forceselected=True)
 
         for key in key_enums.keys():
             if self.buttons.just_pressed(event, key):
