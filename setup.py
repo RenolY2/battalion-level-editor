@@ -20,6 +20,7 @@ else:
 # Dependencies are automatically detected, but it might need fine tuning.
 
 include_files = [
+    "plugins",
     "objecthelp",
     "resources/",
     ("lib/fieldnames.txt", "lib/fieldnames.txt"),
