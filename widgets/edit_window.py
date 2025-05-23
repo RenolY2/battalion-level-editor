@@ -6,7 +6,7 @@ from functools import partial
 from lib.bw_types import BWMatrix, decompose, recompose
 from timeit import default_timer
 from widgets.editor_widgets import open_message_dialog
-from builtin_plugins.plugin_feature_test import load_icon
+from builtin_plugins.add_object_window import load_icon
 from itertools import chain
 
 import PyQt6.QtWidgets as QtWidgets

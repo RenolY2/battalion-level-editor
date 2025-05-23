@@ -14,7 +14,7 @@ import PyQt6.QtCore as QtCore
 import PyQt6.QtWidgets as QtWidgets
 from widgets.menu.menu import Menu
 
-from builtin_plugins import plugin_feature_test
+from builtin_plugins import add_object_window
 
 from PyQt6.QtCore import Qt
 
