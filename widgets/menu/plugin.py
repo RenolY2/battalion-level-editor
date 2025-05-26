@@ -68,7 +68,7 @@ class PluginHandler(object):
         self.add_event("key_press", "LevelEditor", "qtkey")
         self.add_event("cancel_mode", "LevelEditor")
 
-        self.add_object_window: plugin_feature_test.Plugin = self.load_builtin_plugin(plugin_feature_test)
+        self.add_object_window: add_object_window.Plugin = self.load_builtin_plugin(add_object_window)
 
     def add_event(self, event_name, *args):
         self.events[event_name] = args
