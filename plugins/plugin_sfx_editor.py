@@ -1,10 +1,13 @@
 import os
 import sys
 import subprocess
+import multiprocessing
 from typing import TYPE_CHECKING
+from plugins.sfx_editor.main import main
 
 if TYPE_CHECKING:
     import bw_editor
+
 
 class Plugin(object):
     def __init__(self):
@@ -35,17 +38,11 @@ class Plugin(object):
 
         # Start the editor as a separate process
         try:
-            # Use the same Python interpreter that's running this plugin
-            python_exe = sys.executable
-            
-            # Set environment variables to help Python find the modules
-            env = os.environ.copy()
-            env["PYTHONPATH"] = sfx_editor_dir + os.pathsep + env.get("PYTHONPATH", "")
-            
-            # Start the process
-            self.sfx_process = subprocess.Popen([python_exe, main_script], 
-                                              cwd=sfx_editor_dir,
-                                              env=env)
+            process = multiprocessing.Process(target=main, args=[[]])
+
+            process.daemon = True
+            process.start()
+            self.sfx_process = process
             
             print(f"SFX Editor opened as process: {self.sfx_process.pid}")
         except Exception as e:
@@ -107,24 +104,13 @@ class Plugin(object):
                     
                     # Open the editor with the file specified
                     try:
-                        # Use the same Python interpreter that's running this plugin
-                        python_exe = sys.executable
-                        
-                        # Set environment variables to help Python find the modules
-                        env = os.environ.copy()
-                        env["PYTHONPATH"] = sfx_editor_dir + os.pathsep + env.get("PYTHONPATH", "")
+                        print(os.path.join(sfx_editor_dir, "main.py"), temp_path)
+                        process = multiprocessing.Process(target=main, args=[[os.path.join(sfx_editor_dir, "main.py"), temp_path]])
 
-                        print("Trying to launch editor")
-                        print("editor dir", sfx_editor_dir)
-                        print("python path", env["PYTHONPATH"])
+                        process.daemon = True
+                        process.start()
+                        self.sfx_process = process
 
-                        # Start the process with an argument to open the specific file
-                        self.sfx_process = subprocess.Popen(
-                            [python_exe, os.path.join(sfx_editor_dir, "main.py"), temp_path],
-                            cwd=sfx_editor_dir,
-                            env=env
-                        )
-                        
                         print(f"SFX Editor opened with effect {effect_name}")
                     except Exception as e:
                         print(f"Error opening SFX Editor: {str(e)}")

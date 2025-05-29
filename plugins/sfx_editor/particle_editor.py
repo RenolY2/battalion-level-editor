@@ -5,8 +5,8 @@ import os
 from PIL import Image, ImageTk
 import tkinter.colorchooser as colorchooser
 
-from theme_manager import ThemeManager
-from utils import create_military_background
+from .theme_manager import ThemeManager
+from .utils import create_military_background
 
 class ParticleEffectEditor:
     def __init__(self, root):
@@ -36,7 +36,8 @@ class ParticleEffectEditor:
         """Set the application icon"""
         try:
             # Look for the icon in the assets folder
-            icon_path = os.path.join("assets", "sfx_editor_icon.png")
+            base = os.path.dirname(__file__)
+            icon_path = os.path.join(base, "assets", "sfx_editor_icon.png")
             
             # Check if the icon file exists
             if os.path.exists(icon_path):
