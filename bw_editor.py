@@ -1239,7 +1239,7 @@ class LevelEditor(QMainWindow):
 
     def action_update_position(self, event, pos):
         self.current_coordinates = pos
-        self.statusbar.showMessage(str(pos))
+        self.statusbar.showMessage("({}, {}, {})".format(*pos))
 
     def action_open_edit(self):
         if self.pik_control.button_edit_object.isEnabled():
