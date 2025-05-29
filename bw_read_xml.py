@@ -172,11 +172,13 @@ def create_object_hierarchy(id_map):
 
     return hierarchy, never_referenced
 
+
 def create_ref(ref, hierarchy, id_map):
     if ref.id not in hierarchy:
         return ref.name
     else:
         return ref.name + " => " + create_ref(id_map[hierarchy[ref.id]], hierarchy, id_map)
+
 
 if __name__ == "__main__":
     infile = "bw2_sandbox/SP_5.3_Level.xml"
