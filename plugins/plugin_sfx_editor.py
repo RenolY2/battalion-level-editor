@@ -28,7 +28,11 @@ class Plugin(object):
         
         # Path to the main.py script in sfx_editor
         main_script = os.path.join(sfx_editor_dir, "main.py")
-        
+
+        print("Trying to launch editor")
+        print("editor dir", sfx_editor_dir)
+        print("main", main_script)
+
         # Start the editor as a separate process
         try:
             # Use the same Python interpreter that's running this plugin
@@ -109,7 +113,11 @@ class Plugin(object):
                         # Set environment variables to help Python find the modules
                         env = os.environ.copy()
                         env["PYTHONPATH"] = sfx_editor_dir + os.pathsep + env.get("PYTHONPATH", "")
-                        
+
+                        print("Trying to launch editor")
+                        print("editor dir", sfx_editor_dir)
+                        print("python path", env["PYTHONPATH"])
+
                         # Start the process with an argument to open the specific file
                         self.sfx_process = subprocess.Popen(
                             [python_exe, os.path.join(sfx_editor_dir, "main.py"), temp_path],
