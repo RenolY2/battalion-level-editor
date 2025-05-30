@@ -4,6 +4,7 @@ import traceback
 __version__ = '2.1.0'
 
 import os
+import multiprocessing
 from timeit import default_timer
 from copy import deepcopy
 from io import TextIOWrapper, BytesIO, StringIO
@@ -1393,6 +1394,7 @@ class Logger(object):
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     #with cProfile.Profile() as pr:
     if True:
         pr = None
