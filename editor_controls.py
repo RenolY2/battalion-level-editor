@@ -278,7 +278,7 @@ class Gizmo2DMoveX(ClickDragAction):
     def just_released(self, editor, buttons, event):
         if self.moved:
             startstate = self.start_state
-            editor.history.record_stash(startstate)
+            editor.history.record_move(startstate)
             self.moved = False
             self.start_state = None
 

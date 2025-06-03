@@ -1321,6 +1321,12 @@ class EditorLevelPositionsHistory(EditorHistory):
         if len(stash) > 0 and not self.editor.dolphin.do_visualize():
             self.add(stash)
 
+    def record_move(self, before_state):
+        objects = [entry[0] for entry in before_state]
+        after_state = self.stash_record(objects)
+        if len(before_state) > 0 and not self.editor.dolphin.do_visualize():
+            self.add((before_state, after_state))
+
     def record(self, objects):
         record = self.stash_record(objects)
         if len(record) > 0 and not self.editor.dolphin.do_visualize():
@@ -1341,26 +1347,24 @@ class EditorLevelPositionsHistory(EditorHistory):
     def history_undo(self):
         if self.top == 0:
             return None
-        elif self.top == len(self.history):
-            top = self.history[-1]
-            stash = self.stash_record(obj for obj in self.editor.level_file.objects_with_positions.values())
-            self.record_stash(stash)
-            if len(stash) > 0 and not self.editor.dolphin.do_visualize():
-                self.top -= 1
 
         self.top -= 1
         self.print_state()
-        return self.history[self.top]
+        entry = self.history[self.top]
+        if isinstance(entry, tuple):
+            return entry[0]
+        return entry
 
     def history_redo(self):
-        if self.top >= len(self.history)-1:
+        if self.top >= len(self.history):
             return None
 
+        entry = self.history[self.top]
         self.top += 1
-        item = self.history[self.top]
-
         self.print_state()
-        return item
+        if isinstance(entry, tuple):
+            return entry[1]
+        return entry
 
 
 import sys
