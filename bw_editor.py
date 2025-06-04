@@ -7,6 +7,7 @@ import os
 import multiprocessing
 from timeit import default_timer
 from copy import deepcopy
+from dataclasses import dataclass
 from io import TextIOWrapper, BytesIO, StringIO
 from math import sin, cos, atan2, pi
 import json
@@ -20,7 +21,7 @@ from PyQt6.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter,
                              QScrollArea, QGridLayout, QMenuBar, QMenu, QApplication, QStatusBar, QLineEdit)
 from PyQt6.QtGui import QMouseEvent, QImage, QAction
 import PyQt6.QtGui as QtGui
-
+import numpy
 import opengltext
 import py_obj
 from lib.lua.luaworkshop import LuaWorkbench
@@ -1126,12 +1127,13 @@ class LevelEditor(QMainWindow):
             if state is None:
                 print("reached end of undo history")
             else:
-                for obj, mtx, overridemtx in state:
-                    currmtx = obj.getmatrix()
+                for entry in state:
+                    entry: HistoryEntry
+                    currmtx = entry.bwobj.getmatrix()
                     if currmtx is not None:
                         for i in range(16):
-                            currmtx.mtx[i] = mtx[i]
-                        obj.update_xml()
+                            currmtx.mtx[i] = entry.matrix[i]
+                        entry.bwobj.update_xml()
                 if len(state) > 0:
                     self.level_view.do_redraw(force=True)
                     self.set_has_unsaved_changes(True)
@@ -1144,12 +1146,13 @@ class LevelEditor(QMainWindow):
             if state is None:
                 print("reached end of undo history")
             else:
-                for obj, mtx, overridemtx in state:
-                    currmtx = obj.getmatrix()
+                for entry in state:
+                    entry: HistoryEntry
+                    currmtx = entry.bwobj.getmatrix()
                     if currmtx is not None:
                         for i in range(16):
-                            currmtx.mtx[i] = mtx[i]
-                        obj.update_xml()
+                            currmtx.mtx[i] = entry.matrix[i]
+                        entry.bwobj.update_xml()
                 if len(state) > 0:
                     self.level_view.do_redraw(force=True)
                     self.set_has_unsaved_changes(True)
@@ -1294,10 +1297,24 @@ class EditorHistory(object):
         return item
 
 
+@dataclass
+class HistoryEntry:
+    bwobj: BattalionObject
+    matrix: numpy.array
+    override: numpy.array
+
+
+@dataclass
+class ActionStep:
+    prev: list
+    curr: list
+
+
 class EditorLevelPositionsHistory(EditorHistory):
     def __init__(self, historysize, editor):
         super().__init__(historysize)
         self.editor: LevelEditor = editor
+        self.history: list[HistoryEntry]
 
     def stash_record(self, objects):
         record = []
@@ -1310,25 +1327,24 @@ class EditorLevelPositionsHistory(EditorHistory):
                 else:
                     overridemtx = None
 
-                record.append((obj, mtx, overridemtx))
+                record.append(HistoryEntry(obj, mtx, overridemtx))
 
         return record
+
+    def create_updated_record(self, record: list[HistoryEntry]):
+        newrecord = self.stash_record(
+            entry.bwobj for entry in record
+        )
+
+        return newrecord
 
     def stash_selected(self):
         return self.stash_record(self.editor.level_view.selected)
 
     def record_stash(self, stash):
         if len(stash) > 0 and not self.editor.dolphin.do_visualize():
-            self.add(stash)
-
-    def record(self, objects):
-        record = self.stash_record(objects)
-        if len(record) > 0 and not self.editor.dolphin.do_visualize():
-            self.add(record)
-
-    def record_selected(self):
-        objects = self.editor.level_view.selected
-        self.record(objects)
+            current = self.create_updated_record(stash)
+            self.add(ActionStep(stash, current))
 
     def print_state(self):
         indicators = ["  " for x in range(self.historysize)]
@@ -1339,28 +1355,26 @@ class EditorLevelPositionsHistory(EditorHistory):
         print(" ".join(indices))
 
     def history_undo(self):
-        if self.top == 0:
+        if not self.history:
             return None
-        elif self.top == len(self.history):
-            top = self.history[-1]
-            stash = self.stash_record(obj for obj in self.editor.level_file.objects_with_positions.values())
-            self.record_stash(stash)
-            if len(stash) > 0 and not self.editor.dolphin.do_visualize():
-                self.top -= 1
 
-        self.top -= 1
+        if self.top > 0:
+            self.top -= 1
+
+        state = self.history[self.top].prev
+
         self.print_state()
-        return self.history[self.top]
+        return state
 
     def history_redo(self):
-        if self.top >= len(self.history)-1:
+        if self.top >= len(self.history):
             return None
 
+        state = self.history[self.top].curr
         self.top += 1
-        item = self.history[self.top]
 
         self.print_state()
-        return item
+        return state
 
 
 import sys
