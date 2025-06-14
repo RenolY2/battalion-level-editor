@@ -389,7 +389,10 @@ class Plugin(object):
                             texname = arg.removesuffix(".ace")
                             texobj = texture_lookup.get(texname.lower())
                             if texobj is not None:
-                                parent[texobj.id] = obj.id
+                                if texobj.id not in parent:
+                                    parent[texobj.id] = []
+
+                                parent[texobj.id].append(obj.id)
                             else:
                                 print("Warning: Special Effect", obj.mName,"references non-existing texture", texname)
 
@@ -397,7 +400,10 @@ class Plugin(object):
                             modelname, _ = arg.rsplit(".", maxsplit=2)
                             modelobj = mesh_lookup.get(modelname.lower())
                             if modelobj is not None:
-                                parent[modelobj.id] = obj.id
+                                if modelobj.id not in parent:
+                                    parent[modelobj.id] = []
+
+                                parent[modelobj.id].append(obj.id)
                             else:
                                 print("Warning: Special Effect", obj.mName,"references non-existing model", modelname)
 
