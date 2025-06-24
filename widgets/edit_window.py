@@ -1,6 +1,7 @@
 import typing
 import os
 import math
+import string
 import json
 from functools import partial
 from lib.bw_types import BWMatrix, decompose, recompose
@@ -17,6 +18,7 @@ from widgets.editor_widgets import SearchBar
 from widgets.edit_window_enums import FLAG_TYPES, ENUMS, FLAGS
 
 ICONS = {"COPY": None}
+ALLOWED_FUNCNAME_CHARS = string.ascii_letters + string.digits + "_."
 
 
 def get_field_name(object_type, fieldname):
@@ -1283,7 +1285,10 @@ class LuaNameEdit(QtWidgets.QWidget):
         self.textinput = QtWidgets.QLineEdit(self)
         self.vbox = QtWidgets.QVBoxLayout(self)
         self.vbox.setContentsMargins(0, 0, 0, 0)
-        self.already_exists = SelectableLabel("Lua name already exists! Please use a different one.", self)
+
+        self.already_exists_text = "Lua name already exists! Please use a different one."
+        self.invalid_char_text = "Invalid name! Please only use latin letters, digits, _ and ."
+        self.already_exists = SelectableLabel(self.invalid_char_text, self)
         self.vbox.addWidget(self.textinput)
         self.vbox.addWidget(self.already_exists)
         self.already_exists.setVisible(False)
@@ -1291,9 +1296,10 @@ class LuaNameEdit(QtWidgets.QWidget):
         self.get_value = get_value
         self.set_value = set_value
         self.name_usages = name_usages
-        self.textinput.textChanged.connect(self.change_value)
+        self.textinput.textChanged.connect(self.update_info)
+        self.textinput.textEdited.connect(self.change_value)
         self.object = obj
-    
+
     def find_text(self, value, case_sensitive):
         if case_sensitive:
             return value in self.textinput.text(), self
@@ -1303,10 +1309,11 @@ class LuaNameEdit(QtWidgets.QWidget):
     def get_searchable_values(self):
         return [self.textinput.text()]
 
-    def display_already_exists(self):
+    def display_info(self, text):
+        self.already_exists.setText(text)
         self.already_exists.setVisible(True)
 
-    def hide_already_exists(self):
+    def hide_info(self):
         self.already_exists.setVisible(False)
 
     def update_value(self):
@@ -1317,17 +1324,31 @@ class LuaNameEdit(QtWidgets.QWidget):
         self.textinput.setText(str(val))
         self.blockSignals(False)
 
-    def change_value(self, val):
+    def update_info(self, val):
         val = val.strip()
         if not val:
-            self.hide_already_exists()
+            self.hide_info()
+        else:
+            usages = self.name_usages(val)
+            if len(usages) > 1 or len(usages) == 1 and self.object.id not in usages:
+                self.display_info(self.already_exists_text)
+            elif not all(c in ALLOWED_FUNCNAME_CHARS for c in val):
+                self.display_info(self.invalid_char_text)
+
+    def change_value(self):
+        val = self.textinput.text()
+        val = val.strip()
+        if not val:
+            self.hide_info()
             self.set_value(None)
         else:
             usages = self.name_usages(val)
             if len(usages) > 1 or len(usages) == 1 and self.object.id not in usages:
-                self.display_already_exists()
+                self.display_info(self.already_exists_text)
+            elif not all(c in ALLOWED_FUNCNAME_CHARS for c in val):
+                self.display_info(self.invalid_char_text)
             else:
-                self.hide_already_exists()
+                self.hide_info()
                 self.set_value(val)
 
 
@@ -1612,9 +1633,18 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
 
         def setter(x):
             if x is None:
+                print("Deleting lua name", object.id)
                 editor.lua_workbench.entityinit.delete_name(object.id)
+                object.lua_name = ""
             else:
-                editor.lua_workbench.entityinit.set_name(object.id, x)
+                print("Setting lua name", object.id, x)
+                if not all(c in ALLOWED_FUNCNAME_CHARS for c in x):
+                    print("Didn't set because disallowed character in name")
+                    print("Only", ALLOWED_FUNCNAME_CHARS, "allowed")
+                else:
+                    editor.lua_workbench.entityinit.set_name(object.id, x)
+                    object.lua_name = x
+                    editor.lua_workbench.write_entity_initialization()
 
         lua_getsetters = (getter, setter)
         item_cache = {}
