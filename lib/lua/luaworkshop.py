@@ -257,12 +257,17 @@ class LuaWorkbench(object):
 
     def record_file_change(self, script_name):
         self.last_file_change[script_name] = os.stat(os.path.join(self.workdir, script_name+".lua")).st_mtime
+
+        #print("Time for", script_name, "is", self.last_file_change[script_name])
     
     def did_file_change(self, script_name):
         curr = os.stat(os.path.join(self.workdir, script_name+".lua")).st_mtime
+
         if script_name not in self.last_file_change:
-            return True 
+            #print(script_name, "has no recorded file change time")
+            return True
         else:
+            #print(script_name, "now:", curr, "past:", self.last_file_change[script_name])
             return self.last_file_change[script_name] != curr 
     
     def open_script(self, script_name):
@@ -349,7 +354,9 @@ class LuaWorkbench(object):
             print("compiling", script_name)
             compiled_file = os.path.join(self.tmp_out, script_name+".luap")
             decompiled_file = os.path.join(self.workdir, script_name+".lua")
-            if not os.path.exists(compiled_file) or self.did_file_change(script_name):
+            if (not os.path.exists(compiled_file)
+                    or self.did_file_change(script_name)
+                    or script_name == "EntityInitialise"):
                 compile_lua(decompiled_file, compiled_file)
                 self.record_file_change(script_name)
             else:
