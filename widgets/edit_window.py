@@ -1636,6 +1636,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                 print("Deleting lua name", object.id)
                 editor.lua_workbench.entityinit.delete_name(object.id)
                 object.lua_name = ""
+                editor.lua_workbench.write_entity_initialization()
             else:
                 print("Setting lua name", object.id, x)
                 if not all(c in ALLOWED_FUNCNAME_CHARS for c in x):
