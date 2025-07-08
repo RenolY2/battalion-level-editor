@@ -912,17 +912,6 @@ class ReferenceEdit(QtWidgets.QWidget):
                 if obj is not None:
                     obj.updatemodelname()
                 self.changed.emit()
-            else:
-                currobj = self.get_value()
-                if currobj is not None:
-                    try:
-                        index = self.items.index((currobj.name, currobj))
-                    except ValueError:
-                        pass
-                    else:
-                        self.object_combo_box.setCurrentIndex(index)
-                        open_message_dialog(f"Selected object type doesn't match, selection reverted."
-                                            "")
 
     def is_instance(self, other_type):
         if self.type == other_type:
