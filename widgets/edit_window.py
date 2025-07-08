@@ -767,7 +767,7 @@ class ReferenceEdit(QtWidgets.QWidget):
             if obj.type not in check_types:
                 open_message_dialog(
                     f"Warning!\n"
-                    f"Object {obj.name} cannot be used because it has incompatible type {obj.type})")
+                    f"Object {obj.name} cannot be used because it has incompatible type {obj.type}.")
                 self.object_combo_box.setCurrentText(default)
             else:
                 self.set_value(obj)
