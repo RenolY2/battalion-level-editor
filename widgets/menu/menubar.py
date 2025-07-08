@@ -234,6 +234,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                 open_error_dialog(str(err), None)
 
             loading_bar.force_close()
+            self.editor.read_entityinit_and_update()
+
             self.editor.statusbar.showMessage("Finished reloading scripts!")
             print("finished reloading")
 
