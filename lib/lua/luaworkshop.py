@@ -357,7 +357,13 @@ class LuaWorkbench(object):
             if (not os.path.exists(compiled_file)
                     or self.did_file_change(script_name)
                     or script_name == "EntityInitialise"):
-                compile_lua(decompiled_file, compiled_file)
+
+                if not os.path.exists(compiled_file) and not self.did_file_change(script_name):
+                    orig_file = os.path.join(self.tmp, script_name+".luap")
+                    print("File unchanged, copying", orig_file, "to", compiled_file)
+                    shutil.copy(orig_file, compiled_file)
+                else:
+                    compile_lua(decompiled_file, compiled_file)
                 self.record_file_change(script_name)
             else:
                 print(script_name, "hasn't changed, compile skipped")
