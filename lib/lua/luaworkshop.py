@@ -301,6 +301,7 @@ class LuaWorkbench(object):
                 progress_update(i/len(script_names))
 
         self.save_filechanges()
+        self.clear_tmp_out()
 
         if len(files_to_be_fixed) > 0:
             result = open_yesno_box("The following files are known to have been decompiled incorrectly:\n"
@@ -347,6 +348,12 @@ class LuaWorkbench(object):
         self.entityinit.update_initialization(os.path.join(self.workdir, "EntityInitialise.lua"),
                                               os.path.join(self.workdir, "EntityInitialise.lua"))
         self.record_file_change("EntityInitialise")
+
+    def clear_tmp_out(self):
+        files = os.listdir(self.tmp_out)
+        for fname in files:
+            if fname.endswith(".luap"):
+                os.remove(os.path.join(self.tmp_out, fname))
 
     def repack_scripts(self, res, scripts=[], delete_rest=True):
         script_sections = []
