@@ -430,6 +430,10 @@ class Plugin(object):
             if self.newaddwindow.current_mode == AddObjectMode.EXISTING:
                 self.newaddwindow.addexistingoject: AddExistingObject
                 obj = self.newaddwindow.addexistingoject.spawn_object(point)
+                if obj.type == "cDestroyableObject" and obj.mStickToFloor:
+                    mtx = obj.getmatrix()
+                    mtx.set_position(point.x, 0, point.y)
+
                 if self.last_obj is not None:
                     if obj.type == "cWaypoint" and self.last_obj.type == "cWaypoint":
                         self.last_obj.NextWP = obj
