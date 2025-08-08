@@ -149,10 +149,10 @@ class TileModel(object):
         self.material = materials[tile.material_index]
         self.quads_collision = []
 
-        tl = tile.surface_coordinates[0]
-        tr = tile.surface_coordinates[1]
-        bl = tile.surface_coordinates[2]
-        br = tile.surface_coordinates[3]
+        br = tile.surface_coordinates[0]
+        bl = tile.surface_coordinates[1]
+        tr = tile.surface_coordinates[2]
+        tl = tile.surface_coordinates[3]
 
         aabb_max = Vector3(-inf, -inf, -inf)
         aabb_min = Vector3(inf, inf, inf)
