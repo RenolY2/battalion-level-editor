@@ -189,6 +189,14 @@ class EditorFileMenu(QMenu):
             self.file_load_recent_menu.add_action(file,
                                                   func=partial(self.load_specific_recent_file, file))
 
+    def get_pfd_path(self):
+        base = self.current_path
+        assert base.endswith(".xml"), "PFD only exists for BW1"
+        pfd_path = base.replace(".xml", ".pfd")
+        assert os.path.exists(pfd_path), f"{pfd_path} not found"
+
+        return pfd_path
+
     def get_strings_path(self, language):
         string_file = self.level_paths.stringpaths[language]
 
