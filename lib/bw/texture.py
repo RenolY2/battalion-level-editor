@@ -41,14 +41,7 @@ class TextureArchive(object):
         for texture in archive.textures.textures:
             texture.data_ready = False
 
-            self.textures[texture.name.lower()] = texture
-            name = bytes(texture.name, encoding="ascii").lower()
-            if self.is_bw1:
-                name2 = name.ljust(0x10, b"\x00")
-            else:
-                name2 = name.ljust(0x20, b"\x00")
-            self.textures[name2] = texture
-
+            self.register_texture(texture)
 
         self._cached = {}
         self.tex = glGenTextures(1)
@@ -58,6 +51,15 @@ class TextureArchive(object):
         self.texture_queue = mp.Queue()
         self.result_queue = mp.Queue()
         self.texture_processor = mp.Process(target=process, args=(self.texture_queue, self.result_queue))
+
+    def register_texture(self, texture):
+        self.textures[texture.name.lower()] = texture
+        name = bytes(texture.name, encoding="ascii").lower()
+        if self.is_bw1:
+            name2 = name.ljust(0x10, b"\x00")
+        else:
+            name2 = name.ljust(0x20, b"\x00")
+        self.textures[name2] = texture
 
     def clear_cache(self, textures=tuple()):
         for texname in textures:
