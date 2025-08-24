@@ -338,6 +338,8 @@ class PikminSideWidget(QWidget):
 
         if len(selected) >= 1:
             for i, v in enumerate(selected):
+                if v.id is None:
+                    continue
                 self.make_window(self.parent, v, make_main=True)
 
 
@@ -557,10 +559,13 @@ class PikminSideWidget(QWidget):
 
         for obj in objs:
             if len(objectnames) < 20:
-                if obj.customname is not None:
-                    objectnames.append("{0} ({1}, {2})".format(obj.type, obj.customname,  obj.id))
+                if not hasattr(obj, "id"):
+                    objectnames.append(obj.type)
                 else:
-                    objectnames.append("{0} ({1})".format(obj.type, obj.id))
+                    if obj.customname is not None:
+                        objectnames.append("{0} ({1}, {2})".format(obj.type, obj.customname,  obj.id))
+                    else:
+                        objectnames.append("{0} ({1})".format(obj.type, obj.id))
                 """if obj.customname is not None:
                     objectnames.append("{0} ({1}, {2})".format(obj.customname, obj.type, obj.id))
                 else:
