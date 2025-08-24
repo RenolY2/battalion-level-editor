@@ -50,14 +50,18 @@ class EditorMouseMode(object):
         self.callback_change_to = {}
         self.callback_change_from = {}
 
-    def add_change_to_callback(self, mode, func):
+    def plugin_set_change_to_callback(self, mode, func):
         self.callback_change_to[mode] = func
 
-    def add_change_from_callback(self, mode, func):
+    def plugin_set_change_from_callback(self, mode, func):
         self.callback_change_from[mode] = func
 
     def set_mode(self, mode: MouseMode):
         assert isinstance(mode, MouseMode)
+        if self.mode == MouseMode.PLUGIN and mode != MouseMode.PLUGIN:
+            for func in self.callback_change_from.values():
+                func()
+
         self.mode = mode
 
     # Add plugin mode and return its index for identification
@@ -70,6 +74,10 @@ class EditorMouseMode(object):
 
     def set_plugin_mode(self, mode: int):
         assert 0 <= mode < len(self.plugin_modes)
+        if self.mode == MouseMode.PLUGIN and self.plugin_mode != mode:
+            if self.plugin_mode in self.callback_change_from:
+                self.callback_change_from[self.plugin_mode]()
+
         self.set_mode(MouseMode.PLUGIN)
         self.plugin_mode = mode
 
@@ -251,6 +259,47 @@ class TopdownSelect(ClickDragAction):
         editor.last_selectionbox = (editor.selectionbox_start, editor.selectionbox_end)
         editor.selectionbox_start = editor.selectionbox_end = None
         editor.do_redraw()
+
+
+class PluginTopdownSelect(ClickDragAction):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.select_start = None
+        self.select_end = None
+
+    def condition(self, editor, buttons, event):
+        return (editor.gizmo.was_hit_at_all is not True)
+
+    def just_clicked(self, editor, buttons, event):
+        super().just_clicked(editor, buttons, event)
+        x, y = self.first_click.x, self.first_click.y
+
+        selectstartx, selectstartz = editor.mouse_coord_to_world_coord(x, y)
+        self.select_start = (selectstartx, selectstartz)
+        editor.plugin_handler.execute_event("world_click_select_start", editor, selectstartx, selectstartz)
+
+    def move(self, editor, buttons, event):
+        selectendx, selectendz = editor.mouse_coord_to_world_coord(event.position().x(), event.position().y())
+        self.select_end = (selectendx, selectendz)
+        editor.plugin_handler.execute_event("world_click_select_continue", editor, selectendx, selectendz)
+
+    def just_released(self, editor, buttons, event):
+        if self.first_click is None:
+            return
+
+        if self.select_start is not None and self.select_end is not None:
+            select_start_x = min(self.select_start[0], self.select_end[0])
+            select_start_z = min(self.select_start[1], self.select_end[1])
+            select_end_x = max(self.select_start[0], self.select_end[0])
+            select_end_z = max(self.select_start[1], self.select_end[1])
+
+            editor.plugin_handler.execute_event("world_click_select_box", editor,
+                                                select_start_x, select_start_z,
+                                                select_end_x, select_end_z)
+
+        self.select_start = None
+        self.select_end = None
 
 
 class Gizmo2DMoveX(ClickDragAction):
@@ -644,6 +693,7 @@ class UserControl(object):
         self.add_action(TopdownSelect("2DSelect", "Left"))
         self.add_action(AddObjectTopDown("AddObject2D", "Left"))
         self.add_action(PluginEventClickAction("PluginClick", "Left"))
+        self.add_action(PluginTopdownSelect("Plugin2DSelect", "Left"))
 
         self.add_action3d(RotateCamera3D("RotateCamera", "Right"))
         self.add_action3d(AddObject3D("AddObject3D", "Left"))
