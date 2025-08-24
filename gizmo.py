@@ -1,7 +1,7 @@
 from OpenGL.GL import *
 
 from lib.model_rendering import Model
-from lib.vectors import Vector3, Plane
+from lib.vectors import Vector3, Plane, Line
 from widgets.editor_widgets import catch_exception
 
 id_to_meshname = {
@@ -41,7 +41,7 @@ class Gizmo(Model):
         self.render_axis = None
 
         with open("resources/gizmo_collision.obj", "r") as f:
-            self.collision = Model.from_obj(f, rotate=True)
+            self.collision = Model.from_obj(f, rotate=True, generate_collision=True, collision_flip=True)
 
     def set_render_axis(self, axis):
         self.render_axis = axis
@@ -49,11 +49,45 @@ class Gizmo(Model):
     def reset_axis(self):
         self.render_axis = None
 
+    def collide(self, ray, scale, is3d=True, translation_visible=True, rotation_visible=True):
+        if self.hidden:
+            return None, 999999
+        else:
+            meshes = []
+            if translation_visible:
+                meshes.append((self.collision.named_meshes["gizmo_x"], 1))
+                if is3d: meshes.append((self.collision.named_meshes["gizmo_y"], 2))
+                meshes.append((self.collision.named_meshes["gizmo_z"], 3))
+                if not is3d: meshes.append((self.collision.named_meshes["middle"], 7))
+
+            if rotation_visible:
+                if is3d: meshes.append((self.collision.named_meshes["rotation_x"], 4))
+                meshes.append((self.collision.named_meshes["rotation_y"], 5))
+                if is3d: meshes.append((self.collision.named_meshes["rotation_z"], 6))
+
+            dist = 999999
+            hit = None
+            print("Ray point:", ray.origin, "Gizmo:", self.position)
+            local_ray = Line(ray.origin.copy(), ray.direction)
+            local_ray.origin = (local_ray.origin - self.position)*(1/scale)
+            print("COLLISION CHECK: ", local_ray.origin, local_ray.direction)
+            for mesh, meshid in meshes:
+                for tri in mesh.collision_tris:
+                    result = local_ray.collide(tri)
+                    if result:
+                        pos, d = result
+                        if d < dist:
+                            dist = d
+                            hit = meshid
+
+            return hit, dist
+
+
     def move_to_average(self, objects, bwterrain, waterheight, visualize):
         for obj in objects:
             if obj is None:
                 continue
-            if obj.getmatrix() is not None:
+            if obj.getmatrix() is not None or obj.getposition() is not None:
                 self.hidden = False
                 break
         else:
@@ -66,28 +100,35 @@ class Gizmo(Model):
         avgz = None
         count = 0
         for obj in objects:
-            if visualize and obj.mtxoverride is not None:
-                mtx = obj.mtxoverride
+            if obj.getmatrix() is not None:
+                if visualize and obj.mtxoverride is not None:
+                    mtx = obj.mtxoverride
+                else:
+                    mtx = obj.getmatrix()
+                    if mtx is not None:
+                        mtx = mtx.mtx
+                x, objheight, z = mtx[12:15]
+            elif obj.getposition() is not None:
+                x, objheight, z = obj.getposition()
             else:
-                mtx = obj.getmatrix()
-                if mtx is not None:
-                    mtx = mtx.mtx
-            if mtx is not None:
+                x, objheight, z = None, None, None
+
+            if x is not None:
                 count += 1
-                objheight = mtx[13]
+
                 if not visualize:
                     h = obj.calculate_height(bwterrain, waterheight)
                     if h is not None:
                         objheight = h
 
                 if avgx is None:
-                    avgx = mtx[12]
+                    avgx = x
                     avgy = objheight
-                    avgz = mtx[14]
+                    avgz = z
                 else:
-                    avgx += mtx[12]
+                    avgx += x
                     avgy += objheight
-                    avgz += mtx[14]
+                    avgz += z
 
         self.position.x = avgx / count
         self.position.y = avgy / count
