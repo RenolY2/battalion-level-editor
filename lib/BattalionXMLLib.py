@@ -415,6 +415,7 @@ class BattalionFilePaths(object):
         self.resourcepath = None
         self.objectpath = None
         self.preloadpath = None
+        self.pathdata_bw1 = None
 
         self.objectfilepadding = None
         self.preloadpadding = None
@@ -648,6 +649,9 @@ class BattalionObject(object):
         else:
             #setattr(self, "getmatrix", lambda: None)
             self.getmatrix: typing.Callable[[], None | BWMatrix] = lambda: None
+
+    def getposition(self):
+        return None
 
     @property
     def references(self):
