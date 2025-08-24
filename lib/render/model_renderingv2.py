@@ -911,6 +911,89 @@ class LineDrawing(object):
         glDrawArrays(GL_LINES, 0, len(self.lines)//6)
 
 
+class QuadDrawing(object):
+    def __init__(self):
+        self.vertexshader = Shader.create("""
+        #version 330 compatibility
+        layout(location = 0) in vec3 vert;
+        layout(location = 1) in vec4 color;
+
+        out vec4 fragColor;
+
+        mat4 mtx = mat4(1.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 1.0, 0.0,
+                        0.0, 1.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 1.0);
+
+        void main(void)
+        {   
+            fragColor = color;
+            gl_Position = gl_ModelViewProjectionMatrix* mtx*vec4(vert, 1.0);
+        }   
+
+
+        """)
+
+        self.fragshader = Shader.create("""
+        #version 330
+        in vec4 fragColor;
+        out vec4 finalColor;
+
+        void main (void)
+        {
+            finalColor = fragColor;
+        }  
+        """)
+
+        self.vao = None
+        self.program = Program(self.vertexshader, self.fragshader)
+        self.vbo = VertexColorBuffer(*self.vertexshader.get_locations( "vert", "color"))
+
+        self.quads = []
+        self.dirty = True
+
+    def reset(self):
+        self.quads = []
+        self.dirty = True
+
+    def add_quad(self, p1, p2, p3, p4, color):
+        self.quads.extend(p1)
+        self.quads.extend(color)
+        self.quads.extend(p2)
+        self.quads.extend(color)
+        self.quads.extend(p3)
+        self.quads.extend(color)
+        self.quads.extend(p4)
+        self.quads.extend(color)
+
+    def build_mesh(self):
+        if self.vao is None:
+            self.vao = glGenVertexArrays(1)
+        glBindVertexArray(self.vao)
+
+        self.vbo.init()
+        self.vbo.load_data(numpy.array(self.quads, dtype=numpy.float32))
+        self.dirty = False
+
+    def bind(self):
+        if not self.program.compiled():
+            self.program.compile()
+
+        if self.vao is None or self.dirty:
+            self.build_mesh()
+
+        self.program.bind()
+        glBindVertexArray(self.vao)
+
+    def unbind(self):
+        glUseProgram(0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindVertexArray(0)
+
+    def render(self):
+        glDrawArrays(GL_QUADS, 0, len(self.quads)//6)
+
+
 class WireframeModel(object):
     def __init__(self, modelfile):
         self.vertexshader = Shader.create("""
