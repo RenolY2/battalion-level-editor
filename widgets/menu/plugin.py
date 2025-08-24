@@ -52,6 +52,7 @@ class PluginHandler(object):
 
         # widget event: setup_widget(editor, widget)
         self.events = {}
+        self.add_event("load", "LevelEditor")
         self.add_event("plugin_init", "LevelEditor")
         self.add_event("select_update", "LevelEditor")
         self.add_event("before_save", "LevelEditor")
@@ -67,6 +68,9 @@ class PluginHandler(object):
         self.add_event("key_release", "LevelEditor", "qtkey")
         self.add_event("key_press", "LevelEditor", "qtkey")
         self.add_event("cancel_mode", "LevelEditor")
+        self.add_event("world_click_select_start", "LevelEditor", "startx", "startz")
+        self.add_event("world_click_select_continue", "LevelEditor", "endx", "endz")
+        self.add_event("world_click_select_box", "LevelEditor", "start", "end")
 
         self.add_object_window: add_object_window.Plugin = self.load_builtin_plugin(add_object_window)
 
@@ -82,7 +86,9 @@ class PluginHandler(object):
         return self.plugin_sidewidget
 
     def hot_reload(self, editor):
+        #print("changed?", self.plugin_folder_changed(), self.plugin_menu)
         if self.plugin_folder_changed() and self.plugin_menu is not None:
+            print("yooo")
             changed_plugins = self.reload_changed_plugins()
             self.plugin_folder_update_time()
 
@@ -226,6 +232,7 @@ class PluginHolderWidget(QtWidgets.QScrollArea):
         self.plugin_widgets = {}
 
     def is_empty(self):
+        print("Are we empty?", len(self.plugin_widgets))
         return len(self.plugin_widgets) == 0
 
     def remove_plugin_widget(self, pluginname):
@@ -239,6 +246,7 @@ class PluginHolderWidget(QtWidgets.QScrollArea):
             return index
 
     def add_plugin_widget(self, pluginname, widget):
+        print("Adding plugin widget for", pluginname)
         if pluginname not in self.plugin_widgets:
             self.plugin_widgets[pluginname] = widget
             self.scroll_layout.addWidget(widget)
