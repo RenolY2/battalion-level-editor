@@ -1,7 +1,7 @@
 import json
 from time import time
 from OpenGL.GL import *
-from .vectors import Vector3
+from .vectors import Vector3, Triangle
 from struct import unpack
 import os
 from OpenGL.GL import *
@@ -26,6 +26,8 @@ def read_vertex(v_data):
     v = int(split[0])
     return v, texcoord
 
+def flip(x,y,z):
+    return x,z,y
 
 class Mesh(object):
     def __init__(self, name):
@@ -35,11 +37,30 @@ class Mesh(object):
         self.texcoords = []
         self.triangles = []
         self.lines = []
+        self.collision_tris = []
 
         self._vbo = None
 
         self.texture = None
         self._displist = None
+
+    def generate_collision(self, collision_flip):
+        self.collision_tris = []
+        for v1, v2, v3 in self.triangles:
+            v1i, v1coord = v1
+            v2i, v2coord = v2
+            v3i, v3coord = v3
+            if not collision_flip:
+                v1 = Vector3(*self.vertices[v1i])
+                v2 = Vector3(*self.vertices[v2i])
+                v3 = Vector3(*self.vertices[v3i])
+            else:
+                v1 = Vector3(*flip(*self.vertices[v1i]))
+                v2 = Vector3(*flip(*self.vertices[v2i]))
+                v3 = Vector3(*flip(*self.vertices[v3i]))
+
+            tri = Triangle(v1, v2, v3)
+            self.collision_tris.append(tri)
 
     def generate_displist(self):
         if self._displist is not None:
@@ -237,7 +258,7 @@ class Model(object):
             self.mesh_list.append(mesh)
 
     @classmethod
-    def from_obj(cls, f, scale=1.0, rotate=False):
+    def from_obj(cls, f, scale=1.0, rotate=False, generate_collision=False, collision_flip=True):
         model = cls()
         vertices = []
         texcoords = []
@@ -286,7 +307,15 @@ class Model(object):
                 elif len(args) == 4:
                     v1, v2, v3 = map(read_vertex, args[1:4])
                     curr_mesh.triangles.append(((v1[0]-1, None), (v3[0]-1, None), (v2[0]-1, None)))
+
+
         model.add_mesh(curr_mesh)
+        if generate_collision:
+            for mesh in model.named_meshes.values():
+                mesh.generate_collision(collision_flip)
+            for mesh in model.mesh_list:
+                mesh.generate_collision(collision_flip)
+
         return model
         #elif cmd == "vn":
         #    nx, ny, nz = map(float, args[1:4])
