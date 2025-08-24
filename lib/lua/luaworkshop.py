@@ -101,6 +101,19 @@ def compile_lua(path, out):
                                                                                     encoding="ascii",
                                                                                     errors="backslashreplace")))
 
+def disassemble_lua(path, out):
+    err = io.StringIO()
+    result = subprocess.run([LUAC_PATH, "-l", path], capture_output=True)
+    if result.returncode != 0:
+        filename = os.path.basename(path)
+        raise RuntimeError("A compiler error happened in script {0}:\n\n{1}".format(filename,
+                                                                                    str(result.stderr,
+                                                                                    encoding="ascii",
+                                                                                    errors="backslashreplace")))
+    else:
+        with open(out, "w") as f:
+            f.write(str(result.stdout, encoding="ascii", errors="backslashreplace").replace("\r\n", "\n"))
+
 
 class EntityInitialization(object):
     def __init__(self):
