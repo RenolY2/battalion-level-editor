@@ -473,15 +473,53 @@ class BWTerrainV2(BWSectionedFile):
         timer.time("AABBs generated")
 
     def check_height(self, x, y):
-        mapx = int((x + 2048)*0.25)
-        mapy = int((y + 2048)*0.25)
-        if 0 <= mapx < 1024 and 0 <= mapy < 1024:
+        mapx = int((x + 2048)*0.1875)
+        mapy = int((y + 2048)*0.1875)
+        if 0 <= mapx < 768 and 0 <= mapy < 768:
+            mapx = mapx + mapx // 3
+            mapy = mapy + mapy // 3
             if self.pointdata[mapx, mapy] == -1:
                 return None
             return self.pointdata[mapx, mapy]
         else:
             return None
 
+    def _check_height(self, x, y):
+        mapx = x
+        mapy = y
+        if 0 <= mapx < 768 and 0 <= mapy < 768:
+            mapx = mapx + mapx // 3
+            mapy = mapy + mapy // 3
+            if self.pointdata[mapx, mapy] == -1:
+                return None
+            return self.pointdata[mapx, mapy]
+        else:
+            return None
+
+    def check_height_interpolate(self, x, y):
+        base_x = (x + 2048)*0.1875
+        prev_x = int(base_x)
+        next_x = int(base_x)+1
+        x_fac = (base_x - prev_x)%1
+
+        base_y = (y + 2048)*0.1875
+        prev_y = int(base_y)
+        next_y = int(base_y) + 1
+        y_fac = (base_y - prev_y)%1
+
+        p1_1 = self._check_height(prev_x, prev_y)
+        p2_1 = self._check_height(next_x, prev_y)
+        p1_2 = self._check_height(prev_x, next_y)
+        p2_2 = self._check_height(next_x, next_y)
+
+        if p1_1 is None or p2_1 is None or p1_2 is None or p2_2 is None:
+            return p1_1
+        else:
+            p1_avg = p1_1*(1-x_fac) + p2_1*x_fac
+            p2_avg = p1_2 * (1 - y_fac) + p2_2 * y_fac
+
+            fin = p1_avg*(1-y_fac) + p2_avg*y_fac
+            return fin
 
     def ray_collide(self, line: Line):
         timer = Timer()
