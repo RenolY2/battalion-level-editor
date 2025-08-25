@@ -325,7 +325,7 @@ class PFD(object):
         for i, point in enumerate(self.pathpoints):
             for link in point.neighbours:
                 if link.exists():
-                    link.edge.distance = ((link.point.x-point.x)**2 + (link.point.y-point.y)**2)**0.5
+                    link.edge.distance = min(255, int(((link.point.x-point.x)**2 + (link.point.y-point.y)**2)**0.5))
                     #packed = link.edge.pack()
                     packed = (point._index, link.point._index) if point._index < link.point._index else (link.point._index, point._index)
                     try:
@@ -639,7 +639,7 @@ class Plugin(object):
             self.texture.img_data = Image.open(path)
             self.do_update = True
 
-    def load_currpfd(self, editor: "bw_editor.LevelEditor"):
+    def load_currpfd(self, editor: "bw_editor.LevelEditor", message=True):
         path = editor.file_menu.get_pfd_path()
 
         if path:
@@ -660,7 +660,8 @@ class Plugin(object):
             self.do_update = True
             self.curr = None"""
             editor.level_view.do_redraw()
-            open_message_dialog("Loaded!", parent=editor)
+            if message:
+                open_message_dialog("Loaded!", parent=editor)
 
     def load_pfd(self, editor: "bw_editor.LevelEditor"):
         path, _ = QtWidgets.QFileDialog.getOpenFileName(editor,
@@ -683,7 +684,7 @@ class Plugin(object):
             #self.do_update = True
             #self.curr = None
 
-    def save_currpfd(self, editor):
+    def save_currpfd(self, editor, message=True):
         path = editor.file_menu.get_pfd_path()
 
         if path:
@@ -691,7 +692,8 @@ class Plugin(object):
             self.pfd.write(tmp)
             with open(path, "wb") as f:
                 f.write(tmp.getvalue())
-            open_message_dialog("Saved!", parent=editor)
+            if message:
+                open_message_dialog("Saved!", parent=editor)
 
     def cancel_mode(self, editor):
         print("Cancelled")
@@ -1203,12 +1205,18 @@ class Plugin(object):
             for link in point.neighbours:
                 if link.exists and link.point in self.selected_points:
                     link.edge.flags = self.edge_template.flags
-    
 
     def toggle_visible(self, editor):
         self.clear_selection(editor.level_view)
         editor.level_view.do_redraw()
 
+    def before_save(self, editor):
+        if self.pfd is not None:
+            self.save_currpfd(editor, message=False)
+
+    def after_load(self, editor):
+        if self.pfd is not None:
+            self.load_currpfd(editor, message=False)
 
     def get_edge(self, i):
         if len(self.selected_points) == 1:
