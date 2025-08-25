@@ -8,6 +8,7 @@ import multiprocessing
 from timeit import default_timer
 from copy import deepcopy
 from dataclasses import dataclass
+from itertools import chain
 from io import TextIOWrapper, BytesIO, StringIO
 from math import sin, cos, atan2, pi
 import json
@@ -15,7 +16,7 @@ import enum
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtCore as QtCore
 from PyQt6.QtCore import Qt
-
+from plugins.plugin_pfd_edit import PathfindPoint
 from PyQt6.QtWidgets import (QWidget, QMainWindow, QFileDialog, QSplitter,
                              QSpacerItem, QLabel, QPushButton, QSizePolicy, QVBoxLayout, QHBoxLayout,
                              QScrollArea, QGridLayout, QMenuBar, QMenu, QApplication, QStatusBar, QLineEdit)
@@ -98,6 +99,16 @@ class LevelEditor(QMainWindow):
         self.plugin_handler.add_menu_actions(self)
         self.plugin_handler.add_plugin_widgets(self)
 
+        if self.plugin_handler.plugin_sidewidget.is_empty():
+            self.plugin_handler.plugin_sidewidget.setFixedSize(0, 0)
+            self.horizontalLayout.setStretchFactor(0, 2)
+            self.horizontalLayout.setStretchFactor(1, 3)
+            self.horizontalLayout.setStretchFactor(3, 2)
+            self.horizontalLayout.setSizes([self.leveldatatreeview.width(),
+                                            self.level_view.width(),
+                                            0,
+                                            self.pik_control.width()])
+
         self.level_view.level_file = self.level_file
         self.level_view.set_editorconfig(self.configuration["editor"])
         self.level_view.visibility_menu = self.menubar.visibility_menu
@@ -140,6 +151,8 @@ class LevelEditor(QMainWindow):
         self.timer.setInterval(1000)
         self.timer.timeout.connect(self.read_entityinit_if_changed)
         self.timer.start()
+
+        self.plugin_handler.execute_event("load", self)
 
     def get_selected_obj(self) -> BattalionObject:
         if len(self.level_view.selected) == 1:
@@ -375,10 +388,7 @@ class LevelEditor(QMainWindow):
             if mtx is not None:
                 self.level_view.selected_positions.append(mtx)
 
-        self.level_view.gizmo.move_to_average(self.level_view.selected,
-                                              self.level_view.bwterrain,
-                                              self.level_view.waterheight,
-                                              self.dolphin.do_visualize())
+        self.level_view.center_gizmo(self.dolphin.do_visualize())
         self.update_3d()
         self.level_view.do_redraw(forceselected=True)
         self.level_view.select_update.emit()
@@ -433,15 +443,7 @@ class LevelEditor(QMainWindow):
         self.setStatusBar(self.statusbar)
 
         self.connect_actions()
-        if plugin_sidewidget.is_empty():
-            plugin_sidewidget.setFixedSize(0, 0)
-            self.horizontalLayout.setStretchFactor(0, 2)
-            self.horizontalLayout.setStretchFactor(1, 3)
-            self.horizontalLayout.setStretchFactor(3, 2)
-            self.horizontalLayout.setSizes([self.leveldatatreeview.width(),
-                                            self.level_view.width(),
-                                            0,
-                                            self.pik_control.width()])
+
 
     def action_hook_into_dolphion(self):
         error = self.dolphin.initialize()
@@ -901,11 +903,11 @@ class LevelEditor(QMainWindow):
 
     @catch_exception
     def action_move_objects(self, deltax, deltay, deltaz):
-        for i in range(len(self.level_view.selected_positions)):
+        """for i in range(len(self.level_view.selected_positions)):
             for j in range(len(self.level_view.selected_positions)):
                 pos = self.level_view.selected_positions
                 if i != j and pos[i] == pos[j]:
-                    print("What the fuck")
+                    print("What the fuck")"""
         if self.dolphin.running and self.dolphin.do_visualize():
             for obj in self.level_view.selected:
                 if obj.mtxoverride is not None:
@@ -1032,38 +1034,51 @@ class LevelEditor(QMainWindow):
                         BWMatrix.static_rotate_z(obj.mtxoverride, deltarotation.z)
         else:
             for mtx in self.level_view.selected_positions:
-                if deltarotation.x != 0:
-                    BWMatrix.static_rotate_x(mtx.mtx, deltarotation.x)
-                if deltarotation.y != 0:
-                    mtx.rotate_y(deltarotation.y)
-                if deltarotation.z != 0:
-                    BWMatrix.static_rotate_z(mtx.mtx, deltarotation.z)
+                if hasattr(mtx, "mtx"):
+                    if deltarotation.x != 0:
+                        BWMatrix.static_rotate_x(mtx.mtx, deltarotation.x)
+                    if deltarotation.y != 0:
+                        mtx.rotate_y(deltarotation.y)
+                    if deltarotation.z != 0:
+                        BWMatrix.static_rotate_z(mtx.mtx, deltarotation.z)
 
         #if self.rotation_mode.isChecked():
         if True:
             middle = self.level_view.gizmo.position
 
 
-            for obj in self.level_view.selected:
-                if obj.getmatrix() is None:
-                    continue
-                if self.dolphin.do_visualize() and obj.mtxoverride is not None:
-                    mtx = obj.mtxoverride
-                else:
-                    mtx = obj.getmatrix().mtx
-                position = Vector3(mtx[12], mtx[13], mtx[14])
-                diff = position - middle
-                diff.y = 0.0
+            for obj in chain(self.level_view.selected, self.level_view.selected_misc):
+                if obj.getmatrix() is not None:
+                    if self.dolphin.do_visualize() and obj.mtxoverride is not None:
+                        mtx = obj.mtxoverride
+                    else:
+                        mtx = obj.getmatrix().mtx
+                    position = Vector3(mtx[12], mtx[13], mtx[14])
+                elif obj.getposition() is not None:
+                    position = Vector3(*obj.getposition())
+                    mtx = None
 
-                length = diff.norm()
-                if length > 0:
-                    diff.normalize()
-                    angle = atan2(diff.x, diff.z)
-                    angle += deltarotation.y
-                    position.x = middle.x + length * sin(angle)
-                    position.z = middle.z + length * cos(angle)
-                    mtx[12] = position.x
-                    mtx[14] = position.z
+                else:
+                    position = None
+                    mtx = None
+
+                if position is not None:
+                    diff = position - middle
+                    diff.y = 0.0
+
+                    length = diff.norm()
+                    if length > 0:
+                        diff.normalize()
+                        angle = atan2(diff.x, diff.z)
+                        angle += deltarotation.y
+                        position.x = middle.x + length * sin(angle)
+                        position.z = middle.z + length * cos(angle)
+
+                    if mtx is not None:
+                        mtx[12] = position.x
+                        mtx[14] = position.z
+                    else:
+                        obj.setposition(position.x, position.y, position.z)
 
         #self.pikmin_gen_view.update()
         self.level_view.do_redraw(forceselected=True)
@@ -1080,10 +1095,7 @@ class LevelEditor(QMainWindow):
                 pos.y = height
 
         self.pik_control.update_info()
-        self.level_view.gizmo.move_to_average(self.level_view.selected,
-                                              self.level_view.bwterrain,
-                                              self.level_view.waterheight,
-                                              self.dolphin.do_visualize())
+        self.level_view.center_gizmo(self.dolphin.do_visualize())
         self.set_has_unsaved_changes(True)
         self.level_view.do_redraw()
 
@@ -1129,11 +1141,8 @@ class LevelEditor(QMainWindow):
             else:
                 for entry in state:
                     entry: HistoryEntry
-                    currmtx = entry.bwobj.getmatrix()
-                    if currmtx is not None:
-                        for i in range(16):
-                            currmtx.mtx[i] = entry.matrix[i]
-                        entry.bwobj.update_xml()
+                    entry.restore()
+
                 if len(state) > 0:
                     self.level_view.do_redraw(force=True)
                     self.set_has_unsaved_changes(True)
@@ -1148,21 +1157,14 @@ class LevelEditor(QMainWindow):
             else:
                 for entry in state:
                     entry: HistoryEntry
-                    currmtx = entry.bwobj.getmatrix()
-                    if currmtx is not None:
-                        for i in range(16):
-                            currmtx.mtx[i] = entry.matrix[i]
-                        entry.bwobj.update_xml()
+                    entry.restore()
                 if len(state) > 0:
                     self.level_view.do_redraw(force=True)
                     self.set_has_unsaved_changes(True)
                     self.update_3d()
 
     def update_3d(self):
-        self.level_view.gizmo.move_to_average(self.level_view.selected,
-                                              self.level_view.bwterrain,
-                                              self.level_view.waterheight,
-                                              self.dolphin.do_visualize())
+        self.level_view.center_gizmo(self.dolphin.do_visualize())
         self.level_view.do_redraw()
 
     def select_from_3d_to_treeview(self):
@@ -1299,10 +1301,52 @@ class EditorHistory(object):
 
 @dataclass
 class HistoryEntry:
-    bwobj: BattalionObject
-    matrix: numpy.array
-    override: numpy.array
+    obj: object #BattalionObject
+    data1: object
+    data2: object
 
+    def restore(self):
+        pass
+    #matrix: numpy.array
+    #override: numpy.array
+
+
+@dataclass
+class HistoryEntryBW(HistoryEntry):
+    obj: BattalionObject
+    data1: numpy.array
+    data2: numpy.array
+
+    def restore(self):
+        currmtx = self.obj.getmatrix()
+        if currmtx is not None:
+            for i in range(16):
+                currmtx.mtx[i] = self.data1[i]
+            self.obj.update_xml()
+
+    @classmethod
+    def backup(cls, obj):
+        bwmtx = obj.getmatrix()
+        mtx = bwmtx.mtx.copy()
+        if obj.mtxoverride is not None:
+            overridemtx = obj.mtxoverride.copy()
+        else:
+            overridemtx = None
+
+        return cls(obj, mtx, overridemtx)
+
+@dataclass
+class HistoryEntryPFD:
+    obj: PathfindPoint
+    data1: tuple
+    data2: tuple
+
+    def restore(self):
+        self.obj.setposition(*self.data1)
+
+    @classmethod
+    def backup(cls, obj):
+        return cls(obj, obj.getposition(), None)
 
 @dataclass
 class ActionStep:
@@ -1321,25 +1365,24 @@ class EditorLevelPositionsHistory(EditorHistory):
         for obj in objects:
             bwmtx = obj.getmatrix()
             if bwmtx is not None:
-                mtx = bwmtx.mtx.copy()
-                if obj.mtxoverride is not None:
-                    overridemtx = obj.mtxoverride.copy()
-                else:
-                    overridemtx = None
-
-                record.append(HistoryEntry(obj, mtx, overridemtx))
+                entry = HistoryEntryBW.backup(obj)
+                record.append(entry)
+            elif obj.getposition() is not None:
+                entry = HistoryEntryPFD.backup(obj)
+                record.append(entry)
 
         return record
 
     def create_updated_record(self, record: list[HistoryEntry]):
         newrecord = self.stash_record(
-            entry.bwobj for entry in record
+            entry.obj for entry in record
         )
 
         return newrecord
 
     def stash_selected(self):
-        return self.stash_record(self.editor.level_view.selected)
+        return self.stash_record(
+            chain(self.editor.level_view.selected, self.editor.level_view.selected_misc))
 
     def record_stash(self, stash):
         if len(stash) > 0 and not self.editor.dolphin.do_visualize():
