@@ -63,6 +63,7 @@ class DoubleEdit(QtWidgets.QWidget):
         super().__init__(parent)
         self.vector_layout = QtWidgets.QHBoxLayout(self)
         self.vector_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.vector_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.vector_layout)
         self.edits = []
         color = ColorView(self)
@@ -118,6 +119,9 @@ class PathfindPoint:
     pathgroup: "RenderGroup" = None
     lua_name = None
     id = None
+
+    def __hash__(self):
+        return id(self)
 
     @classmethod
     def new(cls, x, y):
@@ -370,6 +374,7 @@ class PFD(object):
 
         f.write(values)
         print("Written gradient map")
+
 
 class RenderGroupDistributor(object):
     def __init__(self, groupcount, buffer=256):
@@ -972,7 +977,7 @@ class Plugin(object):
         else:
             point_list = self.pfd.pathpoints
 
-        for point in limit:
+        for point in point_list:
             diff_x = abs(x - point.x)
             diff_z = abs(z - point.y)
             if diff_x + diff_z < tolerance:
@@ -983,7 +988,6 @@ class Plugin(object):
             return result[0][0]
         else:
             return None
-
 
     def world_click_select_box(self, editor: "bw_editor.LevelEditor",
                                select_start_x, select_start_z,
@@ -1131,10 +1135,12 @@ class Plugin(object):
 
         pfd1 = QtWidgets.QWidget(widget)
         layout1 = QtWidgets.QHBoxLayout(pfd1)
+        layout1.setContentsMargins(0, 0, 0, 0)
         pfd1.setLayout(layout1)
 
         pfd2 = QtWidgets.QWidget(widget)
         layout2 = QtWidgets.QHBoxLayout(pfd2)
+        layout2.setContentsMargins(0, 0, 0, 0)
         pfd2.setLayout(layout2)
 
         self.button_load_pfd = PFDPluginButton(
@@ -1180,6 +1186,7 @@ class Plugin(object):
 
         pfd3 = QtWidgets.QWidget(widget)
         layout3 = QtWidgets.QHBoxLayout(pfd3)
+        layout3.setContentsMargins(0, 0, 0, 0)
         pfd3.setLayout(layout2)
 
         self.mass_set = PFDPluginButton(
@@ -1191,6 +1198,10 @@ class Plugin(object):
         layout3.addWidget(self.mass_set)
         layout3.addWidget(self.mass_set_2)
         widget.add_widget(pfd3)
+
+        self.bake_wp = widget.add_widget(PFDPluginButton(
+            widget, text="Bake Selected Waypoint Path to PFD", editor=editor, func=self.buttonaction_waypoint)
+        )
 
     def set_select_ignore(self, editor):
         editor.level_view.ignore_selection = self.only_select_pathfind.isChecked()
@@ -1483,6 +1494,107 @@ class Plugin(object):
                 f.write(tmp.getvalue())
             self.pfd_path = filepath
             open_message_dialog("Saved!", parent=editor)
+
+    def test_intersect(self, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y):
+        if (p1_x == p2_x and p1_y == p2_y) or (p3_x == p4_x and p3_y == p4_y):
+            return False, False, False
+
+        denom = (p4_y - p3_y) * (p2_x - p1_x) - (p4_x - p3_x)*(p2_y - p1_y)
+        if denom == 0:
+            return False, False, False
+
+        ua = ((p4_x - p3_x) * (p1_y - p3_y) - (p4_y - p3_y) * (p1_x - p3_x)) / denom
+        ub = ((p2_x - p1_x) * (p1_y - p3_y) - (p2_y - p1_y) * (p1_x - p3_x)) / denom
+        if 0 <= ua <= 1.0 and 0 <= ub <= 1.0:
+            return ua, p1_x + ua*(p2_x - p1_x), p1_y + ua*(p2_y - p1_y)
+        else:
+            return False, False, False
+
+    def buttonaction_waypoint(self, editor: "bw_editor.LevelEditor"):
+        point = editor.get_selected_obj()
+        if point is not None and point.type == "cWaypoint":
+            for id, obj in editor.level_file.objects.items():
+                if obj.type == "cWaypoint" and obj.NextWP is not None:
+                    obj.NextWP._backref = obj
+
+            root = point
+            while hasattr(root, "_backref"):
+                root = root._backref
+
+            self.bake_waypoint_to_pfd(root)
+
+    def bake_waypoint_to_pfd(self, point):
+        traverse = [point]
+        visited = []
+        point_pairs = []
+        next_next = point.NextWP
+        #point_pairs.append((start_mat.x, start_mat.z, next_mat.x, next_mat.z))
+        #print(point_pairs)
+        while traverse:
+            next_point = traverse.pop(0)
+            visited.append(next_point)
+            next_next = next_point.NextWP
+            if next_next is not None:
+                start_mat = next_point.getmatrix()
+                next_mat = next_next.getmatrix()
+
+                point_pairs.append((start_mat.x, start_mat.z, next_mat.x, next_mat.z))
+                if next_next not in visited:
+                    traverse.append(next_next)
+
+        overlaps = 0
+        for x1, y1, x2, y2 in point_pairs:
+            p = self.get_closest_point(x1, y1, tolerance=2)
+            if p is not None:
+                overlaps += 1
+        if overlaps > 3:
+            if not open_yesno_box(f"The path has a lot of overlap with existing PFD points. ({overlaps})",
+                              "Are you sure you want to continue?"):
+                return
+
+        print("Testing intersections...", len(point_pairs))
+        last = None
+        for x1, y1, x2, y2 in point_pairs:
+            intersections = []
+            checked = {}
+            for point in self.pfd.pathpoints:
+                for link in point.neighbours:
+                    if link.exists():
+                        if link.point in checked:
+                            continue
+                        checked[point] = True
+                        dist, x, y = self.test_intersect(x1, y1, x2, y2, point.x, point.y, link.point.x, link.point.y)
+
+                        if dist is not False and dist > 0:
+
+                            intersections.append((dist, x, y, point, link))
+
+            print("intersections", len(intersections))
+            intersections.sort(key=lambda x: x[0])
+            if last is None:
+                last = PathfindPoint.new(x1, y1)
+            newpoints = [last]
+
+
+            for d, x, y, point, link in intersections:
+                intersection_point = PathfindPoint.new(x, y)
+                other = link.point
+                point.remove_neighbour(other)
+                point.connect(intersection_point, prio=0)
+                intersection_point.connect(other, prio=0)
+                last.connect(intersection_point, prio=0)
+                last = intersection_point
+                newpoints.append(intersection_point)
+            end = PathfindPoint.new(x2, y2)
+            newpoints.append(end)
+            last.connect(end, prio=0)
+            last = end
+
+            for point in newpoints:
+                if point.pathgroup is None:
+                    self.pfd.pathpoints.append(point)
+                    self.render_distributor.add_point(point)
+
 
     def render_post(self, viewer: "bw_widgets.BolMapViewer"):
         self.hide_pfd: QtWidgets.QCheckBox
