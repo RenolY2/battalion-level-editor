@@ -60,6 +60,14 @@ MODE_3D = 1
 #colors = [(1.0, 0.0, 0.0), (0.0, 0.5, 0.0), (0.0, 0.0, 1.0), (1.0, 1.0, 0.0)]
 colors = [(0.0,191/255.0,255/255.0), (30/255.0,144/255.0,255/255.0), (0.0,0.0,255/255.0), (0.0,0.0,139/255.0)]
 
+def filter_combine(list1, list2, objtypes_exclude):
+    newlist = []
+    for obj in list1:
+        if not isinstance(obj, objtypes_exclude):
+            newlist.append(obj)
+    newlist.extend(list2)
+
+    return newlist
 
 class SelectionDebug(object):
     def __init__(self, levelview: "BolMapViewer", enabled):
@@ -344,6 +352,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.drag_last_pos = None
 
         self.selected = []
+        self.selected_misc = []
         self.selected_positions = []
         self.selected_rotations = []
         self.waterheight = None
@@ -471,6 +480,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.onscreen_handler.update()
 
         self._dont_render = False
+        self.ignore_selection = False
 
         self.selectdebug = SelectionDebug(self, False)
         self.frames = []
@@ -514,6 +524,15 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self._dont_render = False
         self.do_redraw()
 
+    def center_gizmo(self, dolphin_visualize):
+        self.gizmo.move_to_average(
+            self.selected,
+            self.selected_misc,
+            self.bwterrain,
+            self.waterheight,
+            dolphin_visualize
+        )
+
     def reloadModels(self, resource_archive, callback=None):
         self.makeCurrent()
         if self.bwmodelhandler is None:
@@ -535,16 +554,19 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.overlay_texture.init()
         self.bwterrain = BWTerrainV2(f)
         self.makeCurrent()
+        print("Terrain read")
 
         if self.terrainmap is not None:
             for entry in self.terrainmap:
                 glDeleteLists(entry, 1)
 
+        print("Lists cleared")
         for i, material in enumerate(self.bwterrain.materials):
             self.bwmodelhandler.textures.initialize_texture(material.mat1, mipmap=True)
             self.bwmodelhandler.textures.initialize_texture(material.mat2, mipmap=True)
-            if callback is not None: callback(len(self.bwterrain.materials), i)
-
+            if callback is not None:
+                callback(len(self.bwterrain.materials), i)
+        print("Materials initialized")
         self.terrainmap = []
 
         glColor4f(0.0, 0.0, 0.0, 1.0)
@@ -636,7 +658,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
             glEndList()
             self.terrainmap.append(mesh)
-
+        print("Done")
         self.doneCurrent()
 
     def render_terrain_immediate(self):
@@ -908,6 +930,8 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             #self.update()
 
     def reset(self, keep_collision=False):
+        self.ignore_selection = False
+
         self.graphics.scenery.do_rebuild = True
         self.set_2d_selectionbox(None, None, None, None)
         self.highlight_colltype = None
@@ -928,6 +952,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         self.selectionbox_end = None
 
         self.selected = []
+        self.selected_misc = []
         self.models.cubev2.mtxdirty = True
 
         if not keep_collision:
@@ -1101,82 +1126,83 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                 selected_positions = []
                 selected_rotations = []
                 offset = 0
-                if self.is_topdown():
-                    objlist = list(self.level_file.objects_with_positions.values())
-                    self.graphics.render_select(objlist)
-                    if clickwidth*clickheight == 1:
-                        hit = []
-                        # Check click <-> object intersection
-                        x, z = self.mouse_coord_to_world_coord(click_x, original_click_y)
-                        for obj in reversed(self.level_file.objects_with_positions.values()):
-                            if not vismenu.object_visible(obj.type, obj):
-                                continue
-                            if self.dolphin.do_visualize():
-                                mtx = obj.mtxoverride
-                            else:
-                                mtx = obj.getmatrix()
-                                if mtx is not None:
-                                    mtx = mtx.mtx
-                            if mtx is not None:
-                                objx, objz = mtx[12], mtx[14]
-                                if (x-objx)**2 + (z-objz)**2 <= 2.25**2:
-                                    hit.append(obj)
-                        if len(hit) > 0:
-                            if self._lasthit == hit:
-                                self._hitcycle = (self._hitcycle+1)%len(self._lasthit)
-                            else:
-                                self._lasthit = hit
-                                self._hitcycle = 0
-                            selected[hit[self._hitcycle]] = True
-
-                    else:
-                        if self.last_selectionbox is not None:
-                            startbox, endbox = self.last_selectionbox
-                            if startbox is not None and endbox is not None:
-                                minx = min(startbox[0], endbox[0])
-                                maxx = max(startbox[0], endbox[0])
-                                miny = min(startbox[1], endbox[1])
-                                maxy = max(startbox[1], endbox[1])
-
-                                for obj in reversed(self.level_file.objects_with_positions.values()):
-                                    if not vismenu.object_visible(obj.type, obj):
-                                        continue
-
-                                    if self.dolphin.do_visualize():
-                                        mtx = obj.mtxoverride
-                                    else:
-                                        mtx = obj.getmatrix()
-                                        if mtx is not None:
-                                            mtx = mtx.mtx
+                if not self.ignore_selection:
+                    if self.is_topdown():
+                        objlist = list(self.level_file.objects_with_positions.values())
+                        self.graphics.render_select(objlist)
+                        if clickwidth*clickheight == 1:
+                            hit = []
+                            # Check click <-> object intersection
+                            x, z = self.mouse_coord_to_world_coord(click_x, original_click_y)
+                            for obj in reversed(self.level_file.objects_with_positions.values()):
+                                if not vismenu.object_visible(obj.type, obj):
+                                    continue
+                                if self.dolphin.do_visualize():
+                                    mtx = obj.mtxoverride
+                                else:
+                                    mtx = obj.getmatrix()
                                     if mtx is not None:
-                                        objx, objz = mtx[12], mtx[14]
-                                        if minx <= objx <= maxx and miny <= objz <= maxy:
-                                            selected[obj] = True
-                else:
-                    objlist = list(self.level_file.objects_with_positions.values())
-                    self.graphics.render_select(objlist)
-                    pixels = glReadPixels(click_x, click_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
-                    self.selectdebug.record_view("3DSelect", click_x, click_y)
-                    #print(pixels, click_x, click_y, clickwidth, clickheight)
+                                        mtx = mtx.mtx
+                                if mtx is not None:
+                                    objx, objz = mtx[12], mtx[14]
+                                    if (x-objx)**2 + (z-objz)**2 <= 2.25**2:
+                                        hit.append(obj)
+                            if len(hit) > 0:
+                                if self._lasthit == hit:
+                                    self._hitcycle = (self._hitcycle+1)%len(self._lasthit)
+                                else:
+                                    self._lasthit = hit
+                                    self._hitcycle = 0
+                                selected[hit[self._hitcycle]] = True
 
-                    #for i in range(0, clickwidth*clickheight, 4):
-                    start = default_timer()
-                    selectionfail = False
-                    for i in range(0, clickwidth*clickheight, 13):
-                        # | (pixels[i*3+0] << 16)
-                        if pixels[i * 3] != 0xFF:
-                            value = pixels[i*3] | pixels[i*3+1]<<8 | pixels[i*3+2]<<16
-                            if value != 0:
-                                index = (value >> 4) & 0xFFFF
-                                misc = value & 0xFF
-                                if not 0 <= index < len(objlist):
-                                    print("Selection failure, index", index, "vs", len(objlist), "objects")
-                                    selectionfail = True
-                                    break
+                        else:
+                            if self.last_selectionbox is not None:
+                                startbox, endbox = self.last_selectionbox
+                                if startbox is not None and endbox is not None:
+                                    minx = min(startbox[0], endbox[0])
+                                    maxx = max(startbox[0], endbox[0])
+                                    miny = min(startbox[1], endbox[1])
+                                    maxy = max(startbox[1], endbox[1])
 
-                                selected[objlist[index]] = True
-                    if selectionfail:
-                        selected = {}
+                                    for obj in reversed(self.level_file.objects_with_positions.values()):
+                                        if not vismenu.object_visible(obj.type, obj):
+                                            continue
+
+                                        if self.dolphin.do_visualize():
+                                            mtx = obj.mtxoverride
+                                        else:
+                                            mtx = obj.getmatrix()
+                                            if mtx is not None:
+                                                mtx = mtx.mtx
+                                        if mtx is not None:
+                                            objx, objz = mtx[12], mtx[14]
+                                            if minx <= objx <= maxx and miny <= objz <= maxy:
+                                                selected[obj] = True
+                    else:
+                        objlist = list(self.level_file.objects_with_positions.values())
+                        self.graphics.render_select(objlist)
+                        pixels = glReadPixels(click_x, click_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
+                        self.selectdebug.record_view("3DSelect", click_x, click_y)
+                        #print(pixels, click_x, click_y, clickwidth, clickheight)
+
+                        #for i in range(0, clickwidth*clickheight, 4):
+                        start = default_timer()
+                        selectionfail = False
+                        for i in range(0, clickwidth*clickheight, 13):
+                            # | (pixels[i*3+0] << 16)
+                            if pixels[i * 3] != 0xFF:
+                                value = pixels[i*3] | pixels[i*3+1]<<8 | pixels[i*3+2]<<16
+                                if value != 0:
+                                    index = (value >> 4) & 0xFFFF
+                                    misc = value & 0xFF
+                                    if not 0 <= index < len(objlist):
+                                        print("Selection failure, index", index, "vs", len(objlist), "objects")
+                                        selectionfail = True
+                                        break
+
+                                    selected[objlist[index]] = True
+                        if selectionfail:
+                            selected = {}
                 #print("select time taken", default_timer() - start)
                 #print("result:", selected)
                 selected = [x for x in selected.keys()]
@@ -1185,9 +1211,9 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                     selected_positions.append(mtx)
 
                 if not shiftpressed:
-                    self.selected = selected
-                    self.selected_positions = selected_positions
-                    self.selected_rotations = selected_rotations
+                    self.selected = filter_combine(self.selected, selected, (BattalionObject, ))
+                    self.selected_positions = filter_combine(self.selected_positions, selected_positions, (BWMatrix, ))
+                    self.selected_rotations = filter_combine(self.selected_rotations, selected_rotations, (BWMatrix, ))
                     self.select_update.emit()
 
                 else:
@@ -1204,11 +1230,8 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
 
                     self.select_update.emit()
 
-                self.gizmo.move_to_average(self.selected,
-                                           self.bwterrain,
-                                           self.waterheight,
-                                           self.dolphin.do_visualize())
-                if len(selected) == 0:
+                self.center_gizmo(self.dolphin.do_visualize())
+                if len(self.selected) == 0 and len(self.selected_misc) == 0:
                     #print("Select did register")
                     self.gizmo.hidden = True
                 if self.mode == MODE_3D: # In case of 3D mode we need to update scale due to changed gizmo position
@@ -1303,9 +1326,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
         subtime = default_timer()
         if self.level_file is not None:
             selected = self.selected
-            positions = self.selected_positions
 
-            select_optimize = {x:True for x in selected}
             #objects = self.pikmin_generators.generators
             #glDisable(GL_CULL_FACE)
             self.graphics.render_scene()
