@@ -1512,6 +1512,11 @@ class Plugin(object):
 
     def buttonaction_waypoint(self, editor: "bw_editor.LevelEditor"):
         point = editor.get_selected_obj()
+        for id, obj in editor.level_file.objects.items():
+            if obj.type == "cWaypoint":
+                if hasattr(obj, "_backref"):
+                    del obj._backref
+
         if point is not None and point.type == "cWaypoint":
             for id, obj in editor.level_file.objects.items():
                 if obj.type == "cWaypoint" and obj.NextWP is not None:
