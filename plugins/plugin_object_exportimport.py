@@ -345,7 +345,7 @@ class Plugin(object):
         print("I have been initialized")
         self.last_category = None
 
-    def after_load(self):
+    def after_load(self, editor):
         self.last_category = None
 
     def remove_selected_object(self, editor: "bw_editor.LevelEditor"):

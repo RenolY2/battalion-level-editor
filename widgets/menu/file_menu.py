@@ -274,7 +274,7 @@ class EditorFileMenu(QMenu):
 
             # Cancel any available mouse modes
             self.editor.plugin_handler.execute_event("cancel_mode", self.editor)
-            self.editor.plugin_handler.execute_event("before_load")
+            self.editor.plugin_handler.execute_event("before_load", self.editor)
 
             with func_open(filepath, "rb") as f:
                 try:
@@ -382,7 +382,7 @@ class EditorFileMenu(QMenu):
                     QApplication.processEvents()
                     self.editor.level_view.start_redrawing()
 
-                    self.editor.plugin_handler.execute_event("after_load")
+                    self.editor.plugin_handler.execute_event("after_load", self.editor)
                     loadingbar.force_close()
 
                 except Exception as error:

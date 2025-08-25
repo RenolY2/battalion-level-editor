@@ -404,8 +404,17 @@ class Plugin(object):
         try:
             shutil.copy(os.path.join(base, pf2path),
                         os.path.join(savestatepath,pf2path))
+
         except FileNotFoundError:
             pass
+
+        try:
+            pfd = editor.file_menu.get_pfd_path()
+            shutil.copy(pfd,
+                        os.path.join(savestatepath, os.path.basename(pfd)))
+        except:
+            pass
+
 
     def load_savestate(self, editor: "bw_editor.LevelEditor"):
         savestatepath = QtWidgets.QFileDialog.getExistingDirectory(
