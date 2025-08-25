@@ -217,6 +217,14 @@ class PathfindPoint:
     def getposition(self):
         return self.x, 0, self.y
 
+    def setposition(self, x, y, z):
+        self.x = x
+        self.y = z
+        self.set_dirty()
+        for edge in self.neighbours:
+            if edge.exists():
+                edge.point.set_dirty()
+
     def calculate_height(self, bwterrain, water):
         return 0
 
@@ -528,7 +536,7 @@ class Plugin(object):
         self.gradient_path = None
         self.pfd_path = None
 
-        self.render_distributor = RenderGroupDistributor(32, buffer=64)
+        self.render_distributor = RenderGroupDistributor(32, buffer=128)
 
         self.dirty = True
 
@@ -585,8 +593,6 @@ class Plugin(object):
                 right_height = curr_height
             if right_height is None:
                 right_height = curr_height
-
-
 
         for x in range(int(res)):
             for y in range(int(res)):
@@ -1155,6 +1161,12 @@ class Plugin(object):
         self.hide_pfd: QtWidgets.QCheckBox = widget.add_widget(QtWidgets.QCheckBox(
             widget, text="Show Pathfinding Points"
         ))
+        self.only_select_pathfind: QtWidgets.QCheckBox = widget.add_widget(QtWidgets.QCheckBox(
+            widget, text="Only Select Pathfind Points"
+        ))
+
+        self.only_select_pathfind.toggled.connect(partial(self.set_select_ignore, editor))
+        self.only_select_pathfind.setToolTip("If checked, disables selecting other map objects besides pathfinding points.")
 
         self.hide_pfd.toggled.connect(partial(self.toggle_visible, editor))
         self.hide_pfd.toggle()
@@ -1177,6 +1189,9 @@ class Plugin(object):
         layout3.addWidget(self.mass_set_2)
         widget.add_widget(pfd3)
 
+    def set_select_ignore(self, editor):
+        editor.level_view.ignore_selection = self.only_select_pathfind.isChecked()
+
     def buttonaction_mass_set(self, editor):
         for point in self.selected_points:
             for link in point.neighbours:
@@ -1191,6 +1206,7 @@ class Plugin(object):
     
 
     def toggle_visible(self, editor):
+        self.clear_selection(editor.level_view)
         editor.level_view.do_redraw()
 
 
@@ -1217,16 +1233,16 @@ class Plugin(object):
         if append:
             if obj not in self.selected_points:
                 self.selected_points.append(obj)
-                editor.selected.append(obj)
+                editor.selected_misc.append(obj)
                 editor.selected_positions.append(obj)
             else:
 
                 self.selected_points.remove(obj)
-                editor.selected.remove(obj)
+                editor.selected_misc.remove(obj)
                 editor.selected_positions.remove(obj)
         else:
             self.selected_points = [obj]
-            editor.selected = [obj]
+            editor.selected_misc = [obj]
             editor.selected_positions = [obj]
 
         editor.parent().parent().update_3d()
@@ -1236,11 +1252,11 @@ class Plugin(object):
             for obj in objlist:
                 if obj not in self.selected_points:
                     self.selected_points.append(obj)
-                    editor.selected.append(obj)
+                    editor.selected_misc.append(obj)
                     editor.selected_positions.append(obj)
         else:
             self.selected_points = [obj for obj in objlist]
-            editor.selected = [obj for obj in objlist]
+            editor.selected_misc = [obj for obj in objlist]
             editor.selected_positions = [obj for obj in objlist]
 
         editor.parent().parent().update_3d()
@@ -1248,7 +1264,7 @@ class Plugin(object):
     def clear_selection(self, editor: "bw_widgets.BolMapViewer"):
         try:
             for obj in self.selected_points:
-                editor.selected.remove(obj)
+                editor.selected_misc.remove(obj)
                 editor.selected_positions.remove(obj)
         except ValueError:
             pass
