@@ -3,6 +3,7 @@ from OpenGL.GL import *
 from lib.model_rendering import Model
 from lib.vectors import Vector3, Plane, Line
 from widgets.editor_widgets import catch_exception
+from itertools import chain
 
 id_to_meshname = {
     0x1: "gizmo_x",
@@ -83,8 +84,8 @@ class Gizmo(Model):
             return hit, dist
 
 
-    def move_to_average(self, objects, bwterrain, waterheight, visualize):
-        for obj in objects:
+    def move_to_average(self, objects, misc_objects, bwterrain, waterheight, visualize):
+        for obj in chain(objects, misc_objects):
             if obj is None:
                 continue
             if obj.getmatrix() is not None or obj.getposition() is not None:
@@ -99,7 +100,7 @@ class Gizmo(Model):
         avgy = None
         avgz = None
         count = 0
-        for obj in objects:
+        for obj in chain(objects, misc_objects):
             if obj.getmatrix() is not None:
                 if visualize and obj.mtxoverride is not None:
                     mtx = obj.mtxoverride
