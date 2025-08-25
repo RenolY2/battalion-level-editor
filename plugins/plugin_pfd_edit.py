@@ -318,23 +318,24 @@ class PFD(object):
     def write(self, f):
         edges = []
         edges_pack = []
-
+        print("Start")
         for i, point in enumerate(self.pathpoints):
             point._index = i
-
+        print("Indexed points")
         for i, point in enumerate(self.pathpoints):
             for link in point.neighbours:
                 if link.exists():
+                    if hasattr(link.edge, "_index"):
+                        continue
+
                     link.edge.distance = min(255, int(((link.point.x-point.x)**2 + (link.point.y-point.y)**2)**0.5))
                     #packed = link.edge.pack()
                     packed = (point._index, link.point._index) if point._index < link.point._index else (link.point._index, point._index)
-                    try:
-                        index = edges_pack.index(packed)
-                        link.edge._index = index
-                    except ValueError:
-                        edges_pack.append(packed)
-                        link.edge._index = len(edges)
-                        edges.append(link.edge)
+
+                    edges_pack.append(packed)
+                    link.edge._index = len(edges)
+                    edges.append(link.edge)
+        print("Indexed edges")
         f.write(struct.pack(">HH", len(self.pathpoints), len(edges)))
         for point in self.pathpoints:
             x = max(0, min(8192, int((point.x + 2048) * 2)))
@@ -352,10 +353,10 @@ class PFD(object):
 
             f.write(struct.pack(">HHHHHHHH",
                                 *indices))
-
+        print("Written points")
         for edge in edges:
             f.write(struct.pack("BBB", edge.distance, edge.priority, edge.flags))
-
+        print("Written edges")
         print("Written", len(self.pathpoints), "points and", len(edges), "edges")
         values = bytearray(0 for i in range(512*512))
         for x in range(512):
@@ -368,7 +369,7 @@ class PFD(object):
                 values[x + y*512] = val
 
         f.write(values)
-
+        print("Written gradient map")
 
 class RenderGroupDistributor(object):
     def __init__(self, groupcount, buffer=256):
