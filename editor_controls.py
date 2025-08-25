@@ -334,10 +334,7 @@ class Gizmo2DMoveX(ClickDragAction):
         super().just_released(editor, buttons, event)
         editor.gizmo.hidden = False
         editor.gizmo.reset_axis()
-        editor.gizmo.move_to_average(editor.selected,
-                                     editor.bwterrain,
-                                     editor.waterheight,
-                                     editor.dolphin.do_visualize())
+        editor.center_gizmo(editor.dolphin.do_visualize())
 
 
 class Gizmo2DMoveXZ(Gizmo2DMoveX):

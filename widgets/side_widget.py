@@ -268,10 +268,7 @@ class PikminSideWidget(QWidget):
             mtx = obj.getmatrix()
             if mtx is not None:
                 self.parent.level_view.selected_positions = [mtx]
-                self.parent.level_view.gizmo.move_to_average(self.parent.level_view.selected,
-                                                      self.parent.level_view.bwterrain,
-                                                      self.parent.level_view.waterheight,
-                                                      self.parent.dolphin.do_visualize())
+                self.parent.level_view.center_gizmo(self.parent.dolphin.do_visualize())
             else:
                 self.parent.level_view.selected_positions = []
 
