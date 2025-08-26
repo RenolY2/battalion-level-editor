@@ -18,7 +18,7 @@ from functools import partial
 from lib.render.model_renderingv2 import QuadDrawing, LineDrawing
 from editor_controls import MouseMode
 from widgets.edit_window import IntegerInput, ColorView
-from widgets.editor_widgets import open_yesno_box, open_message_dialog
+from widgets.editor_widgets import open_yesno_box, open_message_dialog, open_error_dialog
 
 
 def round_to_multiple(val, val2, upwards=False):
@@ -263,6 +263,15 @@ class Link:
         self.edge = None
 
 
+class TooManyPoints(Exception):
+    pass
+
+
+
+class TooManyEdges(Exception):
+    pass
+
+
 class PFD(object):
     def __init__(self):
         self.pathpoints = []
@@ -320,12 +329,22 @@ class PFD(object):
         return pfd
 
     def write(self, f):
+        if len(self.pathpoints) >= 0xFFFF:
+            raise TooManyPoints(f"Too many PFD points! {len(self.pathpoints)} >= 65535. Recommended: 10000 or less")
         edges = []
         edges_pack = []
         print("Start")
         for i, point in enumerate(self.pathpoints):
             point._index = i
         print("Indexed points")
+
+        for i, point in enumerate(self.pathpoints):
+            for link in point.neighbours:
+                if link.exists():
+                    if hasattr(link.edge, "_index"):
+                        del link.edge._index
+
+
         for i, point in enumerate(self.pathpoints):
             for link in point.neighbours:
                 if link.exists():
@@ -340,6 +359,8 @@ class PFD(object):
                     link.edge._index = len(edges)
                     edges.append(link.edge)
         print("Indexed edges")
+        if len(self.edges) >= 0xFFFF:
+            raise TooManyPoints(f"Too many PFD edges! {len(self.pathpoints)} >= 65535. Recommended: 20000 or less")
         f.write(struct.pack(">HH", len(self.pathpoints), len(edges)))
         for point in self.pathpoints:
             x = max(0, min(8192, int((point.x + 2048) * 2)))
@@ -550,6 +571,7 @@ class Plugin(object):
 
         self.last_point = None
         self.visual_points = []
+        self.visual_lines = []
         self.start_point = None
         self.end_point = None
         self.edge_template = PathEdge(0, 0, 0)
@@ -695,11 +717,17 @@ class Plugin(object):
 
         if path:
             tmp = BytesIO()
-            self.pfd.write(tmp)
-            with open(path, "wb") as f:
-                f.write(tmp.getvalue())
-            if message:
-                open_message_dialog("Saved!", parent=editor)
+            try:
+                self.pfd.write(tmp)
+            except TooManyPoints as err:
+                open_error_dialog(f"{err}\nSaving PFD has been aborted.", None)
+            except TooManyEdges as err:
+                open_error_dialog(f"{err}\nSaving PFD has been aborted.", None)
+            else:
+                with open(path, "wb") as f:
+                    f.write(tmp.getvalue())
+                if message:
+                    open_message_dialog("Saved!", parent=editor)
 
     def cancel_mode(self, editor):
         print("Cancelled")
@@ -707,6 +735,7 @@ class Plugin(object):
         editor.level_view.text_display.set_text("PFD", "")
         editor.level_view.text_display.update()
         self.visual_points = []
+        self.visual_lines = []
 
     def buttonaction_add_point(self, editor: "bw_editor.LevelEditor"):
         print("Adding point")
@@ -919,6 +948,11 @@ class Plugin(object):
             end_x = round_to_multiple(max(self.start_point[0], end_x), spacing, upwards=True)
             end_z = round_to_multiple(max(self.start_point[1], end_z), spacing, upwards=True)
 
+            self.visual_lines = []
+            self.visual_lines.append((start_x, start_z, start_x, end_z-spacing, (1.0, 0.0, 0.0)))
+            self.visual_lines.append((start_x, start_z, end_x-spacing, start_z, (1.0, 0.0, 0.0)))
+            self.visual_lines.append((end_x-spacing, end_z-spacing, start_x, end_z-spacing, (1.0, 0.0, 0.0)))
+            self.visual_lines.append((end_x-spacing, end_z-spacing, end_x-spacing, start_z, (1.0, 0.0, 0.0)))
 
             size_x = int((end_x-start_x)/spacing)
             size_z = int((end_z-start_z)/spacing)
@@ -972,7 +1006,7 @@ class Plugin(object):
 
     def get_closest_point(self, x, z, tolerance, limit=None):
         result = []
-        if limit:
+        if limit is not None:
             point_list = limit
         else:
             point_list = self.pfd.pathpoints
@@ -992,12 +1026,15 @@ class Plugin(object):
     def world_click_select_box(self, editor: "bw_editor.LevelEditor",
                                select_start_x, select_start_z,
                                select_end_x, select_end_z):
+        self.visual_points = []
+        self.visual_lines = []
+
         if not self.hide_pfd.isChecked():
             return
 
         if self.pfd is not None:
             if editor.mouse_mode.plugin_active(self.MODE_MAKE_PATH_GRID):
-                self.visual_points = []
+
                 spacing = self.get_spacing()
                 start_x = round_to_multiple(min(select_start_x, select_end_x), spacing, upwards=True)
                 start_z = round_to_multiple(min(select_start_z, select_end_z), spacing, upwards=True)
@@ -1300,8 +1337,7 @@ class Plugin(object):
                 for link in point.neighbours:
                     if link.exists():
                         link.point.remove_neighbour(point)
-                        if link.exists():
-                            link.point.set_dirty()
+                        link.point.set_dirty()
                 self.pfd.pathpoints.remove(point)
 
             self.dirty = True
@@ -1678,6 +1714,9 @@ class Plugin(object):
             self.quads.reset()
             self.lines.reset_lines()
             self.selected_quads.reset()
+
+            for x1, y1, x2, y2, color in self.visual_lines:
+                self.lines.add_line((x1, 100, y1), (x2, 100, y2), color)
 
             for pointx, pointy in self.visual_points:
                 size = 0.5
