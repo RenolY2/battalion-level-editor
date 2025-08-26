@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from math import ceil, floor
 from OpenGL.GL import *
 import struct
+import traceback
 #from lib.bw.texture import OpenGLTexture
 from lib.model_rendering import TexturedMesh
 from PIL import Image
@@ -730,10 +731,10 @@ class Plugin(object):
             tmp = BytesIO()
             try:
                 self.pfd.write(tmp)
-            except TooManyPoints as err:
+            except Exception as err:
+                traceback.print_exc()
                 open_error_dialog(f"{err}\nSaving PFD has been aborted.", None)
-            except TooManyEdges as err:
-                open_error_dialog(f"{err}\nSaving PFD has been aborted.", None)
+
             else:
                 with open(path, "wb") as f:
                     f.write(tmp.getvalue())
