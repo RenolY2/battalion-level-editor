@@ -1371,13 +1371,18 @@ class Plugin(object):
         editor.selected = []
         editor.selected_positions = []
         editor.selected_rotations = []
+        editor.selected_misc = []
         self.clear_selection(editor)
+        editor.do_redraw(force=True)
 
     def delete_selected_points(self, editor):
         if self.pfd is not None:
-            if (len(self.selected_points) > 0
-                    and open_yesno_box(f"{len(self.selected_points)} PFD point(s) selected.",
-                                       "Do you want to delete them?")):
+            if len(self.selected_points) > 0:
+                if len(self.selected_points) > 100:
+                    if not open_yesno_box(f"{len(self.selected_points)} PFD points selected.",
+                                       "Do you want to delete them?"):
+                        return
+
                 for point in self.selected_points:
                     point.pathgroup.remove_point(point)
                     for link in point.neighbours:
