@@ -458,6 +458,15 @@ class Plugin(object):
                                 os.path.join(base, pf2path))
                 except FileNotFoundError:
                     pass
+
+                try:
+                    pfd = editor.file_menu.get_pfd_path()
+
+                    shutil.copy(os.path.join(savestatepath, os.path.basename(pfd)),
+                                pfd)
+                except:
+                    pass
+
                 editor.file_menu.button_load_level(fpathoverride=editor.file_menu.current_path)
 
                 basepath = os.path.dirname(editor.current_gen_path)
