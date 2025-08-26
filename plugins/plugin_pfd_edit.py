@@ -360,7 +360,7 @@ class PFD(object):
                     link.edge._index = len(edges)
                     edges.append(link.edge)
         print("Indexed edges")
-        if len(self.edges) >= 0xFFFF:
+        if len(edges) >= 0xFFFF:
             raise TooManyPoints(f"Too many PFD edges! {len(self.pathpoints)} >= 65535. Recommended: 20000 or less")
         f.write(struct.pack(">HH", len(self.pathpoints), len(edges)))
         for point in self.pathpoints:
