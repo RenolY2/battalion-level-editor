@@ -592,6 +592,7 @@ class LevelEditor(QMainWindow):
 
         delete_shortcut = QtGui.QShortcut(QtGui.QKeySequence(Qt.Key.Key_Delete), self)
         delete_shortcut.activated.connect(self.action_delete_objects)
+        self.delete_shortcut = delete_shortcut
 
         undo_shortcut = QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Z"), self)
         undo_shortcut.activated.connect(self.action_undo)
@@ -1131,6 +1132,8 @@ class LevelEditor(QMainWindow):
             result = open_yesno_box(text, description)
             if result:
                 self.delete_objects(self.level_view.selected)
+
+        self.plugin_handler.execute_event("delete_press", self)
 
     @catch_exception
     def action_undo(self):

@@ -67,6 +67,7 @@ class PluginHandler(object):
         self.add_event("terrain_click_2d", "BolMapViewer", "point")
         self.add_event("key_release", "LevelEditor", "qtkey")
         self.add_event("key_press", "LevelEditor", "qtkey")
+        self.add_event("delete_press", "LevelEditor")
         self.add_event("cancel_mode", "LevelEditor")
         self.add_event("world_click_select_start", "LevelEditor", "startx", "startz")
         self.add_event("world_click_select_continue", "LevelEditor", "endx", "endz")
