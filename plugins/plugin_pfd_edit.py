@@ -538,13 +538,16 @@ class PFDPluginButton(QtWidgets.QPushButton):
 
         self.pressed.connect(self.call_func)
         self._checked = False
+        col = self.palette().button().color()
+        self.darker = (col.red()-13, col.green()-13, col.blue()-13)
 
     def setChecked(self, status):
         if status == self._checked:
             return
         self._checked = status
+        #palette = QtWidgets.QApplication.palette()
         if self._checked:
-            self.setStyleSheet("background-color: rgb(40, 40, 40);")
+            self.setStyleSheet(f"background-color: rgb({self.darker[0]}, {self.darker[1]}, {self.darker[2]});")
         else:
             self.setStyleSheet("")
 
