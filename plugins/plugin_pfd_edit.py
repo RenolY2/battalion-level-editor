@@ -1081,8 +1081,23 @@ class Plugin(object):
                 grid = [[None for z in range(size_z)] for x in range(size_x)]
                 print(size_x, size_z, "SIZE", start_x, start_z, end_x, end_z)
                 points = []
+
+                check_size = 500
+
                 for x in range(size_x):
                     for z in range(size_z):
+                        if x % check_size == 0 and z % check_size == 0:
+                            ix = x // check_size
+                            iy = z // check_size
+                            startx_offset = start_x + ix*check_size
+                            starty_offset = start_z + iy*check_size
+                            endx_offset = start_x + (ix + 1) * check_size
+                            endy_offset = start_z + (iy + 1) * check_size
+
+                            check_area = self.get_limited_points(
+                                (startx_offset - tolerance, starty_offset - tolerance, endx_offset+tolerance, endy_offset+tolerance)
+                            )
+
                         point = self.get_closest_point(start_x + x*spacing, start_z + z*spacing, spacing, check_area)
 
                         if point is None:
