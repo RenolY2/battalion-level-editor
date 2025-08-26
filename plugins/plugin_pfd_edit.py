@@ -1,5 +1,6 @@
 import PyQt6.QtWidgets as QtWidgets
 import PyQt6.QtCore as QtCore
+import PyQt6.QtGui as QtGui
 from dataclasses import dataclass
 from collections import namedtuple
 from typing import TYPE_CHECKING
@@ -526,7 +527,7 @@ class Material(object):
 
 
 class PFDPluginButton(QtWidgets.QPushButton):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, checkable=False, **kwargs):
         self.editor = kwargs["editor"]
         self.func = kwargs["func"]
         del kwargs["editor"]
@@ -535,6 +536,16 @@ class PFDPluginButton(QtWidgets.QPushButton):
         super().__init__(*args, **kwargs)
 
         self.pressed.connect(self.call_func)
+        self._checked = False
+
+    def setChecked(self, status):
+        if status == self._checked:
+            return
+        self._checked = status
+        if self._checked:
+            self.setStyleSheet("background-color: rgb(40, 40, 40);")
+        else:
+            self.setStyleSheet("")
 
     def call_func(self):
         self.func(self.editor)
@@ -729,7 +740,9 @@ class Plugin(object):
                 if message:
                     open_message_dialog("Saved!", parent=editor)
 
-    def cancel_mode(self, editor):
+    def cancel_mode(self, editor,
+                    uncheck_add=True, uncheck_connect=True,
+                    uncheck_disconnect=True, uncheck_grid=True):
         print("Cancelled")
         editor.level_view.text_display.set_text("PFD", " ")
         editor.level_view.text_display.set_text("PFD", "")
@@ -737,16 +750,24 @@ class Plugin(object):
         self.visual_points = []
         self.visual_lines = []
 
+        if uncheck_add: self.button_add_point.setChecked(False)
+        if uncheck_connect: self.button_connect_point.setChecked(False)
+        if uncheck_disconnect: self.button_disconnect_point.setChecked(False)
+        if uncheck_grid: self.button_make_grid.setChecked(False)
+
     def buttonaction_add_point(self, editor: "bw_editor.LevelEditor"):
         print("Adding point")
         assert self.MODE_ADD_PATHPOINT is not None
         if not editor.level_view.mouse_mode.plugin_active(self.MODE_ADD_PATHPOINT):
+            self.clear_gizmo(editor.level_view)
             print("Enabled path point mode")
+            self.button_add_point.setChecked(True)
             editor.level_view.mouse_mode.set_plugin_mode(self.MODE_ADD_PATHPOINT)
             editor.level_view.text_display.set_text("PFD", "Pathfinding: Left Mouse Button to place points.\nESC to cancel.")
         else:
             print("Disabled path point mode")
             editor.level_view.mouse_mode.set_mode(MouseMode.NONE)
+            print("Unchecking")
             self.cancel_mode(editor)
 
     def buttonaction_delete_point(self, editor: "bw_editor.LevelEditor"):
@@ -757,6 +778,9 @@ class Plugin(object):
         assert self.MODE_CONNECT_PATHPOINT is not None
         if not editor.level_view.mouse_mode.plugin_active(self.MODE_CONNECT_PATHPOINT):
             self.last_point = None
+            self.clear_gizmo(editor.level_view)
+
+            self.button_connect_point.setChecked(True)
             editor.level_view.mouse_mode.set_plugin_mode(self.MODE_CONNECT_PATHPOINT)
             editor.level_view.text_display.set_text("PFD",
                                                     ("Pathfinding: Left Mouse Button to connect points.\n"
@@ -770,6 +794,8 @@ class Plugin(object):
         assert self.MODE_DISCONNECT_PATHPOINT is not None
         if not editor.level_view.mouse_mode.plugin_active(self.MODE_DISCONNECT_PATHPOINT):
             self.last_point = None
+            self.clear_gizmo(editor.level_view)
+            self.button_disconnect_point.setChecked(True)
             editor.level_view.mouse_mode.set_plugin_mode(self.MODE_DISCONNECT_PATHPOINT)
             editor.level_view.text_display.set_text("PFD",
                                                     ("Pathfinding: Left Mouse Button to disconnect points.\n"
@@ -918,11 +944,16 @@ class Plugin(object):
     def buttonaction_connect_points_grid(self, editor: "bw_editor.LevelEditor"):
         print("Connecting point")
 
+    def key_press(self, editor, key):
+        print(type(key), key)
+
     def buttonaction_make_grid(self, editor: "bw_editor.LevelEditor"):
         assert self.MODE_MAKE_PATH_GRID is not None
         if not editor.level_view.mouse_mode.plugin_active(self.MODE_MAKE_PATH_GRID):
             self.start_point = None
             self.end_point = None
+            self.clear_gizmo(editor.level_view)
+            self.button_make_grid.setChecked(True)
             editor.level_view.mouse_mode.set_plugin_mode(self.MODE_MAKE_PATH_GRID)
             editor.level_view.text_display.set_text("PFD",
                                                     ("Pathfinding: Click+Drag to create grid of points.\n"
@@ -1105,15 +1136,21 @@ class Plugin(object):
                     self.edge3_edit.update_value()
                     self.edge4_edit.update_value()
 
+    def delete_press(self, editor):
+        self.delete_selected_points(editor)
+
     def setup_widget(self, editor: "bw_editor.LevelEditor", widget: "plugin.PluginWidgetEntry"):
         print("Setting up widget...")
         self.section = widget.add_widget(QtWidgets.QLabel(widget, text="BW1 Pathfind Data (PFD) Tools:"))
 
 
         self.button_add_point = widget.add_widget(PFDPluginButton(
-            widget, text="Add Path Point", editor=editor, func=self.buttonaction_add_point))
-        self.button_delete_point = widget.add_widget(PFDPluginButton(
+            widget, text="Add Path Point", editor=editor, func=self.buttonaction_add_point,
+            checkable=False))
+        self.button_delete_point: PFDPluginButton = widget.add_widget(PFDPluginButton(
             widget, text="Delete Path Point", editor=editor, func=self.buttonaction_delete_point))
+
+
         self.button_connect_point = widget.add_widget(PFDPluginButton(
             widget, text="Connect Points", editor=editor, func=self.buttonaction_connect_points))
         self.button_disconnect_point = widget.add_widget(PFDPluginButton(
@@ -1330,18 +1367,28 @@ class Plugin(object):
         self.selected_quads.reset()
         editor.parent().parent().update_3d()
 
+    def clear_gizmo(self, editor: "bw_widgets.BolMapViewer"):
+        editor.selected = []
+        editor.selected_positions = []
+        editor.selected_rotations = []
+        self.clear_selection(editor)
+
     def delete_selected_points(self, editor):
         if self.pfd is not None:
-            for point in self.selected_points:
-                point.pathgroup.remove_point(point)
-                for link in point.neighbours:
-                    if link.exists():
-                        link.point.remove_neighbour(point)
-                        link.point.set_dirty()
-                self.pfd.pathpoints.remove(point)
+            if (len(self.selected_points) > 0
+                    and open_yesno_box(f"{len(self.selected_points)} PFD point(s) selected.",
+                                       "Do you want to delete them?")):
+                for point in self.selected_points:
+                    point.pathgroup.remove_point(point)
+                    for link in point.neighbours:
+                        if link.exists():
+                            p = link.point
+                            p.remove_neighbour(point)
+                            p.set_dirty()
+                    self.pfd.pathpoints.remove(point)
 
-            self.dirty = True
-            self.clear_selection(editor.level_view)
+                self.dirty = True
+                self.clear_selection(editor.level_view)
 
     def raycast_3d(self, editor: "bw_widgets.BolMapViewer", ray):
         return
@@ -1434,7 +1481,7 @@ class Plugin(object):
                     self.current_val1.setText("\n".join(neighbours))"""
                     #self.current_val2.setText("{} {} {} {}".format(*point.values[4:8]))
                     self.dirty = True
-                else:
+                elif not editor.shift_is_pressed:
                     self.clear_selection(editor)
 
                 if len(self.selected_points) == 1:
@@ -1442,8 +1489,6 @@ class Plugin(object):
                     self.edge2_edit.update_value()
                     self.edge3_edit.update_value()
                     self.edge4_edit.update_value()
-
-        print("heya", x, y)
 
     def buttonaction_load_gradient(self, editor):
         path = self.gradient_path if self.gradient_path else editor.pathsconfig["xml"].replace(".xml", "_Gradient.png")
@@ -1461,7 +1506,6 @@ class Plugin(object):
                 for y in range(512):
                     vals = pixels[x,y]
                     self.pfd.set_map_val(x, 511-y, vals[0])
-
 
     def buttonaction_save_gradient(self, editor):
         path = self.gradient_path if self.gradient_path else editor.pathsconfig["xml"].replace(".xml", "_Gradient.png")
