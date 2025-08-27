@@ -15,7 +15,7 @@ from widgets.menu.file_menu import PF2
 from typing import TYPE_CHECKING
 from configuration import read_config, make_default_config, save_cfg
 from plugins.plugin_object_exportimport import LabeledWidget
-
+from widgets.menu.file_menu import LoadingBar
 if TYPE_CHECKING:
     import bw_editor
 
@@ -74,7 +74,43 @@ class SaveStateNameDialog(QtWidgets.QDialog):
         self.reject()
 
 
-class LoadingBar(QtWidgets.QDialog):
+class LuaUnpackDialog(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Unpack Lua")
+        self.bundle_path = None
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.text_info = QtWidgets.QLabel(self,
+                                          text=("Do you want to unpack the savestate's scripts?\n"
+                                                "Your current scripts will be overwritten.\n"
+                                                "You can always manually unpack lua scripts later with Lua->Reload Scripts from Resource."))
+        self.remember_widget = QtWidgets.QCheckBox(self, text="Remember for future savestate loads")
+
+        self.layout.addWidget(self.text_info)
+        self.layout.addWidget(self.remember_widget)
+
+        self.ok = QtWidgets.QPushButton(self, text="Yes")
+        self.cancel = QtWidgets.QPushButton(self, text="No")
+        self.cancel.setDefault(True)
+        self.buttons = QtWidgets.QHBoxLayout(self)
+        self.buttons.addWidget(self.ok)
+        self.buttons.addWidget(self.cancel)
+        self.layout.addLayout(self.buttons)
+
+        self.ok.pressed.connect(self.confirm)
+        self.cancel.pressed.connect(self.deny)
+
+    def remember(self):
+        return self.remember_widget.isChecked()
+
+    def confirm(self):
+        self.accept()
+
+    def deny(self):
+        self.reject()
+
+
+class LoadingBarOld(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         WIDTH = 200
@@ -154,9 +190,16 @@ class Plugin(object):
                         ("Dump PF2 to PNG", self.pf2dump),
                         ("Update Texture Cache for Selection", self.update_texture_cache),
                         ("Clean Up Invalid Resources", self.clean_up)]
+                        #("Open Dialog", self.open_dialog)]
                         #("Loading Bar Test", self.loading_bar)]
         print("I have been initialized")
         self.is_doing_manual_savestate = False
+        self.remember_choice = None
+
+    def open_dialog(self, editor):
+        result = LuaUnpackDialog()
+        a = result.exec()
+        print(a, result.remember())
 
     def clean_up(self, editor: "bw_editor.LevelEditor"):
         res = editor.file_menu.resource_archive
@@ -467,12 +510,34 @@ class Plugin(object):
                 except:
                     pass
 
+                if self.remember_choice is None:
+                    dialog = LuaUnpackDialog()
+                    do_unpack = dialog.exec()
+                    if dialog.remember():
+                        self.remember_choice = do_unpack
+                else:
+                    do_unpack = self.remember_choice
+
                 editor.file_menu.button_load_level(fpathoverride=editor.file_menu.current_path)
 
-                basepath = os.path.dirname(editor.current_gen_path)
-                resname = editor.file_menu.level_paths.resourcepath
 
-                editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname))
+                if do_unpack:
+                    bar = LoadingBar(editor)
+
+                    basepath = os.path.dirname(editor.current_gen_path)
+                    resname = editor.file_menu.level_paths.resourcepath
+                    bar.show()
+                    def progress(i):
+                        bar.update_progress(i)
+                        QtWidgets.QApplication.processEvents()
+
+                    try:
+                        editor.lua_workbench.unpack_scripts(os.path.join(basepath, resname), progress)
+                        open_message_dialog("Lua scripts unpacked!", "", editor)
+                    except Exception as err:
+                        bar.force_close()
+                        raise
+                    bar.force_close()
 
             else:
                 open_message_dialog("Save state is from a different level!",
