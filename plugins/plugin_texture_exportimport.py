@@ -257,7 +257,7 @@ class Plugin(object):
                         gen_mipmap = settings[0].lower() == "mipmap"
                     else:
                         if basetex is not None:
-                            gen_mipmap = basetex.mipmaps > 1
+                            gen_mipmap = len(basetex.mipmaps) > 1
                         else:
                             gen_mipmap = False
 
