@@ -683,6 +683,11 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
                 self.set_row_values(1, "Mem2 free", self.get_mem2_remaining())
 
             self.set_row_values(3, "Heap", "Address", "Total (Bytes)", "Used (Bytes)", "Free (Bytes)")
+            for i in range(40):  # Reset existing coloring
+                col = self.gradient.get_value(0.0)
+                self.set_color(i, 3, col)
+                self.set_color(i, 4, col)
+
             i = 0
             for name, addr, advanced in self.heaps:
                 if not advanced or (advanced and self.advanced.isChecked()):
