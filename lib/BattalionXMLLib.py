@@ -986,6 +986,9 @@ class BattalionObject(object):
                 modelname = self.modelname
             #elif self.type ==
 
+            if self.type in ("cGUIStringFromLabel", "cGUIStringString"):
+                return "{}({}, {})".format(self.type, self.mcString, self.id)
+
             if self._custom_name:
                 if modelname:
                     return "{0}({2},{1})".format(modelname, self._custom_name, self.id)
