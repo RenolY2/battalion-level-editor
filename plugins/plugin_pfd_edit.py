@@ -317,7 +317,7 @@ class PFD(object):
         for i in range(count2):
             distance, b, c = struct.unpack_from(">BBB", edge_data, i * 0x3)
             edge = edges[i]
-            edge.distance, edge.priority, edge.flags = distance, b, c
+            edge.set(distance, b, c)
 
         for x in range(512):
             for y in range(512):
@@ -1333,15 +1333,6 @@ class Plugin(object):
 
         return None
 
-    def terrain_click_3d(self, editor, ray, pos):
-        print("CLICKED", pos)
-        #self.pos = pos
-        self.raycast = ray
-        self.pos = pos + Vector3(0, 0, 2)
-
-        swp = ray.swapped_yz()
-        #print("time", timeit.timeit(lambda: editor.bwterrain.ray_collide(swp), number=250)/250.0)
-
     def add_selection(self,  editor: "bw_widgets.BolMapViewer", obj, append=True):
         if append:
             if obj not in self.selected_points:
@@ -1550,7 +1541,6 @@ class Plugin(object):
 
             img.save(filepath)
             self.gradient_path = filepath
-
 
     def buttonaction_load_pfd_file(self, editor):
         path = self.pfd_path if self.gradient_path else editor.pathsconfig["xml"].replace(".xml", ".pfd")
