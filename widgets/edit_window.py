@@ -1373,6 +1373,8 @@ class MiscEdit(QtWidgets.QWidget):
                                     name_usages,
                                     obj)
         self.object_id = SelectableLabel(f"Object ID: {obj.id}", self)
+        self.select_button = QtWidgets.QPushButton("Select", self)
+        self.hbox.addWidget(self.select_button)
         self.hbox.addWidget(self.object_id)
         self.hbox.addWidget(make_labeled_widget(self, "Lua name", self.lua_name))
         self.hbox.addWidget(make_labeled_widget(self, "Custom name", self.custom_name))
@@ -1654,11 +1656,19 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         #luaname_edit = LuaNameEdit(self.content_holder, getter, setter, editor.lua_workbench.entityinit.name_usages, object)
         #luaname_edit.textinput.installEventFilter(self)
 
+        def select_goto():
+            obj = self.object
+            if obj is not None:
+                editor.level_view.selected = [obj]
+                editor.pik_control.goto_object(obj.id)
+                editor.level_view.select_update.emit()
+
         misc_edit = MiscEdit(self.content_holder,
                              custom_getsetters,
                              lua_getsetters,
                              editor.lua_workbench.entityinit.name_usages,
                              object)
+        misc_edit.select_button.pressed.connect(select_goto)
         misc_edit.custom_name.editingFinished.connect(self.refresh_editor)
         misc_edit.lua_name.textinput.installEventFilter(self)
         misc_edit.update_value()
