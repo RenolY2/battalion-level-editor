@@ -205,8 +205,11 @@ class PikminSideWidget(QWidget):
 
         return obj
 
-    def clone_object(self):
-        clonelist = [x for x in self.parent.level_view.selected]
+    def clone_object(self, objs=None, code_clone=False):
+        if objs is None:
+            clonelist = [x for x in self.parent.level_view.selected]
+        else:
+            clonelist = objs
 
         # Do not clone selected grunts who are already passengers because passengers will get cloned anyway
         for obj in self.parent.level_view.selected:
@@ -224,12 +227,16 @@ class PikminSideWidget(QWidget):
                         clone.mPassenger[i] = self._copy_object(clone.mPassenger[i], 5, 5)
                         newclones.append(clone.mPassenger[i])
 
-        self.parent.level_view.do_select(newclones)
+        if not code_clone:
+            self.parent.level_view.do_select(newclones)
         self.parent.leveldatatreeview.set_objects(self.parent.level_file, self.parent.preload_file, remember_position=True)
         self.parent.update_3d()
         self.parent.level_view.do_redraw(force=True)
-        self.set_objectlist(newclones)
+        if not code_clone:
+            self.set_objectlist(newclones)
         self.parent.set_has_unsaved_changes(True)
+
+        return newclones
 
     def select_obj(self, id):
         if id in self.parent.level_file.objects_with_positions:

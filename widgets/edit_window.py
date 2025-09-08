@@ -718,6 +718,8 @@ class ReferenceEdit(QtWidgets.QWidget):
         self.goto_button = QtWidgets.QPushButton("Goto/Select", self)
         self.object_combo_box.currentIndexChanged.connect(self.change_object)
         self.object_combo_box.lineEdit().editingFinished.connect(self.change_object_text)
+        self.clone_set = QtWidgets.QPushButton("Set To Clone")
+        self.clone_set.setToolTip("Will clone the currently set object and set the field to the cloned object.")
 
         self.copy_button = QtWidgets.QPushButton(parent=self, icon=ICONS["COPY"])
         self.copy_button.setToolTip("Copy ID into Clipboard")
@@ -728,6 +730,7 @@ class ReferenceEdit(QtWidgets.QWidget):
         line_1.addWidget(self.copy_button)
         line_1.addWidget(self.edit_button)
         line_1.addWidget(self.set_to_selected_button)
+        line_1.addWidget(self.clone_set)
         line_1.addWidget(self.goto_button)
 
         # self.gridlayout.addWidget(line_1_holder, 0, 0)
@@ -1184,8 +1187,18 @@ class FieldEdit(QtCore.QObject):
                     editor.pik_control.goto_object(obj.id)
                     editor.level_view.select_update.emit()
 
+            def clone_set():
+                obj = getter()
+                if obj is not None:
+                    clones = editor.pik_control.clone_object([obj], True)
+                    setter(clones[0])
+                    content.update_value()
+                    model_refresh()
+                    self.trigger_editor_refresh()
+
             content.set_to_selected_button.pressed.connect(set_to_selected)
             content.goto_button.pressed.connect(select_goto)
+            content.clone_set.pressed.connect(clone_set)
 
             content.update_value(item_cache)
             line_layout.addWidget(content)
