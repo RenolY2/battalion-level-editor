@@ -998,7 +998,9 @@ class BattalionObject(object):
             elif self.type == "cGUIPage" and self.mpScript is not None:
                 if self.mpScript.mpScript is not None:
                     return "{}({}, {})".format(self.type, self.mpScript.mpScript.mName, self.id)
-
+            elif self.type == "cGUITextBoxWidget":
+                if self.mpText is not None:
+                    return "{}({}, {})".format(self.type, self.mpText.mcString, self.id)
             if self._custom_name:
                 if modelname:
                     return "{0}({2},{1})".format(modelname, self._custom_name, self.id)
