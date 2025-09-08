@@ -501,6 +501,9 @@ class LevelEditor(QMainWindow):
             elif obj.type == "cTextureResource":
                 self.mini_model_viewer.set_scene_texture(obj.mName)
                 self.mini_model_viewer.angle = 0
+            elif obj.type == "cGUITextureWidget" and obj.mpTexture is not None:
+                self.mini_model_viewer.set_scene_texture(obj.mpTexture.mName)
+                self.mini_model_viewer.angle = 0
             elif obj.type == "sSpriteBasetype":
                 if obj.texture is not None:
                     self.mini_model_viewer.set_scene_texture(obj.texture.mName)
@@ -671,77 +674,6 @@ class LevelEditor(QMainWindow):
             else:
                 self.level_view.selected_positions.append(point.position)
         self.update_3d()
-
-    def action_open_rotationedit_window(self):
-        if self.edit_spawn_window is None:
-            self.edit_spawn_window = mkdd_widgets.SpawnpointEditor()
-            self.edit_spawn_window.position.setText("{0}, {1}, {2}".format(
-                self.pikmin_gen_file.startpos_x, self.pikmin_gen_file.startpos_y, self.pikmin_gen_file.startpos_z
-            ))
-            self.edit_spawn_window.rotation.setText(str(self.pikmin_gen_file.startdir))
-            self.edit_spawn_window.closing.connect(self.action_close_edit_startpos_window)
-            self.edit_spawn_window.button_savetext.pressed.connect(self.action_save_startpos)
-            self.edit_spawn_window.show()
-
-    #@catch_exception
-
-
-    def load_optional_3d_file(self, additional_files, bmdfile, collisionfile):
-        choice, pos = FileSelect.open_file_list(self, additional_files,
-                                                "Select additional file to load", startat=0)
-
-        if choice.endswith("(3D Model)"):
-            alternative_mesh = load_textured_bmd(bmdfile)
-            with open("lib/temp/temp.obj", "r") as f:
-                verts, faces, normals = py_obj.read_obj(f)
-
-            self.setup_collision(verts, faces, bmdfile, alternative_mesh)
-
-        elif choice.endswith("(3D Collision)"):
-            bco_coll = RacetrackCollision()
-            verts = []
-            faces = []
-
-            with open(collisionfile, "rb") as f:
-                bco_coll.load_file(f)
-
-            for vert in bco_coll.vertices:
-                verts.append(vert)
-
-            for v1, v2, v3, collision_type, rest in bco_coll.triangles:
-                faces.append(((v1 + 1, None), (v2 + 1, None), (v3 + 1, None)))
-            model = CollisionModel(bco_coll)
-            self.setup_collision(verts, faces, collisionfile, alternative_mesh=model)
-
-    def load_optional_3d_file_arc(self, additional_files, bmdfile, collisionfile, arcfilepath):
-        choice, pos = FileSelect.open_file_list(self, additional_files,
-                                                "Select additional file to load", startat=0)
-
-        if choice.endswith("(3D Model)"):
-            with open("lib/temp/temp.bmd", "wb") as f:
-                f.write(bmdfile.getvalue())
-
-            bmdpath = "lib/temp/temp.bmd"
-            alternative_mesh = load_textured_bmd(bmdpath)
-            with open("lib/temp/temp.obj", "r") as f:
-                verts, faces, normals = py_obj.read_obj(f)
-
-            self.setup_collision(verts, faces, arcfilepath, alternative_mesh)
-
-        elif choice.endswith("(3D Collision)"):
-            bco_coll = RacetrackCollision()
-            verts = []
-            faces = []
-
-            bco_coll.load_file(collisionfile)
-
-            for vert in bco_coll.vertices:
-                verts.append(vert)
-
-            for v1, v2, v3, collision_type, rest in bco_coll.triangles:
-                faces.append(((v1 + 1, None), (v2 + 1, None), (v3 + 1, None)))
-            model = CollisionModel(bco_coll)
-            self.setup_collision(verts, faces, arcfilepath, alternative_mesh=model)
 
     def setup_level_file(self, level_file, preload_file, filepath):
         self.level_view.graphics.render_everything_once = True
