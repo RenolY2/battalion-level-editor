@@ -989,6 +989,10 @@ class BattalionObject(object):
             if self.type in ("cGUIStringFromLabel", "cGUIStringString"):
                 return "{}({}, {})".format(self.type, self.mcString, self.id)
 
+            if self.type == "cGUITextureWidget":
+                if self.mpTexture is not None:
+                    return "{}({}, {})".format(self.type, self.mpTexture.mName, self.id)
+
             if self._custom_name:
                 if modelname:
                     return "{0}({2},{1})".format(modelname, self._custom_name, self.id)
