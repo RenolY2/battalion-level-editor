@@ -993,6 +993,12 @@ class BattalionObject(object):
                 if self.mpTexture is not None:
                     return "{}({}, {})".format(self.type, self.mpTexture.mName, self.id)
 
+            elif self.type == "cGUIEvent":
+                return "{}({}, {}, {})".format(self.type, self.meEvent, self.mcString, self.id)
+            elif self.type == "cGUIPage" and self.mpScript is not None:
+                if self.mpScript.mpScript is not None:
+                    return "{}({}, {})".format(self.type, self.mpScript.mpScript.mName, self.id)
+
             if self._custom_name:
                 if modelname:
                     return "{0}({2},{1})".format(modelname, self._custom_name, self.id)
