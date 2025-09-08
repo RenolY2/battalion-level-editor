@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from lib.render.model_renderingv2 import QuadDrawing, LineDrawing
 from OpenGL.GL import *
 from math import cos, sin, radians
+from widgets.edit_window import SelectableLabel
 
 if TYPE_CHECKING:
     import bw_editor
@@ -248,7 +249,7 @@ class Plugin(object):
                 if self.curr >= len(roots):
                     self.curr = 0
                     self.currroots.setText("Current Branch: {}".format(self.curr+1))
-
+                self.current_gui_root.setText(roots[self.curr].name)
                 self.render_gui(roots[self.curr], viewer.selected)
 
             self.calc_roots = roots
@@ -285,3 +286,5 @@ class Plugin(object):
 
         self.roots = widget.add_widget(QtWidgets.QLabel(widget, text="GUI Parent Branches: 0"))
         self.currroots = widget.add_widget(QtWidgets.QLabel(widget, text="Current Branch: -"))
+        self.root_text = widget.add_widget(QtWidgets.QLabel(widget, text="Current root:"))
+        self.current_gui_root = widget.add_widget(SelectableLabel(widget, text=""))
