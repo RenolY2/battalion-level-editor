@@ -191,6 +191,7 @@ class UnitViewer(QtOpenGLWidgets.QOpenGLWidget):
             scale=10.0
 
             if is_texture:
+                glDisable(GL_ALPHA_TEST)
                 tex, id = self.editor.level_view.bwmodelhandler.textures.get_texture(modelname.lower())
                 glBindTexture(GL_TEXTURE_2D, id)
                 ratio = tex.texture.height/tex.texture.width
@@ -204,6 +205,7 @@ class UnitViewer(QtOpenGLWidgets.QOpenGLWidget):
                 glTexCoord2d(0.0, 1.0)
                 glVertex3f(scale, -scale*ratio, 0.0)
                 glEnd()
+                glEnable(GL_ALPHA_TEST)
             else:
                 self.editor.level_view.bwmodelhandler.render_model_inplace(modelname)
             glPopMatrix()
