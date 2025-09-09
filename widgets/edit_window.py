@@ -4,6 +4,10 @@ import math
 import string
 import json
 from functools import partial
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import bw_editor
 from lib.bw_types import BWMatrix, decompose, recompose
 from timeit import default_timer
 from widgets.editor_widgets import open_message_dialog
@@ -720,6 +724,7 @@ class ReferenceEdit(QtWidgets.QWidget):
         self.object_combo_box.lineEdit().editingFinished.connect(self.change_object_text)
         self.clone_set = QtWidgets.QPushButton("Set To Clone")
         self.clone_set.setToolTip("Will clone the currently set object and set the field to the cloned object.")
+        self.custom_name = SelectableLabel(self)
 
         self.copy_button = QtWidgets.QPushButton(parent=self, icon=ICONS["COPY"])
         self.copy_button.setToolTip("Copy ID into Clipboard")
@@ -732,6 +737,7 @@ class ReferenceEdit(QtWidgets.QWidget):
         line_1.addWidget(self.set_to_selected_button)
         line_1.addWidget(self.clone_set)
         line_1.addWidget(self.goto_button)
+        line_1.addWidget(self.custom_name)
 
         # self.gridlayout.addWidget(line_1_holder, 0, 0)
         # self.gridlayout.addWidget(line_2_holder, 1, 0)
@@ -793,11 +799,19 @@ class ReferenceEdit(QtWidgets.QWidget):
         clipboard = QtGui.QGuiApplication.clipboard()
         clipboard.setText(str(value))
 
+    def update_custom_name(self):
+        currobj = self.get_value()
+        if currobj is None or currobj.customname is None:
+            self.custom_name.setText("")
+        else:
+            self.custom_name.setText("Custom Name: " + currobj.customname)
+
     def update_value(self, item_cache=None, large_set_optimize=False):
         self.object_combo_box.blockSignals(True)
         self.object_combo_box.clear()
 
         currobj = self.get_value()
+        self.update_custom_name()
 
         if large_set_optimize:
             self.object_combo_box.addItem(currobj.name)
@@ -1214,6 +1228,11 @@ class FieldEdit(QtCore.QObject):
         for content in self.contents:
             content.update_value()
 
+    def update_custom_name(self):
+        for content in self.contents:
+            if isinstance(content, ReferenceEdit):
+                content.update_custom_name()
+
     def trigger_editor_refresh(self):
         self.editor_refresh.emit()
 
@@ -1449,6 +1468,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.scroll_area.setWidgetResizable(True)
         self.keep_window_on_top = False
         self.setup_rows(object)
+        self.misc_edit = None
 
         self.scheduled_scrollbar_pos = None
         self.scroll_area.verticalScrollBar().rangeChanged.connect(self.scroll_area_bar_update)
@@ -1670,8 +1690,10 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                              object)
         misc_edit.select_button.pressed.connect(select_goto)
         misc_edit.custom_name.editingFinished.connect(self.refresh_editor)
+        misc_edit.custom_name.editingFinished.connect(self.update_custom_names)
         misc_edit.lua_name.textinput.installEventFilter(self)
         misc_edit.update_value()
+        self.misc_edit = misc_edit
         self.fields.append(misc_edit)
         self.add_row(
             TooltippedLabel("Misc",
@@ -1713,6 +1735,14 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.editor.level_view.do_redraw(forcelightdirty=True)
         self.editor.leveldatatreeview.updatenames()
         self.editor.set_has_unsaved_changes(True)
+
+    def update_custom_names(self):
+        self.editor: bw_editor.LevelEditor
+        for window in self.editor.pik_control.editwindows:
+            window: NewEditWindow
+            for field in window.fields:
+                if isinstance(field, FieldEdit):
+                    field.update_custom_name()
 
     def add_row(self, name=None, widget=None):
         if name is not None:
