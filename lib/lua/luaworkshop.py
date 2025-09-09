@@ -368,25 +368,30 @@ class LuaWorkbench(object):
             if fname.endswith(".luap"):
                 os.remove(os.path.join(self.tmp_out, fname))
 
-    def repack_scripts(self, res, scripts=[], delete_rest=True):
+    def repack_scripts(self, res, scripts=[], delete_rest=True, force=False):
         script_sections = []
         for script_name in scripts+["EntityInitialise"]:
             print("compiling", script_name)
             compiled_file = os.path.join(self.tmp_out, script_name+".luap")
             decompiled_file = os.path.join(self.workdir, script_name+".lua")
-            if (not os.path.exists(compiled_file)
-                    or self.did_file_change(script_name)
-                    or script_name == "EntityInitialise"):
-
-                if not os.path.exists(compiled_file) and not self.did_file_change(script_name):
-                    orig_file = os.path.join(self.tmp, script_name+".luap")
-                    print("File unchanged, copying", orig_file, "to", compiled_file)
-                    shutil.copy(orig_file, compiled_file)
-                else:
-                    compile_lua(decompiled_file, compiled_file)
+            if force:
+                compile_lua(decompiled_file, compiled_file)
                 self.record_file_change(script_name)
+                print("Force recompiled", script_name)
             else:
-                print(script_name, "hasn't changed, compile skipped")
+                if (not os.path.exists(compiled_file)
+                        or self.did_file_change(script_name)
+                        or script_name == "EntityInitialise"):
+
+                    if not os.path.exists(compiled_file) and not self.did_file_change(script_name):
+                        orig_file = os.path.join(self.tmp, script_name+".luap")
+                        print("File unchanged, copying", orig_file, "to", compiled_file)
+                        shutil.copy(orig_file, compiled_file)
+                    else:
+                        compile_lua(decompiled_file, compiled_file)
+                    self.record_file_change(script_name)
+                else:
+                    print(script_name, "hasn't changed, compile skipped")
             
             script_section = bwarchivelib.LuaScript.from_filepath(compiled_file)
             script_sections.append(script_section)

@@ -99,8 +99,13 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.lua_reload_scripts_action = self.lua_menu.add_action("Reload Scripts from Resource",
                                                                     self.lua_reload_scripts)
 
+        self.lua_force_recompile_action = self.lua_menu.add_action("Force Compile All Scripts",
+                                                                   self.manual_recompile)
+
         self.lua_import_script_action = self.lua_menu.add_action("Import Lua Script",
                                                                  self.lua_import_script)
+
+
 
         self.addAction(self.editor.file_menu.menuAction())
         self.addAction(self.visibility_menu.menuAction())
@@ -161,6 +166,17 @@ class EditorMenuBar(QtWidgets.QMenuBar):
     def lua_open_find(self):
         self.lua_find_menu = LuaFindWindow(None, self.editor.lua_workbench)
         self.lua_find_menu.show()
+
+    def manual_recompile(self):
+        try:
+            self.editor.lua_workbench.repack_scripts(
+                self.editor.file_menu.resource_archive,
+                scripts=[x.mName for x in self.editor.file_menu.level_data.scripts.values()],
+                force=True
+            )
+            open_message_dialog("Script compilation finished!", "")
+        except Exception as err:
+            open_error_dialog("Error appeared during compilation:\n{}".format(str(err)), self.editor)
 
     def run_game(self):
         dolphin_path = self.editor.configuration["editor"].get("dolphin", fallback=None)
