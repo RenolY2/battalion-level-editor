@@ -133,9 +133,10 @@ class Plugin(object):
         print("More")
 
     def plugin_init(self, editor):
-        for obj in editor.file_menu.level_data.objects.values():
-            if "cGUIPage" in obj.type:
-                self.guimode = True
+        if hasattr(editor.file_menu, "level_data"):
+            for obj in editor.file_menu.level_data.objects.values():
+                if "cGUIPage" in obj.type:
+                    self.guimode = True
 
     def after_load(self, editor: "bw_editor.LevelEditor"):
         self.guimode = False
