@@ -132,6 +132,7 @@ class LevelEditor(QMainWindow):
         self._window_title = ""
         self._user_made_change = False
         self._justupdatingselectedobject = False
+        self.copypaste_obj = None
 
         self.addobjectwindow_last_selected = None
 
@@ -256,6 +257,7 @@ class LevelEditor(QMainWindow):
 
     @catch_exception
     def reset(self):
+        self.copypaste_obj = None
         self.menubar.reset_hook()
         self.last_position_clicked = []
         self.loaded_archive = None

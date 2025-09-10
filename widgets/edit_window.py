@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     import bw_editor
 from lib.bw_types import BWMatrix, decompose, recompose
 from timeit import default_timer
-from widgets.editor_widgets import open_message_dialog
+from widgets.editor_widgets import open_message_dialog, open_yesno_box
 from builtin_plugins.add_object_window import load_icon
 from itertools import chain
 
@@ -20,6 +20,8 @@ import PyQt6.QtCore as QtCore
 from lib.BattalionXMLLib import BattalionObject, BattalionLevelFile
 from widgets.editor_widgets import SearchBar
 from widgets.edit_window_enums import FLAG_TYPES, ENUMS, FLAGS
+from lib.bw_types import BWMatrix
+from lib.vectors import Vector2, Vector4
 
 ICONS = {"COPY": None}
 ALLOWED_FUNCNAME_CHARS = string.ascii_letters + string.digits + "_."
@@ -93,6 +95,15 @@ class SelectableLabel(QtWidgets.QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
+
+
+class SelectableLabel_SelectCallback(SelectableLabel):
+    clicked = QtCore.pyqtSignal(QtCore.QPointF)
+
+    def mousePressEvent(self, ev: typing.Optional[QtGui.QMouseEvent]) -> None:
+        x = self.pos().x() + ev.position().x()
+        y = self.pos().y() + ev.position().y()
+        self.clicked.emit(QtCore.QPointF(x,y))
 
 
 def make_labeled_widget(parent, text, widget: QtWidgets.QWidget):
@@ -404,6 +415,17 @@ class ColorView(QtWidgets.QWidget):
         self.color = QtGui.QColor(r, g, b, a)
 
 
+class ContentHolder(QtWidgets.QWidget):
+    clicked = QtCore.pyqtSignal(QtCore.QPointF)
+
+    def __init__(self, parent, widgets):
+        super().__init__(parent)
+        self.widegts = widgets
+
+    def mousePressEvent(self, a0: typing.Optional[QtGui.QMouseEvent]) -> None:
+        self.clicked.emit(a0.position())
+
+
 class Line(QtWidgets.QWidget):
     def __init__(self, parent):
         super().__init__(parent)
@@ -422,6 +444,48 @@ class Line(QtWidgets.QWidget):
         mid = self.height()//2
         #painter.fillRect(0, mid, w, mid, self.color)
         painter.drawLine(0, mid, w, mid)
+
+    def change_color(self, r, g, b, a):
+        self.color = QtGui.QColor(r, g, b, a)
+
+
+class OutlineDrawer(QtWidgets.QWidget):
+    def __init__(self, parent, selected):
+        super().__init__(parent)
+        self.selected = selected
+        self.color = QtGui.QColor(0, 0, 0, 127)
+        self.update_size()
+        sizepolicy = self.sizePolicy()
+        sizepolicy.setVerticalPolicy(QtWidgets.QSizePolicy.Policy.Fixed)
+        sizepolicy.setHorizontalPolicy(QtWidgets.QSizePolicy.Policy.Fixed)
+        self.setSizePolicy(sizepolicy)
+
+    def update_size(self):
+        self.setFixedSize(self.parent().width(), self.parent().height())
+
+    def paintEvent(self, a0) -> None:
+        self.update_size()
+        painter = QtGui.QPainter(self)
+        h = self.parent().height()
+        w = self.parent().width()
+
+        painter.setPen(self.color)
+        painter.setBrush(self.color)
+        """upper = h//4
+        lower = upper*3
+        mid = h//2
+        painter.drawPolygon([
+            QtCore.QPoint(0, upper),
+            QtCore.QPoint(0, lower),
+            QtCore.QPoint(mid, lower),
+            QtCore.QPoint(mid, h),
+            QtCore.QPoint(h, mid),
+            QtCore.QPoint(mid, 0),
+            QtCore.QPoint(mid, upper)],
+            QtCore.Qt.FillRule.WindingFill
+            )"""
+        for key, y_s in self.selected.items():
+            painter.fillRect(0+5, y_s[0]-5, w-5, y_s[1] - y_s[0]+5, self.color)
 
     def change_color(self, r, g, b, a):
         self.color = QtGui.QColor(r, g, b, a)
@@ -513,6 +577,10 @@ class MatrixEdit(QtWidgets.QWidget):
         return [x.text() for x in self.edits] + ["Position", "Scale", "Angle", "x", "y", "z"]
 
     def update_value(self):
+        matrix: BWMatrix = self.get_value()
+        self.decomposed.clear()
+        self.decomposed.extend(list(decompose(matrix)))
+
         for edit in self.edits:
             edit.blockSignals(True)
             edit.update_value()
@@ -1045,7 +1113,7 @@ class FieldEdit(QtCore.QObject):
         super().__init__()
         self.object = object
         #self.edit_layout = QtWidgets.QVBoxLayout(self)
-        self.name = SelectableLabel(name, parent)
+        self.name = SelectableLabel_SelectCallback(name, parent)
         tooltip = "Data Type: {}".format(type)
         doc = BW_DOCUMENTATION
 
@@ -1431,6 +1499,60 @@ class HorizWidgetHolder(QtWidgets.QWidget):
         self.hbox.addStretch(value)
 
 
+def is_instance(self, type, other_type):
+    if type == other_type:
+        return True
+    elif type in SUBSETS:
+        return other_type in SUBSETS[type]
+
+    return False
+
+
+class CopyPasteObjectData(object):
+    def __init__(self, obj: BattalionObject, fields: list):
+        self.obj = obj
+        self.fields = fields
+
+    def paste_into(self, other_obj):
+        print("Pasting from", self.obj.name)
+        print("Pasting", self.fields)
+        print("Pasting into", other_obj.name)
+        for field in self.fields:
+            if not hasattr(other_obj, field):
+                result = open_yesno_box(f"{other_obj.name} does not have field {field}.",
+                                        "Do you want to continue anyway?")
+                if not result:
+                    return
+                break
+
+        for field in self.fields:
+            value = getattr(self.obj, field)
+            if not hasattr(other_obj, field):
+                continue
+
+            other_value = getattr(other_obj, field)
+
+            if isinstance(value, BattalionObject) or isinstance(other_value, BattalionObject):
+                assert self.obj.type == other_obj.type
+                setattr(other_obj, field, value)
+            else:
+                assert type(value) == type(other_value)
+                if isinstance(value, (str, int, float, bool)):
+                    setattr(other_obj, field, value)
+                elif isinstance(value, Vector4):
+                    other_value: Vector4
+                    other_value.x = value.x
+                    other_value.y = value.y
+                    other_value.z = value.z
+                    other_value.w = value.w
+                elif isinstance(value, BWMatrix):
+                    for i in range(16):
+                        other_value: BWMatrix
+                        other_value.mtx[i] = value.mtx[i]
+                else:
+                    open_message_dialog(f"Unknown type {type(value)}", "", None)
+
+
 class NewEditWindow(QtWidgets.QMdiSubWindow):
     closing = QtCore.pyqtSignal()
     main_window_changed = QtCore.pyqtSignal(object)
@@ -1455,19 +1577,40 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.makewindow = makewindow
         self.setWindowTitle(f"Edit Object: {object.name}")
 
-        self.scroll_area = QtWidgets.QScrollArea(self)
+        self.main_holder = QtWidgets.QWidget(self)
+        self.main_layout = QtWidgets.QVBoxLayout(self.main_holder)
+        self.main_holder.setLayout(self.main_layout)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.content_holder = QtWidgets.QWidget(self.scroll_area)
+        self.header_holder = QtWidgets.QWidget(self.main_holder)
+        self.header_layout = QtWidgets.QGridLayout(self.header_holder)
+        self.header_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        h = self.header_layout.contentsMargins()
+        self.header_layout.setContentsMargins(h.left(), 0, 0, h.right())
+        self.header_holder.setLayout(self.header_layout)
+        self.scroll_area = QtWidgets.QScrollArea(self.main_holder)
+
+        self.main_layout.addWidget(self.header_holder)
+        self.main_layout.addWidget(self.scroll_area)
+        self.main_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+
+        self.content_holder = ContentHolder(self.scroll_area, [])
+        self.content_holder.clicked.connect(self.clicked_event)
+
+        self.selected_fields = {}
 
         self.scroll_area.setWidget(self.content_holder)
 
         self.area_layout = QtWidgets.QGridLayout(self.content_holder)
         self.area_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        self.selected_fields = {}
+        self.highlighter = OutlineDrawer(self.content_holder, self.selected_fields)
         self.content_holder.setLayout(self.area_layout)
-        self.setWidget(self.scroll_area)
+        self.setWidget(self.main_holder)
         self.scroll_area.setWidgetResizable(True)
         self.keep_window_on_top = False
         self.setup_rows(object)
+        self.highlighter.update_size()
         self.misc_edit = None
 
         self.scheduled_scrollbar_pos = None
@@ -1480,6 +1623,125 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
 
         self.find_shortcut = QtGui.QShortcut("Ctrl+F", self)
         self.find_shortcut.activated.connect(self.goto_find_box)
+        self.shift_pressed = False
+        self.ctrl_pressed = False
+
+        self.last = None
+
+    def copy_fields(self):
+        if not self.selected_fields:
+            self.editor.copypaste_obj = None
+        else:
+            self.editor.copypaste_obj = CopyPasteObjectData(self.object, [field for field in self.selected_fields])
+
+    def paste_fields(self):
+        if self.editor.copypaste_obj is not None:
+            self.editor.copypaste_obj: CopyPasteObjectData
+            self.editor.copypaste_obj.paste_into(self.object)
+
+            for field in self.fields:
+                field.update_value()
+
+            self.object_edited.emit(self.object)
+            self.refresh_editor()
+
+    def focusOutEvent(self, focusOutEvent: typing.Optional[QtGui.QFocusEvent]) -> None:
+        self.shift_pressed = False
+        self.ctrl_pressed = False
+
+    def keyPressEvent(self, keyEvent: typing.Optional[QtGui.QKeyEvent]) -> None:
+        if keyEvent.key() == QtCore.Qt.Key.Key_Shift:
+            self.shift_pressed = True
+        if keyEvent.key() == QtCore.Qt.Key.Key_Control:
+            self.ctrl_pressed = True
+
+    def keyReleaseEvent(self, keyEvent: typing.Optional[QtGui.QKeyEvent]) -> None:
+        if keyEvent.key() == QtCore.Qt.Key.Key_Shift:
+            self.shift_pressed = False
+
+        if keyEvent.key() == QtCore.Qt.Key.Key_Control:
+            self.ctrl_pressed = False
+
+    def clicked_event(self, pos: QtCore.QPointF):
+        if not self.shift_pressed and not self.ctrl_pressed:
+            self.selected_fields.clear()
+            self.last = None
+
+        toggle_selects = []
+
+        result = None
+
+        for field in self.fields:
+            if isinstance(field, FieldEdit):
+                first_line = field.lines[0]
+                last_line = field.lines[-1]
+                up_y = first_line.y()
+                down_y = last_line.y()+last_line.height()
+                if up_y <= pos.y() <= down_y:
+                    print(field.name.text())
+                    fieldname = field.name.text()
+                    """if fieldname not in self.selected_fields:
+                        self.selected_fields[fieldname] = (up_y, down_y)
+                    else:
+                        del self.selected_fields[fieldname]"""
+                    #if self.shift_pressed:
+                    #    for field in self.fields:
+                    #toggle_selects.append((fieldname, up_y, down_y))
+                    result = (fieldname, up_y, down_y)
+
+        if self.shift_pressed and result is not None and self.last is not None:
+            add_fields = False
+
+            for field in self.fields:
+                if isinstance(field, FieldEdit):
+                    name = field.name.text()
+
+                    if name == self.last or name == result[0]:
+                        if add_fields:
+                            first_line = field.lines[0]
+                            last_line = field.lines[-1]
+                            up_y = first_line.y()
+                            down_y = last_line.y() + last_line.height()
+
+                            toggle_selects.append((name, up_y, down_y))
+
+
+                        add_fields = not add_fields
+
+                    if add_fields and name != self.last:
+                        first_line = field.lines[0]
+                        last_line = field.lines[-1]
+                        up_y = first_line.y()
+                        down_y = last_line.y() + last_line.height()
+
+                        toggle_selects.append((name, up_y, down_y))
+
+            last_item = None
+            for item in toggle_selects:
+                if item[0] == self.last:
+                    last_item = item
+            if last_item is not None:
+                toggle_selects.remove(last_item)
+
+        elif result is not None:
+            toggle_selects.append(result)
+
+        for name, up_y, down_y in toggle_selects:
+            if name in self.selected_fields:
+                del self.selected_fields[name]
+            else:
+                self.selected_fields[name] = (up_y, down_y)
+
+        if result is not None:
+            self.last = result[0]
+
+        self.highlighter.update()
+        print(pos)
+
+    def resizeEvent(self, resizeEvent: typing.Optional[QtGui.QResizeEvent]) -> None:
+        super().resizeEvent(resizeEvent)
+        #self.highlighter.setFixedSize(self.content_holder.width(), self.content_holder.height())
+        self.highlighter.update_size()
 
     def eventFilter(self, object, event) -> bool:
         result = super().eventFilter(object, event)
@@ -1534,20 +1796,38 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.closing.emit()
 
     def change_object(self, object):
+        self.selected_fields.clear()
         remember_scrollbar = object.type == self.object.type
         pos = self.scroll_area.verticalScrollBar().value()
 
         start = default_timer()
+
+        self.main_layout.removeWidget(self.header_holder)
+        self.main_layout.removeWidget(self.scroll_area)
+
+        self.header_holder.deleteLater()
+        self.header_holder.setParent(None)
+        self.header_holder = QtWidgets.QWidget(self.main_holder)
+        self.header_layout = QtWidgets.QGridLayout(self.header_holder)
+        h = self.header_layout.contentsMargins()
+        self.header_layout.setContentsMargins(h.left(), 0, 0, h.right())
+        self.header_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        self.header_holder.setLayout(self.header_layout)
+
         self.content_holder.hide()
         self.content_holder.deleteLater()
         self.content_holder.setParent(None)
 
-        self.content_holder = QtWidgets.QWidget()
+        self.content_holder = ContentHolder(None, [])
+        self.highlighter = OutlineDrawer(self.content_holder, self.selected_fields)
         self.scroll_area.setWidget(self.content_holder)
 
         self.area_layout = QtWidgets.QGridLayout(self.content_holder)
         self.area_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.content_holder.setLayout(self.area_layout)
+        self.content_holder.clicked.connect(self.clicked_event)
+        self.main_layout.addWidget(self.header_holder)
+        self.main_layout.addWidget(self.scroll_area)
 
         self._curr_row = 0
         self.search_curr_row = 0
@@ -1555,6 +1835,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         self.setWindowTitle(f"Edit Object: {object.name}")
         print("Edit reset in", default_timer()-start, "s")
         self.setup_rows(object)
+        self.highlighter.update_size()
 
         if remember_scrollbar:
             self.scheduled_scrollbar_pos = pos
@@ -1593,8 +1874,22 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
 
 
         self.search_bar = SearchBar(self.content_holder)
-        self.add_row(name=SelectableLabel("Search"),
-                     widget=self.search_bar)
+        self.button_copy_fields = QtWidgets.QPushButton("Copy Selected Fields")
+        self.button_paste_fields = QtWidgets.QPushButton("Paste into Object")
+
+        self.button_copy_fields.pressed.connect(self.copy_fields)
+        self.button_paste_fields.pressed.connect(self.paste_fields)
+
+        self.tools_widg = QtWidgets.QWidget(self.content_holder)
+        self.tools_widg_layout = QtWidgets.QHBoxLayout(self.tools_widg)
+
+        self.tools_widg_layout.addWidget(self.button_copy_fields)
+        self.tools_widg_layout.addWidget(self.button_paste_fields)
+        self.tools_widg_layout.addWidget(self.search_bar)
+        self.tools_widg_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.add_row(name=SelectableLabel("Tools"),
+                     widget=self.tools_widg)
         self.search_bar.find.connect(self.search)
 
         getter = make_getter(object, "customname")
@@ -1718,6 +2013,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
             self.fields.append(field)
 
             name, firstitem = field.name, field.lines[0]
+            name.clicked.connect(self.clicked_event)
             self.add_row(name, firstitem)
             if len(field.lines) > 1:
                 for i in range(1, len(field.lines)):
@@ -1745,11 +2041,16 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
                     field.update_custom_name()
 
     def add_row(self, name=None, widget=None):
+        if self._curr_row < 3:
+            layout = self.header_layout
+        else:
+            layout = self.area_layout
+
         if name is not None:
-            self.area_layout.addWidget(name, self._curr_row, 0)
+            layout.addWidget(name, self._curr_row, 0)
 
         if widget is not None:
-            self.area_layout.addWidget(widget, self._curr_row, 1)
+            layout.addWidget(widget, self._curr_row, 1)
         self._curr_row += 1
 
     def open_window(self, attr, i):
