@@ -470,6 +470,7 @@ class SearchBar(QtWidgets.QWidget):
         self.setLayout(self.l)
 
         self.textinput = QtWidgets.QLineEdit(self)
+        self.textinput.setPlaceholderText("Search")
         self.searchbutton = QtWidgets.QPushButton(self)
         self.searchbutton.setText("Find")
         self.l.addWidget(self.textinput)
