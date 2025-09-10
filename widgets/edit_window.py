@@ -2021,6 +2021,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         print("Added widgets in", default_timer()-start, "s")
 
     def object_was_updated(self):
+        self.object.updatemodelname()
         self.object_edited.emit(self.object)
 
     def update_water_level(self, obj):
