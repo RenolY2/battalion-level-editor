@@ -1445,7 +1445,7 @@ FLAGS = {
 
 FLAG_TYPES_USAGES = {
     "mUnitInstanceFlags": ("eAiUnitInstanceFlags",
-                           ["cAirVehicle", "cTroop", "cGroundVehicle"]),
+                           ["cAirVehicle", "cTroop", "cGroundVehicle", "cWaterVehicle"]),
     "mUnitFlags": ("eAiUnitFlags",
                    ["sTroopBase", "sAirVehicleBase", "cGroundVehicleBase"]),
 }
