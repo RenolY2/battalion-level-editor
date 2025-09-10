@@ -380,7 +380,7 @@ class Graphics(object):
 
         cam_x, cam_z = rw.cam_x, rw.cam_z
 
-        if self.render_everything_once:
+        if self.render_everything_once and rw.bwmodelhandler:
             for mtx, x, z, modelname in self.models_scene:
                 rw.bwmodelhandler.rendermodel(modelname, mtx, rw.bwterrain, 0)
 
@@ -395,7 +395,7 @@ class Graphics(object):
                 mtx, extradata = None, None
 
             #if len(mtx) > 0:
-            if meshname in self.rw.bwmodelhandler.instancemodels:
+            if self.rw.bwmodelhandler and meshname in self.rw.bwmodelhandler.instancemodels:
                 model = self.rw.bwmodelhandler.instancemodels[meshname]
                 model.bind(mtx, numpy.array([], dtype=numpy.uint8))
                 model.instancedrender(self.rw.bwmodelhandler.textures)

@@ -1101,7 +1101,10 @@ class LevelEditor(QMainWindow):
                     self.update_3d()
 
     def update_3d(self):
-        self.level_view.center_gizmo(self.dolphin.do_visualize())
+        if not hasattr(self, "dolphin"):
+            self.level_view.center_gizmo(False)
+        else:
+            self.level_view.center_gizmo(self.dolphin.do_visualize())
         self.level_view.do_redraw()
 
     def select_from_3d_to_treeview(self):
