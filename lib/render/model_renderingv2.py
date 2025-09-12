@@ -504,7 +504,8 @@ void main (void)
     def instancedrender(self):
         #glUniformMatrix4fv(self.mtxloc, 1, False, mtx)
         for offset, vertexcount in self.mesh_list:
-            glDrawArraysInstanced(GL_TRIANGLES, offset, vertexcount, self._count)
+            if self._count is not None and self._count > 0:
+                glDrawArraysInstanced(GL_TRIANGLES, offset, vertexcount, self._count)
 
     def render_coloredid(self, id):
         glColor3ub((id >> 16) & 0xFF, (id >> 8) & 0xFF, (id >> 0) & 0xFF)
@@ -823,7 +824,8 @@ class BWModelV2(ModelV2):
                 glDisable(GL_TEXTURE_2D)
 
             offset, vertexcount = meshdata
-            glDrawArraysInstanced(GL_TRIANGLES, offset, vertexcount, self._count)
+            if self._count is not None and self._count > 0:
+                glDrawArraysInstanced(GL_TRIANGLES, offset, vertexcount, self._count)
 
 
 class LineDrawing(object):
