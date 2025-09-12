@@ -1082,9 +1082,8 @@ class FieldDocumentationHolder(object):
         return os.stat(doc_file).st_mtime > self.last_changed[classname]
 
     def update(self, classname):
-        print("Checking if", classname, "needs update")
         if self.doc_needs_update(classname):
-            print("Updating...")
+            print("Field documentation for", classname, "has been updated")
             try:
                 self.read_object_doc(os.path.join(self.doc_folder, classname+".doc"))
             except FileNotFoundError:
@@ -1101,6 +1100,7 @@ class FieldDocumentationHolder(object):
 
     def get_doc(self, game, classname, fieldtype):
         return self.docs.get((game, classname, fieldtype), "")
+
 
 BW_DOCUMENTATION = FieldDocumentationHolder("objecthelp/")
 
@@ -1134,7 +1134,6 @@ class FieldEdit(QtCore.QObject):
         self.lines = []
         self.contents = []
         for i in range(elements):
-            print("Adding", name)
             line, content = self.add_field(editor, parent, name, tag, type, i, item_cache)
             assert content is not None
             self.contents.append(content)
