@@ -861,14 +861,14 @@ class BattalionObject(object):
                 elementcount = int(attr_node.attrib["elements"])
                 if elementcount == 1:
                     obj = getattr(self, attr_node.attrib["name"])
-                    if obj is None:
+                    if obj is None or obj.deleted:
                         attr_node[0].text = "0"
                     else:
                         attr_node[0].text = str(obj.id)
                 else:
                     objlist = getattr(self, attr_node.attrib["name"])
                     for obj, node in zip(objlist, attr_node):
-                        if obj is None:
+                        if obj is None or obj.deleted:
                             node.text = "0"
                         else:
                             node.text = str(obj.id)
