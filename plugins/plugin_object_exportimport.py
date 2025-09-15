@@ -437,7 +437,16 @@ class Plugin(object):
                 if obj.mBase.id in bases:
                     deletion_candidates.append(obj)
 
-        for obj in editor.level_view.selected:
+        extended_set = []
+        extended_set.extend(editor.level_view.selected)
+        if dialog.delete_passengers.isChecked():
+            for obj in deletion_candidates:
+                if hasattr(obj, "mPassenger"):
+                    for passenger in obj.mPassenger:
+                        if passenger is not None:
+                            extended_set.append(passenger)
+
+        for obj in extended_set:
             deleted.add(obj.id)
             for obj_dep in obj.get_dependencies(skip=skip):
                 if obj_dep not in deletion_candidates:
