@@ -14,7 +14,7 @@ from collections import namedtuple
 import lib.lua.bwarchivelib as bwarchivelib
 from lib.lua.bwarchivelib import BattalionArchive
 from lib.BattalionXMLLib import BattalionLevelFile, BattalionObject
-from widgets.editor_widgets import open_error_dialog, open_message_dialog
+from widgets.editor_widgets import open_error_dialog, open_message_dialog, open_yesno_box
 from widgets.graphics_widgets import UnitViewer
 from plugins.plugin_padding import YesNoQuestionDialog
 
@@ -342,7 +342,7 @@ class Plugin(object):
                         ("Mass Export", self.export_all_level_objects),
                         ("Quick Import", self.importobject),
                         ("Remove Objects and Assets", self.remove_selected_object),
-                        ("List Loose Textures In Console", self.select_loose_assets)]
+                        ("Delete Loose Textures", self.select_loose_assets)]
         print("I have been initialized")
         self.last_category = None
 
@@ -357,6 +357,13 @@ class Plugin(object):
         for objid, obj in editor.level_file.objects.items():
             if obj.type == "cTextureResource":
                 texture_lookup[obj.mName.lower()] = obj
+
+        terrain = editor.level_view.bwterrain
+        for mat in terrain.materials:
+            for tex in (mat.mat1, mat.mat2):
+                obj = texture_lookup[tex]
+                if obj.id not in parent:
+                    parent[obj.id] = ["Terrain"]
 
         for objid, obj in editor.level_file.objects.items():
             for ref in obj.references:
@@ -407,10 +414,31 @@ class Plugin(object):
                             else:
                                 print("Warning: Special Effect", obj.mName, "({})".format(obj.id), "references non-existing model", modelname)
         print("Listing Orphaned Textures...")
+        selected = []
         for objid, obj in editor.level_file.objects.items():
             if obj.type == "cTextureResource" and (obj.id not in parent or not parent[obj.id]):
                 print(obj.type, obj.name)
+                selected.append(obj)
         print("done...")
+
+        editor.level_view.selected = []
+        editor.level_view.selected_positions = []
+        editor.level_view.selected_rotations = []
+
+        for obj in selected:
+            editor.level_view.selected.append(obj)
+            mtx = obj.getmatrix()
+            if mtx is not None:
+                editor.level_view.selected_positions.append(mtx)
+
+        editor.update_3d()
+        editor.level_view.do_redraw(forceselected=True)
+        editor.level_view.select_update.emit()
+
+        result = open_yesno_box(f"Selected {len(selected)} texture(s). Check console for which textures were selected.", "Do you want to delete them?")
+        if result:
+            self.remove_selected_object(editor)
+
 
     def remove_selected_object(self, editor: "bw_editor.LevelEditor"):
         deleted = set()
