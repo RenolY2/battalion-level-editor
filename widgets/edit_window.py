@@ -1987,6 +1987,7 @@ class NewEditWindow(QtWidgets.QMdiSubWindow):
         misc_edit.custom_name.editingFinished.connect(self.update_custom_names)
         misc_edit.lua_name.textinput.installEventFilter(self)
         misc_edit.update_value()
+        self.object_edited.connect(self.update_custom_names)
         self.misc_edit = misc_edit
         self.fields.append(misc_edit)
         self.add_row(
