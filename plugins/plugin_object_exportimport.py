@@ -341,12 +341,76 @@ class Plugin(object):
         self.actions = [("Quick Export", self.exportobject),
                         ("Mass Export", self.export_all_level_objects),
                         ("Quick Import", self.importobject),
-                        ("Remove Objects and Assets", self.remove_selected_object)]
+                        ("Remove Objects and Assets", self.remove_selected_object),
+                        ("List Loose Textures In Console", self.select_loose_assets)]
         print("I have been initialized")
         self.last_category = None
 
     def after_load(self, editor):
         self.last_category = None
+
+    def select_loose_assets(self, editor: "bw_editor.LevelEditor"):
+        texture_lookup = {}
+        mesh_lookup = {}
+        parent = {}
+
+        for objid, obj in editor.level_file.objects.items():
+            if obj.type == "cTextureResource":
+                texture_lookup[obj.mName.lower()] = obj
+
+        for objid, obj in editor.level_file.objects.items():
+            for ref in obj.references:
+                if ref.id not in parent:
+                    parent[ref.id] = []
+
+                parent[ref.id].append(obj.id)
+
+            if obj.type == "cNodeHierarchyResource":
+                mesh_lookup[obj.mName.lower()] = obj
+                textures = editor.level_view.bwmodelhandler.models[obj.mName].all_textures
+                for texname in textures:
+                    texobj = texture_lookup.get(texname.lower(), None)
+                    if texobj is not None:
+                        if texobj.id not in parent:
+                            parent[texobj.id] = []
+
+                        parent[texobj.id].append(obj.id)
+
+            if obj.type == "cTequilaEffectResource":
+                resource = editor.file_menu.resource_archive.get_resource(b"FEQT", obj.mName)
+                effects_file = io.StringIO(str(resource.data, encoding="ascii"))
+                for line in effects_file:
+                    line = line.strip()
+                    result = line.split(" ", maxsplit=2)
+                    if len(result) == 2:
+                        command, arg = result
+                        arg: str
+                        if command == "Texture":
+                            texname = arg.removesuffix(".ace")
+                            texobj = texture_lookup.get(texname.lower())
+                            if texobj is not None:
+                                if texobj.id not in parent:
+                                    parent[texobj.id] = []
+
+                                parent[texobj.id].append(obj.id)
+                            else:
+                                print("Warning: Special Effect", obj.mName, "({})".format(obj.id), "references non-existing texture", texname)
+
+                        elif command == "Mesh":
+                            modelname, _ = arg.rsplit(".", maxsplit=2)
+                            modelobj = mesh_lookup.get(modelname.lower())
+                            if modelobj is not None:
+                                if modelobj.id not in parent:
+                                    parent[modelobj.id] = []
+
+                                parent[modelobj.id].append(obj.id)
+                            else:
+                                print("Warning: Special Effect", obj.mName, "({})".format(obj.id), "references non-existing model", modelname)
+        print("Listing Orphaned Textures...")
+        for objid, obj in editor.level_file.objects.items():
+            if obj.type == "cTextureResource" and (obj.id not in parent or not parent[obj.id]):
+                print(obj.type, obj.name)
+        print("done...")
 
     def remove_selected_object(self, editor: "bw_editor.LevelEditor"):
         deleted = set()
