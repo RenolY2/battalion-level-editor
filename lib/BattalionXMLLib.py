@@ -583,16 +583,17 @@ class BattalionObject(object):
                 pointers = [subnode.text for subnode in attr_node]
                 if len(pointers) == 1:
                     for ref in references:
-                        if getattr(self, fieldname) == ref:
+                        obj = getattr(self, fieldname)
+                        if obj == ref or (obj is not None and obj.deleted):
                             setattr(self, fieldname, None)
                             break
                 elif len(pointers) > 1:
                     ptrlist = getattr(self, fieldname)
-                    for i in range(len(pointers)):
-                        obj = pointers[i]
+                    for i in range(len(ptrlist)):
+                        obj = ptrlist[i]
                         for ref in references:
-                            if obj == ref:
-                                pointers[i] = None
+                            if obj == ref or (obj is not None and obj.deleted):
+                                ptrlist[i] = None
         self.update_xml()
 
     def check_correctness(self, node, level, other):
