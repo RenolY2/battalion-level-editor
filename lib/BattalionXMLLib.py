@@ -951,7 +951,10 @@ class BattalionObject(object):
             return None
 
     def set_custom_name(self, customname):
-        self._node.attrib["customName"] = customname
+        if not customname or customname is None:
+            del self._node.attrib["customName"]
+        else:
+            self._node.attrib["customName"] = customname
 
     @property
     def id(self):
