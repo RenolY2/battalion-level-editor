@@ -14,6 +14,7 @@ from editor_controls import MouseMode
 from plugins.plugin_object_exportimport import Plugin as ObjectExportImportPlugin
 from lib.bw_types import BWMatrix
 from lib.vectors import Vector3
+from widgets.qtutils import load_icon
 
 if TYPE_CHECKING:
     import bw_editor
@@ -244,21 +245,6 @@ class DirectoryList(QtWidgets.QListWidget):
         dirs.sort()
 
         return dirs
-
-
-def load_icon(imagepath: str) -> QtGui.QIcon | None:
-    if not os.path.exists(imagepath):
-        return None
-
-    try:
-        image = QtGui.QImage(imagepath)
-    except Exception as err:
-        icon = None
-    else:
-        pixmap = QtGui.QPixmap.fromImage(image)
-        icon = QtGui.QIcon(pixmap)
-
-    return icon
 
 
 class ItemWithPath(QtWidgets.QListWidgetItem):

@@ -37,6 +37,8 @@ from configuration import read_config, make_default_config, save_cfg
 from widgets.editor_widgets import open_yesno_box
 from widgets.menu.plugin import PluginHandler
 from widgets.lua_search_widgets import LuaSearchResultItem
+from widgets.qtutils import VerticalWidget
+from widgets.editor_widgets import SearchBarReset
 
 import bw_widgets # as mkddwidgets
 from widgets.side_widget import PikminSideWidget
@@ -374,6 +376,29 @@ class LevelEditor(QMainWindow):
         if len(current) == 1:
             self.tree_select_object(current[0])
 
+    def tree_search_action(self, text):
+        txt = text.lower()
+
+        def search_func(obj):
+            obj_text = obj.tostring().lower()
+            in_model = obj.modelname is not None and txt in obj.modelname.lower()
+            customname = obj.customname is not None and txt in obj.customname.lower()
+            return txt in obj_text or in_model or customname
+
+        self.leveldatatreeview.set_objects(
+            self.level_file,
+            self.preload_file,
+            remember_position=True,
+            filter_func=search_func
+        )
+
+    def tree_clear(self):
+        self.leveldatatreeview.set_objects(
+            self.level_file,
+            self.preload_file,
+            remember_position=True
+        )
+
     def tree_select_object(self, item):
         """if self._dontselectfromtree:
             #print("hmm")
@@ -408,10 +433,22 @@ class LevelEditor(QMainWindow):
         self.horizontalLayout = QSplitter()
         self.centralwidget = self.horizontalLayout
         self.setCentralWidget(self.horizontalLayout)
+
+
+        self.tree_search = SearchBarReset(self.centralwidget)
+        self.tree_search.searchbutton.setToolTip(
+            "Searches for objects, whose XML content, model name or custom name matches the search term in a case insensitive way."
+        )
+        self.tree_search.reset.connect(self.tree_clear)
+        self.tree_search.find.connect(self.tree_search_action)
+        margin = self.tree_search.l.contentsMargins()
+        self.tree_search.l.setContentsMargins(margin.left(), 0, margin.right(), 0)
         self.leveldatatreeview = LevelDataTreeView(self.centralwidget)
         #self.leveldatatreeview.itemClicked.connect(self.tree_select_object)
         self.leveldatatreeview.itemDoubleClicked.connect(self.do_goto_action)
         self.leveldatatreeview.itemSelectionChanged.connect(self.tree_select_arrowkey)
+
+        self.tree_and_search = VerticalWidget(self.centralwidget, self.tree_search, self.leveldatatreeview)
 
         self.level_view = BolMapViewer(self.plugin_handler, self.centralwidget)
 
@@ -419,7 +456,7 @@ class LevelEditor(QMainWindow):
         self.vertical_holder = QSplitter(self)
         self.vertical_holder.setOrientation(Qt.Orientation.Vertical)
         self.left_side = QVBoxLayout(self.vertical_holder)
-        self.vertical_holder.addWidget(self.leveldatatreeview)
+        self.vertical_holder.addWidget(self.tree_and_search)
         self.vertical_holder.addWidget(self.mini_model_viewer)
 
 
@@ -445,6 +482,7 @@ class LevelEditor(QMainWindow):
         self.setStatusBar(self.statusbar)
 
         self.connect_actions()
+
 
 
     def action_hook_into_dolphion(self):

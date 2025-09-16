@@ -382,7 +382,11 @@ class LevelDataTreeView(QTreeWidget):
         else:
             return self.other
 
-    def set_objects(self, leveldata: BattalionLevelFile, preload: BattalionLevelFile, remember_position=False):
+    def set_objects(self,
+                    leveldata: BattalionLevelFile,
+                    preload: BattalionLevelFile,
+                    remember_position=False,
+                    filter_func=None):
         expanded = {}
         scrollvalue = self.verticalScrollBar().value()
 
@@ -413,7 +417,11 @@ class LevelDataTreeView(QTreeWidget):
                 break
         sorteditems = []
         for objectid, object in chain(leveldata.objects.items(), preload.objects.items()):
-            sorteditems.append((object.name, object))
+            if filter_func is not None:
+                if filter_func(object):
+                    sorteditems.append((object.name, object))
+            else:
+                sorteditems.append((object.name, object))
         sorteditems.sort(key=lambda x: x[0])
 
         for name, object in sorteditems:

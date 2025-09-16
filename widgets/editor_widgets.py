@@ -20,6 +20,10 @@ from lib.BattalionXMLLib import BattalionObject
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_editor
+from widgets.qtutils import load_icon
+
+
+ICONS = {"RESET": None}
 
 
 class YesNoQuestionDialog(QtWidgets.QMessageBox):
@@ -480,6 +484,21 @@ class SearchBar(QtWidgets.QWidget):
 
     def do_search(self):
         self.find.emit(self.textinput.text())
+
+
+class SearchBarReset(SearchBar):
+    find = pyqtSignal(str)
+    reset = pyqtSignal()
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.reset_button = QtWidgets.QToolButton(self)
+        if ICONS["RESET"] is None:
+            ICONS["RESET"] = load_icon("resources/Window-Refresh-24x24.png")
+        self.reset_button.setIcon(ICONS["RESET"])
+        self.reset_button.setToolTip("Clear the search filter.")
+        self.l.addWidget(self.reset_button)
+        self.reset_button.pressed.connect(lambda: self.reset.emit())
 
 
 class AddPikObjectWindow(QMdiSubWindow):
