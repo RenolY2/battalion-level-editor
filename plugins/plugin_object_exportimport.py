@@ -885,6 +885,7 @@ class Plugin(object):
                 return
 
             for obj in to_be_exported:
+                obj.update_xml()
                 export.add_object_new(obj)
 
             texture_lookup = {}
