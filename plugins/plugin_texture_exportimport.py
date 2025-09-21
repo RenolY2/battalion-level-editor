@@ -282,7 +282,14 @@ class Plugin(object):
                     tmp = io.BytesIO()
                     tex.write(tmp)
                     tmp.seek(0)
-                    
+
+                    if is_bw1:
+                        test = BW1Texture.from_file(tmp)
+                    else:
+                        test = BW2Texture.from_file(tmp)
+
+                    tmp.seek(0)
+
                     if is_bw1:
                         newresource = bwarchivelib.TextureBW1.from_file_headerless(tmp)
                     else:
