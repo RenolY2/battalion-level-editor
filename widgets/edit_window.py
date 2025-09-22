@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     import bw_editor
 from lib.bw_types import BWMatrix, decompose, recompose
 from timeit import default_timer
-from widgets.editor_widgets import open_message_dialog, open_yesno_box
+from widgets.editor_widgets import open_message_dialog, open_yesno_box, YesNoDialogRemember
 from builtin_plugins.add_object_window import load_icon
 from itertools import chain
 
@@ -25,7 +25,7 @@ from lib.vectors import Vector2, Vector4
 
 ICONS = {"COPY": None}
 ALLOWED_FUNCNAME_CHARS = string.ascii_letters + string.digits + "_."
-
+REMEMBER = {"RESET": None}
 
 def get_field_name(object_type, fieldname):
     return FLAG_TYPES.get((object_type, fieldname))
@@ -674,6 +674,7 @@ class FlagBox(QtWidgets.QWidget):
 
         self.value = SelectableLabel(self)
         self.flag_layout.addWidget(self.value)
+        self.residue = 0
 
         i = 0
         for flagname, value in items:
@@ -706,16 +707,45 @@ class FlagBox(QtWidgets.QWidget):
             button.blockSignals(False)
             checked += value
 
-        self.value.setText(f"Combined flag value: {val}")
+        residue = val & ~checked
+        if residue != 0:
+            flags = []
+            for i in range(32):
+                flag = (residue >> i) & 1
+                if flag:
+                    flags.append(flag << i)
+            flagstext = ",".join(str(n) for n in flags)
 
-        if (val & ~checked) != 0:
-            raise RuntimeError(f"WARNING: Bits unaccounted for with value {val} vs {checked}")
+            if REMEMBER["RESET"] is None:
+                yesnodialog = YesNoDialogRemember((f"Unknown flags detected: {flagstext}\n"
+                                                   "Unknown flags are not editable in the editor.\n"
+                                                   "What do you want to do?"),
+                                                  remember_text="Remember Choice",
+                                                  ok_text="Remove Unknown Flags",
+                                                  no_text="Keep Unknown Flags"
+                                                  )
+                reset = yesnodialog.exec()
+                if yesnodialog.remember():
+                    REMEMBER["RESET"] = reset
+            else:
+                reset = REMEMBER["RESET"]
+
+            val -= residue
+
+            if reset:
+                self.residue = 0
+                self.set_value(val)
+            else:
+                self.residue = residue
+
+        self.value.setText(f"Combined flag value: {val | self.residue}")
 
     def change(self):
         newval = 0
         for button, value in self.flags:
             if button.isChecked():
                 newval |= value
+        newval |= self.residue
         self.value.setText(f"Combined flag value: {newval}")
         self.set_value(newval)
         self.changed.emit()

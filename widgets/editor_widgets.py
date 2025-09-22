@@ -26,6 +26,42 @@ from widgets.qtutils import load_icon
 ICONS = {"RESET": None}
 
 
+class YesNoDialogRemember(QtWidgets.QDialog):
+    def __init__(self, text, remember_text, title="Warning", ok_text="Yes", no_text="No", yes_default=False):
+        super().__init__()
+        self.setWindowTitle(title)
+        self.bundle_path = None
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.text_info = QtWidgets.QLabel(self, text=text)
+        self.remember_widget = QtWidgets.QCheckBox(self, text=remember_text)
+
+        self.layout.addWidget(self.text_info)
+        self.layout.addWidget(self.remember_widget)
+
+        self.ok = QtWidgets.QPushButton(self, text=ok_text)
+        self.cancel = QtWidgets.QPushButton(self, text=no_text)
+        if yes_default:
+            self.ok.setDefault(True)
+        else:
+            self.cancel.setDefault(True)
+        self.buttons = QtWidgets.QHBoxLayout(self)
+        self.buttons.addWidget(self.ok)
+        self.buttons.addWidget(self.cancel)
+        self.layout.addLayout(self.buttons)
+
+        self.ok.pressed.connect(self.confirm)
+        self.cancel.pressed.connect(self.deny)
+
+    def remember(self):
+        return self.remember_widget.isChecked()
+
+    def confirm(self):
+        self.accept()
+
+    def deny(self):
+        self.reject()
+
+
 class YesNoQuestionDialog(QtWidgets.QMessageBox):
     def __init__(self, parent, text, instructiontext):
         super().__init__(parent)
