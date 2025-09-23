@@ -264,6 +264,9 @@ class IntegerInput(QtWidgets.QLineEdit):
         self.blockSignals(False)
 
     def changed_value(self, value):
+        if not value or value == "-":
+            return
+        
         val = int(value)
         if self.min <= val <= self.max:
             self.set_value(val)
