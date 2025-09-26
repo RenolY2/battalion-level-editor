@@ -808,10 +808,10 @@ class BattalionObject(object):
             if result == None:
                 for allegiance in (self.mBaseWF, self.mBaseXY, self.mBaseTT, self.mBaseSE,
                                    self.mBaseUW, self.mBaseNeutral, self.mBaseAG):
-                    if allegiance is not None:
+                    if allegiance is not None and allegiance.mpModel is not None:
                         self._modelname = allegiance.mpModel.mName
                         break
-            else:
+            elif result.mpModel is not None:
                 self._modelname = result.mpModel.mName
 
         elif self.type == "cGroundVehicleBase":
