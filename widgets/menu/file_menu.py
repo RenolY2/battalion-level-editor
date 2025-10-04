@@ -336,7 +336,9 @@ class EditorFileMenu(QMenu):
                         if obj.type == "cLevelSettings":
                             if obj.mpRenderParams is None:
                                 open_error_dialog(
-                                    "WARNING: Render Params in cLevelSettings are missing. \nCannot check water height.",
+                                    ("WARNING: Render Params in cLevelSettings are missing."
+                                     "\nCannot check water height and level might be broken."
+                                     "\nPlease restore Render Params or load a previous save state/backup."),
                                     None)
                             else:
                                 self.editor.level_view.waterheight = obj.mpRenderParams.mWaterHeight
