@@ -334,7 +334,12 @@ class EditorFileMenu(QMenu):
 
                     for id, obj in preload_data.objects.items():
                         if obj.type == "cLevelSettings":
-                            self.editor.level_view.waterheight = obj.mpRenderParams.mWaterHeight
+                            if obj.mpRenderParams is None:
+                                open_error_dialog(
+                                    "WARNING: Render Params in cLevelSettings are missing. \nCannot check water height.",
+                                    None)
+                            else:
+                                self.editor.level_view.waterheight = obj.mpRenderParams.mWaterHeight
                     progressbar.set(30)
 
 
