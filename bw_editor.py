@@ -377,7 +377,7 @@ class LevelEditor(QMainWindow):
             self.tree_select_object(current[0])
 
     def tree_search_action(self, text):
-        txt = text.lower()
+        txt = text.lower().strip()
 
         def search_func(obj):
             obj_text = obj.tostring().lower()

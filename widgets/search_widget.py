@@ -606,7 +606,7 @@ class SearchWidget(QtWidgets.QMainWindow):
             self.treeview.set_objects_mode()
             objects = []
             if self.textmodebutton.checked():
-                searchtext = self.queryinput.toPlainText()
+                searchtext = self.queryinput.toPlainText().strip()
                 searchtextlower = searchtext.lower()
                 if not searchtext:
                     return
