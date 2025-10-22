@@ -345,7 +345,7 @@ class Plugin(object):
                         ("Delete Loose Textures", self.select_loose_assets)]
         print("I have been initialized")
         self.last_category = None
-
+        
     def after_load(self, editor):
         self.last_category = None
 

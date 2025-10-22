@@ -99,6 +99,9 @@ class ParticleEffectEditor:
         self.notebook = ttk.Notebook(param_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True, pady=5)
         
+        # Bind tab change event
+        self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_change)
+        
         # Add tabs for different parameter types
         self.setup_color_tab()
         self.setup_size_tab()
@@ -133,11 +136,19 @@ class ParticleEffectEditor:
         selected_tab = self.notebook.tab(self.notebook.select(), "text")
         
         # Clear all highlight tags first
-        self.file_viewer.tag_remove("highlight", "1.0", "tk.END")
+        if hasattr(self, 'file_viewer'):
+            self.file_viewer.tag_remove("highlight", "1.0", "tk.END")
         
         # If no file loaded, do nothing
         if not self.file_content:
             return
+        
+        # If switching to ORDNANCE COLOR tab and we have pending descriptor load
+        if selected_tab == "ORDNANCE COLOR" and hasattr(self, '_should_load_descriptor'):
+            if hasattr(self, 'descriptors') and len(self.descriptors) > 0:
+                # Load the first descriptor now that the tab is visible
+                self.load_descriptor_values(0)
+                delattr(self, '_should_load_descriptor')
         
         # Highlight parameters based on selected tab
         if selected_tab == "ORDNANCE COLOR":
@@ -152,6 +163,470 @@ class ParticleEffectEditor:
             self.highlight_visual_values()
         elif selected_tab == "TRAIL":
             self.highlight_trail_values()
+
+    def browse_file(self):
+        """Browse for a particle effect file to load"""
+        file_path = filedialog.askopenfilename(
+            title="Select Particle Effect File",
+            filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
+        )
+        
+        if file_path:
+            self.file_path = file_path
+            self.file_label.config(text=os.path.basename(file_path))
+            
+            try:
+                with open(file_path, 'r') as file:
+                    self.file_content = file.read()
+                    
+                self.display_file_content()
+                
+                # Parse particle descriptors FIRST
+                self.parse_particle_descriptors()
+                
+                # Populate descriptor selector
+                self.populate_descriptor_selector()
+                
+                # Extract all parameter values from the file (for other tabs)
+                self.extract_parameters()
+                
+                self.status_var.set(f"LOADED: {os.path.basename(file_path)}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load file: {str(e)}")
+
+    def populate_descriptor_selector(self):
+        """Populate the descriptor selector dropdown and load first descriptor"""
+        if not hasattr(self, 'descriptors') or len(self.descriptors) == 0:
+            return
+        
+        # Create list of descriptor names
+        descriptor_names = [f"{d['index']}: {d['name']}" for d in self.descriptors]
+        
+        # Update the combobox if it exists
+        if hasattr(self, 'descriptor_menu'):
+            self.descriptor_menu['values'] = descriptor_names
+            if len(descriptor_names) > 0:
+                self.descriptor_var.set(descriptor_names[0])
+                
+                # Check if we're currently on the ORDNANCE COLOR tab
+                current_tab = self.notebook.tab(self.notebook.select(), "text")
+                if current_tab == "ORDNANCE COLOR":
+                    # Load immediately if we're already on the color tab
+                    self.root.after(100, lambda: self.load_descriptor_values(0))
+                else:
+                    # Mark that we need to load when user switches to color tab
+                    self._should_load_descriptor = True
+        else:
+            # Store for later when the menu is created
+            self._pending_descriptors = descriptor_names
+            self._should_load_descriptor = True
+
+    def on_descriptor_changed(self, event=None):
+        """Handle descriptor selection change"""
+        if not hasattr(self, 'descriptor_var'):
+            return
+            
+        selected = self.descriptor_var.get()
+        if not selected:
+            return
+            
+        idx = int(selected.split(':')[0])
+        self.load_descriptor_values(idx)
+
+    def setup_descriptor_selector_in_color_tab(self, parent):
+        """Add descriptor selector to color tab"""
+        selector_frame = ttk.LabelFrame(parent, text="SELECT PARTICLE SYSTEM", padding="5", style="Military.TLabelframe")
+        selector_frame.pack(fill=tk.X, pady=5)
+        
+        info_label = ttk.Label(
+            selector_frame, 
+            text="Choose which color range descriptor to edit (files can have multiple color systems):", 
+            style="Desc.TLabel",
+            wraplength=500
+        )
+        info_label.pack(anchor=tk.W, padx=5, pady=2)
+        
+        self.descriptor_var = tk.StringVar()
+        self.descriptor_menu = ttk.Combobox(
+            selector_frame,
+            textvariable=self.descriptor_var,
+            state="readonly",
+            width=60
+        )
+        self.descriptor_menu.pack(fill=tk.X, padx=5, pady=5)
+        self.descriptor_menu.bind('<<ComboboxSelected>>', self.on_descriptor_changed)
+        
+        # If we have pending descriptors from file load, populate now
+        if hasattr(self, '_pending_descriptors'):
+            self.descriptor_menu['values'] = self._pending_descriptors
+            if len(self._pending_descriptors) > 0:
+                self.descriptor_var.set(self._pending_descriptors[0])
+                # Check if this tab is currently visible
+                current_tab = self.notebook.tab(self.notebook.select(), "text")
+                if current_tab == "ORDNANCE COLOR":
+                    # Load immediately since we're on this tab
+                    self.root.after(100, lambda: self.load_descriptor_values(0))
+            delattr(self, '_pending_descriptors')
+
+    def load_descriptor_values(self, idx):
+        """Load a specific descriptor's values into the UI"""
+        if not hasattr(self, 'descriptors') or idx >= len(self.descriptors):
+            print(f"DEBUG: Cannot load descriptor {idx} - descriptors not ready")
+            return
+        
+        descriptor = self.descriptors[idx]
+        print(f"DEBUG: Loading descriptor {idx}: {descriptor['name']}")
+        print(f"DEBUG: Descriptor values: {descriptor['values']}")
+        
+        # Load START colors
+        for color in ['Red', 'Green', 'Blue', 'Alpha']:
+            key = f'Start_{color}'
+            if key in descriptor['values']:
+                # Check if the widget exists before trying to use it
+                if hasattr(self, f'start_{color.lower()}_var'):
+                    getattr(self, f'start_{color.lower()}_var').set(descriptor['values'][key])
+                    self.update_value_label(
+                        getattr(self, f'start_{color.lower()}_var'), 
+                        getattr(self, f'start_{color.lower()}_value')
+                    )
+                    print(f"DEBUG: Set start_{color.lower()}_var to {descriptor['values'][key]}")
+                else:
+                    print(f"DEBUG: start_{color.lower()}_var does not exist")
+                # Update current value display
+                if hasattr(self, f'start_{color.lower()}_current'):
+                    getattr(self, f'start_{color.lower()}_current').config(text=f"{descriptor['values'][key]:.3f}")
+                    print(f"DEBUG: Set start_{color.lower()}_current label")
+                else:
+                    print(f"DEBUG: start_{color.lower()}_current does not exist")
+            else:
+                print(f"DEBUG: Key {key} not found in descriptor values")
+        
+        # Load END colors
+        for color in ['Red', 'Green', 'Blue', 'Alpha']:
+            key = f'End_{color}'
+            if key in descriptor['values']:
+                if hasattr(self, f'end_{color.lower()}_var'):
+                    getattr(self, f'end_{color.lower()}_var').set(descriptor['values'][key])
+                    self.update_value_label(
+                        getattr(self, f'end_{color.lower()}_var'), 
+                        getattr(self, f'end_{color.lower()}_value')
+                    )
+                if hasattr(self, f'end_{color.lower()}_current'):
+                    getattr(self, f'end_{color.lower()}_current').config(text=f"{descriptor['values'][key]:.3f}")
+        
+        # Load TRANSITION colors
+        for color in ['Red', 'Green', 'Blue', 'Alpha']:
+            key = f'Transition_{color}'
+            if key in descriptor['values']:
+                if hasattr(self, f'transition_{color.lower()}_var'):
+                    getattr(self, f'transition_{color.lower()}_var').set(descriptor['values'][key])
+                    self.update_value_label(
+                        getattr(self, f'transition_{color.lower()}_var'), 
+                        getattr(self, f'transition_{color.lower()}_value')
+                    )
+                if hasattr(self, f'transition_{color.lower()}_current'):
+                    getattr(self, f'transition_{color.lower()}_current').config(text=f"{descriptor['values'][key]:.3f}")
+        
+        # Update all previews
+        if hasattr(self, 'start_red_var'):
+            self.update_section_preview('start')
+            self.update_section_preview('end')
+            self.update_section_preview('transition')
+            print("DEBUG: Updated all previews")
+        else:
+            print("DEBUG: start_red_var does not exist, cannot update previews")
+
+    def parse_particle_descriptors(self):
+        """Parse the file into individual particle descriptors"""
+        self.descriptors = []
+        
+        # Split by the separator lines
+        sections = re.split(r'(\*{5,})', self.file_content)
+        
+        descriptor_idx = 0
+        for i in range(0, len(sections), 2):  # Step by 2 to get content sections
+            if i >= len(sections):
+                break
+                
+            section = sections[i]
+            if not section.strip():
+                continue
+                
+            descriptor = {
+                'index': descriptor_idx,
+                'content': section,
+                'separator': sections[i+1] if i+1 < len(sections) else '',
+                'values': {}
+            }
+            
+            # Extract descriptor name if present
+            name_match = re.search(r'Particle_Descriptor_Name (.+)', section)
+            if name_match:
+                descriptor['name'] = name_match.group(1).strip()
+            else:
+                descriptor['name'] = f"Section {descriptor_idx}"
+            
+            # Extract descriptor type
+            type_match = re.search(r'Particle_Descriptor_Type (\d+)', section)
+            if type_match:
+                descriptor['type'] = int(type_match.group(1))
+            
+            # Extract all color values in this descriptor
+            for color_type in ["Red", "Green", "Blue", "Alpha"]:
+                for prefix in ["Start_", "End_", "Transition_"]:
+                    pattern = fr'{prefix}{color_type} NUMBER_VERSION_2\n\*\*\*\*1: (\d+\.\d+)'
+                    match = re.search(pattern, section)
+                    if match:
+                        descriptor['values'][f'{prefix}{color_type}'] = float(match.group(1))
+            
+            # Only add descriptors that have color values
+            if descriptor['values']:
+                self.descriptors.append(descriptor)
+                descriptor_idx += 1
+
+    def setup_color_tab(self):
+        """Setup the color editor tab with separate controls for Start, End, and Transition"""
+        color_frame = ttk.Frame(self.notebook, style="Color.TFrame")
+        self.notebook.add(color_frame, text="ORDNANCE COLOR")
+
+        # Create a canvas with scrollbar
+        canvas = tk.Canvas(color_frame, bg=self.colors['color_tab_bg'], highlightthickness=0)
+        scrollbar = ttk.Scrollbar(color_frame, orient="vertical", command=canvas.yview)
+        
+        # Create a frame inside the canvas to hold all content
+        scrollable_frame = ttk.Frame(canvas, style="Color.TFrame")
+        
+        # Configure the canvas
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack the scrollbar and canvas
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+        
+        # Enable mouse wheel scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        # Color editor - now uses scrollable_frame instead of color_frame
+        color_editor = ttk.LabelFrame(scrollable_frame, text="COLOR CONTROLS", padding="5", style="Military.TLabelframe")
+        color_editor.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Descriptor selector (moved to top, no longer inside current_values)
+        self.setup_descriptor_selector_in_color_tab(color_editor)
+        
+        # START COLOR SECTION (with its own current values)
+        self.setup_color_section(color_editor, "START", "start")
+        
+        # END COLOR SECTION (with its own current values)
+        self.setup_color_section(color_editor, "END", "end")
+        
+        # TRANSITION COLOR SECTION (with its own current values)
+        self.setup_color_section(color_editor, "TRANSITION", "transition")
+        
+        # Description
+        self.setup_description(color_editor)
+
+    def setup_color_section(self, parent, label, prefix):
+        """Setup color controls for Start, End, or Transition"""
+        section_frame = ttk.LabelFrame(parent, text=f"{label} COLOR", padding="5", style="Military.TLabelframe")
+        section_frame.pack(fill=tk.X, pady=5)
+        
+        # Current values display for this section
+        current_values_frame = ttk.LabelFrame(section_frame, text=f"{label} CURRENT VALUES", padding="5", style="Military.TLabelframe")
+        current_values_frame.pack(fill=tk.X, pady=5)
+        
+        current_grid = ttk.Frame(current_values_frame, style="Military.TFrame")
+        current_grid.pack(fill=tk.X, pady=5, padx=5)
+        
+        # Headers
+        ttk.Label(current_grid, text="COLOR", style="ValueHeader.TLabel").grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
+        ttk.Label(current_grid, text="VALUE", style="ValueHeader.TLabel").grid(row=0, column=1, padx=5, pady=2)
+        
+        # RED value
+        red_label = ttk.Label(current_grid, text="RED", foreground=self.colors['accent1'], style="Military.TLabel")
+        red_label.grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
+        
+        red_current = ttk.Label(current_grid, text="-", style="Value.TLabel")
+        red_current.grid(row=1, column=1, padx=5, pady=2)
+        setattr(self, f'{prefix}_red_current', red_current)
+        
+        # GREEN value
+        green_label = ttk.Label(current_grid, text="GREEN", foreground=self.colors['accent3'], style="Military.TLabel")
+        green_label.grid(row=2, column=0, padx=5, pady=2, sticky=tk.W)
+        
+        green_current = ttk.Label(current_grid, text="-", style="Value.TLabel")
+        green_current.grid(row=2, column=1, padx=5, pady=2)
+        setattr(self, f'{prefix}_green_current', green_current)
+        
+        # BLUE value
+        blue_label = ttk.Label(current_grid, text="BLUE", foreground=self.colors['accent4'], style="Military.TLabel")
+        blue_label.grid(row=3, column=0, padx=5, pady=2, sticky=tk.W)
+        
+        blue_current = ttk.Label(current_grid, text="-", style="Value.TLabel")
+        blue_current.grid(row=3, column=1, padx=5, pady=2)
+        setattr(self, f'{prefix}_blue_current', blue_current)
+        
+        # ALPHA value
+        alpha_label = ttk.Label(current_grid, text="OPACITY", style="Military.TLabel")
+        alpha_label.grid(row=4, column=0, padx=5, pady=2, sticky=tk.W)
+        
+        alpha_current = ttk.Label(current_grid, text="-", style="Value.TLabel")
+        alpha_current.grid(row=4, column=1, padx=5, pady=2)
+        setattr(self, f'{prefix}_alpha_current', alpha_current)
+        
+        # Color picker button
+        picker_frame = ttk.Frame(section_frame, style="Military.TFrame")
+        picker_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(picker_frame, text=f"{label} COLOR SELECTION:", style="Military.TLabel").pack(side=tk.LEFT, padx=5)
+        
+        picker_button = ttk.Button(
+            picker_frame, 
+            text="CUSTOM COLOR", 
+            command=lambda: self.open_color_picker_for_section(prefix), 
+            style="Military.TButton"
+        )
+        picker_button.pack(side=tk.LEFT, padx=5)
+        
+        # RGB sliders
+        rgb_frame = ttk.Frame(section_frame, style="Military.TFrame")
+        rgb_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        # Red slider
+        red_label_frame = ttk.Frame(rgb_frame, style="RedLabel.TFrame")
+        red_label_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(red_label_frame, text="RED:", style="Military.TLabel").pack(padx=3, pady=2)
+        
+        red_var = tk.DoubleVar(value=0.0)
+        setattr(self, f'{prefix}_red_var', red_var)
+        
+        red_slider = ttk.Scale(rgb_frame, from_=0.0, to=1.0, variable=red_var, orient=tk.HORIZONTAL, style="Red.Horizontal.TScale")
+        red_slider.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
+        
+        red_value = ttk.Label(rgb_frame, text="0.000", style='Value.TLabel')
+        red_value.grid(row=0, column=2, padx=5, pady=5)
+        setattr(self, f'{prefix}_red_value', red_value)
+        red_slider.bind("<Motion>", lambda e: self.update_value_label(red_var, red_value))
+        red_slider.bind("<ButtonRelease-1>", lambda e: self.update_section_preview(prefix))
+        
+        # Green slider
+        green_label_frame = ttk.Frame(rgb_frame, style="GreenLabel.TFrame")
+        green_label_frame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(green_label_frame, text="GREEN:", style="Military.TLabel").pack(padx=3, pady=2)
+        
+        green_var = tk.DoubleVar(value=0.0)
+        setattr(self, f'{prefix}_green_var', green_var)
+        
+        green_slider = ttk.Scale(rgb_frame, from_=0.0, to=1.0, variable=green_var, orient=tk.HORIZONTAL, style="Green.Horizontal.TScale")
+        green_slider.grid(row=1, column=1, padx=5, pady=5, sticky=tk.EW)
+        
+        green_value = ttk.Label(rgb_frame, text="0.000", style='Value.TLabel')
+        green_value.grid(row=1, column=2, padx=5, pady=5)
+        setattr(self, f'{prefix}_green_value', green_value)
+        green_slider.bind("<Motion>", lambda e: self.update_value_label(green_var, green_value))
+        green_slider.bind("<ButtonRelease-1>", lambda e: self.update_section_preview(prefix))
+        
+        # Blue slider
+        blue_label_frame = ttk.Frame(rgb_frame, style="BlueLabel.TFrame")
+        blue_label_frame.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(blue_label_frame, text="BLUE:", style="Military.TLabel").pack(padx=3, pady=2)
+        
+        blue_var = tk.DoubleVar(value=0.0)
+        setattr(self, f'{prefix}_blue_var', blue_var)
+        
+        blue_slider = ttk.Scale(rgb_frame, from_=0.0, to=1.0, variable=blue_var, orient=tk.HORIZONTAL, style="Blue.Horizontal.TScale")
+        blue_slider.grid(row=2, column=1, padx=5, pady=5, sticky=tk.EW)
+        
+        blue_value = ttk.Label(rgb_frame, text="0.000", style='Value.TLabel')
+        blue_value.grid(row=2, column=2, padx=5, pady=5)
+        setattr(self, f'{prefix}_blue_value', blue_value)
+        blue_slider.bind("<Motion>", lambda e: self.update_value_label(blue_var, blue_value))
+        blue_slider.bind("<ButtonRelease-1>", lambda e: self.update_section_preview(prefix))
+        
+        # Alpha slider
+        alpha_label_frame = ttk.Frame(rgb_frame, style="AlphaLabel.TFrame")
+        alpha_label_frame.grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(alpha_label_frame, text="OPACITY:", style="Military.TLabel").pack(padx=3, pady=2)
+        
+        alpha_var = tk.DoubleVar(value=1.0)
+        setattr(self, f'{prefix}_alpha_var', alpha_var)
+        
+        alpha_slider = ttk.Scale(rgb_frame, from_=0.0, to=1.0, variable=alpha_var, orient=tk.HORIZONTAL, style="Alpha.Horizontal.TScale")
+        alpha_slider.grid(row=3, column=1, padx=5, pady=5, sticky=tk.EW)
+        
+        alpha_value = ttk.Label(rgb_frame, text="1.000", style='Value.TLabel')
+        alpha_value.grid(row=3, column=2, padx=5, pady=5)
+        setattr(self, f'{prefix}_alpha_value', alpha_value)
+        alpha_slider.bind("<Motion>", lambda e: self.update_value_label(alpha_var, alpha_value))
+        alpha_slider.bind("<ButtonRelease-1>", lambda e: self.update_section_preview(prefix))
+        
+        # Color preview for this section
+        preview_frame = ttk.Frame(section_frame, style="Military.TFrame")
+        preview_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(preview_frame, text="PREVIEW:", style="Military.TLabel").pack(side=tk.LEFT, padx=5)
+        
+        preview_container = ttk.Frame(preview_frame, style="PreviewBorder.TFrame")
+        preview_container.pack(side=tk.LEFT, padx=10)
+        
+        preview_canvas = tk.Canvas(preview_container, width=120, height=40, bg="#000000", highlightthickness=0)
+        preview_canvas.pack(padx=2, pady=2)
+        setattr(self, f'{prefix}_color_preview', preview_canvas)
+        
+        hex_label = ttk.Label(preview_frame, text="#000000", style='Value.TLabel')
+        hex_label.pack(side=tk.LEFT, padx=10)
+        setattr(self, f'{prefix}_hex_color', hex_label)
+        
+        rgb_frame.columnconfigure(1, weight=1)
+
+    def open_color_picker_for_section(self, prefix):
+        """Open color picker for a specific section (start, end, or transition)"""
+        # Get current RGB values from sliders
+        r = int(getattr(self, f'{prefix}_red_var').get() * 255)
+        g = int(getattr(self, f'{prefix}_green_var').get() * 255)
+        b = int(getattr(self, f'{prefix}_blue_var').get() * 255)
+        current_color = f"#{r:02x}{g:02x}{b:02x}"
+        
+        # Open color chooser dialog
+        color_result = colorchooser.askcolor(
+            color=current_color,
+            title=f"{prefix.upper()} COLOR SELECTION"
+        )
+        
+        # If a color was selected (not cancelled)
+        if color_result[1]:
+            r, g, b = color_result[0]
+            
+            # Update slider values (0-1 range)
+            getattr(self, f'{prefix}_red_var').set(r / 255)
+            getattr(self, f'{prefix}_green_var').set(g / 255)
+            getattr(self, f'{prefix}_blue_var').set(b / 255)
+            
+            # Update value labels
+            self.update_value_label(getattr(self, f'{prefix}_red_var'), getattr(self, f'{prefix}_red_value'))
+            self.update_value_label(getattr(self, f'{prefix}_green_var'), getattr(self, f'{prefix}_green_value'))
+            self.update_value_label(getattr(self, f'{prefix}_blue_var'), getattr(self, f'{prefix}_blue_value'))
+            
+            # Update color preview
+            self.update_section_preview(prefix)
+
+    def update_section_preview(self, prefix):
+        """Update the color preview for a specific section"""
+        r = int(getattr(self, f'{prefix}_red_var').get() * 255)
+        g = int(getattr(self, f'{prefix}_green_var').get() * 255)
+        b = int(getattr(self, f'{prefix}_blue_var').get() * 255)
+        color = f"#{r:02x}{g:02x}{b:02x}"
+        
+        getattr(self, f'{prefix}_color_preview').config(bg=color)
+        getattr(self, f'{prefix}_hex_color').config(text=color.upper())
 
     def highlight_color_values(self):
         """Highlight all the color values in the file viewer"""
@@ -577,30 +1052,6 @@ class ParticleEffectEditor:
         # Add the frame to the parent paned window
         parent.add(file_viewer_frame, weight=2)
 
-    def setup_color_tab(self):
-        """Setup the color editor tab"""
-        color_frame = ttk.Frame(self.notebook, style="Color.TFrame")
-        self.notebook.add(color_frame, text="ORDNANCE COLOR")
-
-        # Color editor
-        color_editor = ttk.LabelFrame(color_frame, text="COLOR CONTROLS", padding="5", style="Military.TLabelframe")
-        color_editor.pack(fill=tk.BOTH, expand=True)
-        
-        # Current values display
-        self.setup_current_values(color_editor)
-        
-        # Color picker
-        self.setup_color_pickers(color_editor)
-        
-        # RGB sliders
-        self.setup_rgb_sliders(color_editor)
-        
-        # Color preview
-        self.setup_color_preview(color_editor)
-        
-        # Description
-        self.setup_description(color_editor)
-
     def setup_current_values(self, parent):
         """Setup the current values display"""
         self.current_values_frame = ttk.LabelFrame(parent, text="CURRENT VALUES", padding="5", style="Military.TLabelframe")
@@ -667,81 +1118,7 @@ class ParticleEffectEditor:
         
         self.alpha_trans_val = ttk.Label(current_grid, text="-", style="Value.TLabel")
         self.alpha_trans_val.grid(row=4, column=3, padx=5, pady=2)
-    
-    def setup_color_pickers(self, parent):
-        """Setup color picker buttons"""
-        preset_frame = ttk.Frame(parent, style="Military.TFrame")
-        preset_frame.pack(fill=tk.X, pady=5)
-
-        ttk.Label(preset_frame, text="COLOR SELECTION:", style="Military.TLabel").pack(side=tk.LEFT, padx=5)
-
-        self.color_picker_button = ttk.Button(
-            preset_frame, 
-            text="CUSTOM COLOR", 
-            command=self.open_color_picker, 
-            style="Military.TButton"
-        )
-        self.color_picker_button.pack(side=tk.LEFT, padx=5)
-    
-    def setup_rgb_sliders(self, parent):
-        """Setup RGB and Alpha sliders"""
-        rgb_frame = ttk.Frame(parent, style="Military.TFrame")
-        rgb_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-        
-        # Red slider
-        red_label_frame = ttk.Frame(rgb_frame, style="RedLabel.TFrame")
-        red_label_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        ttk.Label(red_label_frame, text="RED:", style="Military.TLabel").pack(padx=3, pady=2)
-        
-        self.red_var = tk.DoubleVar(value=0.7)
-        self.red_slider = ttk.Scale(rgb_frame, from_=0.0, to=1.0, variable=self.red_var, orient=tk.HORIZONTAL, style="Red.Horizontal.TScale")
-        self.red_slider.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
-        
-        self.red_value = ttk.Label(rgb_frame, text="0.700", style='Value.TLabel')
-        self.red_value.grid(row=0, column=2, padx=5, pady=5)
-        self.red_slider.bind("<Motion>", lambda e: self.update_value_label(self.red_var, self.red_value))
-        
-        # Green slider
-        green_label_frame = ttk.Frame(rgb_frame, style="GreenLabel.TFrame")
-        green_label_frame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-        ttk.Label(green_label_frame, text="GREEN:", style="Military.TLabel").pack(padx=3, pady=2)
-        
-        self.green_var = tk.DoubleVar(value=0.3)
-        self.green_slider = ttk.Scale(rgb_frame, from_=0.0, to=1.0, variable=self.green_var, orient=tk.HORIZONTAL, style="Green.Horizontal.TScale")
-        self.green_slider.grid(row=1, column=1, padx=5, pady=5, sticky=tk.EW)
-        
-        self.green_value = ttk.Label(rgb_frame, text="0.300", style='Value.TLabel')
-        self.green_value.grid(row=1, column=2, padx=5, pady=5)
-        self.green_slider.bind("<Motion>", lambda e: self.update_value_label(self.green_var, self.green_value))
-        
-        # Blue slider
-        blue_label_frame = ttk.Frame(rgb_frame, style="BlueLabel.TFrame")
-        blue_label_frame.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
-        ttk.Label(blue_label_frame, text="BLUE:", style="Military.TLabel").pack(padx=3, pady=2)
-        
-        self.blue_var = tk.DoubleVar(value=0.5)
-        self.blue_slider = ttk.Scale(rgb_frame, from_=0.0, to=1.0, variable=self.blue_var, orient=tk.HORIZONTAL, style="Blue.Horizontal.TScale")
-        self.blue_slider.grid(row=2, column=1, padx=5, pady=5, sticky=tk.EW)
-        
-        self.blue_value = ttk.Label(rgb_frame, text="0.500", style='Value.TLabel')
-        self.blue_value.grid(row=2, column=2, padx=5, pady=5)
-        self.blue_slider.bind("<Motion>", lambda e: self.update_value_label(self.blue_var, self.blue_value))
-        
-        # Alpha slider
-        alpha_label_frame = ttk.Frame(rgb_frame, style="AlphaLabel.TFrame")
-        alpha_label_frame.grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
-        ttk.Label(alpha_label_frame, text="OPACITY:", style="Military.TLabel").pack(padx=3, pady=2)
-        
-        self.alpha_var = tk.DoubleVar(value=1.0)
-        self.alpha_slider = ttk.Scale(rgb_frame, from_=0.0, to=1.0, variable=self.alpha_var, orient=tk.HORIZONTAL, style="Alpha.Horizontal.TScale")
-        self.alpha_slider.grid(row=3, column=1, padx=5, pady=5, sticky=tk.EW)
-        
-        self.alpha_value = ttk.Label(rgb_frame, text="1.000", style='Value.TLabel')
-        self.alpha_value.grid(row=3, column=2, padx=5, pady=5)
-        self.alpha_slider.bind("<Motion>", lambda e: self.update_value_label(self.alpha_var, self.alpha_value))
-        
-        rgb_frame.columnconfigure(1, weight=1)
-    
+            
     def extract_parameters(self):
         """Extract parameters from the file content"""
         if not self.file_content:
@@ -878,31 +1255,6 @@ class ParticleEffectEditor:
         
         # Display status message
         self.status_var.set("PARAMETERS EXTRACTED SUCCESSFULLY")
-
-    def setup_color_preview(self, parent):
-        """Setup color preview area"""
-        preview_frame = ttk.Frame(parent, style="Preview.TFrame")
-        preview_frame.pack(fill=tk.X, pady=5)
-        
-        ttk.Label(preview_frame, text="VISUAL REPORT:", style="Military.TLabel").pack(side=tk.LEFT, padx=5)
-        
-        # Canvas for color preview with military-style border
-        preview_container = ttk.Frame(preview_frame, style="PreviewBorder.TFrame")
-        preview_container.pack(side=tk.LEFT, padx=10)
-        
-        self.color_preview = tk.Canvas(preview_container, width=120, height=40, bg="#B34D80", highlightthickness=0)
-        self.color_preview.pack(padx=2, pady=2)
-        
-        # Hex color display
-        self.hex_color = ttk.Label(preview_frame, text="#B34D80", style='Value.TLabel')
-        self.hex_color.pack(side=tk.LEFT, padx=10)
-        
-        self.update_preview()
-        
-        # Bind slider movement to update preview
-        self.red_slider.bind("<B1-Motion>", lambda e: self.update_preview())
-        self.green_slider.bind("<B1-Motion>", lambda e: self.update_preview())
-        self.blue_slider.bind("<B1-Motion>", lambda e: self.update_preview())
     
     def setup_description(self, parent):
         """Setup description text"""
@@ -917,30 +1269,6 @@ class ParticleEffectEditor:
         )
         desc_text.pack(padx=5, pady=5, anchor=tk.W)
     
-    def browse_file(self):
-        """Browse for a particle effect file to load"""
-        file_path = filedialog.askopenfilename(
-            title="Select Particle Effect File",
-            filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
-        )
-        
-        if file_path:
-            self.file_path = file_path
-            self.file_label.config(text=os.path.basename(file_path))
-            
-            try:
-                with open(file_path, 'r') as file:
-                    self.file_content = file.read()
-                    
-                self.display_file_content()
-                
-                # Extract all parameter values from the file
-                self.extract_editable_values()  # Extract color values (your existing method)
-                self.extract_parameters()       # Extract all other parameters
-                
-                self.status_var.set(f"LOADED: {os.path.basename(file_path)}")
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to load file: {str(e)}")
 
     def display_file_content(self):
         """Display file content in the viewer with highlighted editable parts"""
@@ -1005,37 +1333,6 @@ class ParticleEffectEditor:
                 self.file_viewer.tag_add(tag, start_idx, end_idx)
                 self.file_viewer.tag_add("editable", start_idx, end_idx)
     
-    def open_color_picker(self):
-        # Get current RGB values from sliders
-        r = int(self.red_var.get() * 255)
-        g = int(self.green_var.get() * 255)
-        b = int(self.blue_var.get() * 255)
-        current_color = f"#{r:02x}{g:02x}{b:02x}"
-        
-        # Open color chooser dialog
-        color_result = colorchooser.askcolor(
-            color=current_color,
-            title="CUSTOM COLOR SELECTION"
-        )
-        
-        # If a color was selected (not cancelled)
-        if color_result[1]:
-            # color_result is a tuple: ((r, g, b), hex_string)
-            r, g, b = color_result[0]
-            
-            # Update slider values (0-1 range)
-            self.red_var.set(r / 255)
-            self.green_var.set(g / 255)
-            self.blue_var.set(b / 255)
-            
-            # Update value labels
-            self.update_value_label(self.red_var, self.red_value)
-            self.update_value_label(self.green_var, self.green_value)
-            self.update_value_label(self.blue_var, self.blue_value)
-            
-            # Update color preview
-            self.update_preview()
-
     def extract_editable_values(self):
         """Extract editable values from the file content"""
         self.editable_values = {}
@@ -1128,299 +1425,162 @@ class ParticleEffectEditor:
         except (ValueError, tk.TclError):
             # Handle potential errors if slider is being dragged
             pass
-    
-    def update_preview(self):
-        r = int(self.red_var.get() * 255)
-        g = int(self.green_var.get() * 255)
-        b = int(self.blue_var.get() * 255)
-        color = f"#{r:02x}{g:02x}{b:02x}"
-        self.color_preview.config(bg=color)
-        self.hex_color.config(text=color.upper())
-    
-    def apply_pink(self):
-        self.red_var.set(0.7)
-        self.green_var.set(0.3)
-        self.blue_var.set(0.5)
-        self.update_preview()
-        self.update_value_label(self.red_var, self.red_value)
-        self.update_value_label(self.green_var, self.green_value)
-        self.update_value_label(self.blue_var, self.blue_value)
-    
-    def apply_blue(self):
-        self.red_var.set(0.2)
-        self.green_var.set(0.3)
-        self.blue_var.set(0.8)
-        self.update_preview()
-        self.update_value_label(self.red_var, self.red_value)
-        self.update_value_label(self.green_var, self.green_value)
-        self.update_value_label(self.blue_var, self.blue_value)
-    
-    def apply_green(self):
-        self.red_var.set(0.3)
-        self.green_var.set(0.7)
-        self.blue_var.set(0.3)
-        self.update_preview()
-        self.update_value_label(self.red_var, self.red_value)
-        self.update_value_label(self.green_var, self.green_value)
-        self.update_value_label(self.blue_var, self.blue_value)
-    
-    def apply_red(self):
-        self.red_var.set(0.8)
-        self.green_var.set(0.2)
-        self.blue_var.set(0.2)
-        self.update_preview()
-        self.update_value_label(self.red_var, self.red_value)
-        self.update_value_label(self.green_var, self.green_value)
-        self.update_value_label(self.blue_var, self.blue_value)
-    
+            
+    def setup_descriptor_selector(self):
+        """Add UI to select which descriptor to edit"""
+        if not hasattr(self, 'descriptors') or len(self.descriptors) == 0:
+            return
+            
+        selector_frame = ttk.LabelFrame(
+            self.current_values_frame, 
+            text="SELECT PARTICLE SYSTEM", 
+            padding="5", 
+            style="Military.TLabelframe"
+        )
+        selector_frame.pack(fill=tk.X, pady=5, before=self.current_values_frame.winfo_children()[0])
+        
+        # Create dropdown with descriptor names
+        descriptor_names = [f"{d['index']}: {d['name']}" for d in self.descriptors]
+        self.descriptor_var = tk.StringVar(value=descriptor_names[0])
+        
+        descriptor_menu = ttk.Combobox(
+            selector_frame,
+            textvariable=self.descriptor_var,
+            values=descriptor_names,
+            state="readonly",
+            width=50
+        )
+        descriptor_menu.pack(fill=tk.X, padx=5, pady=5)
+        descriptor_menu.bind('<<ComboboxSelected>>', self.on_descriptor_changed)
+        
+        # Load first descriptor
+        self.load_descriptor_values(0)
+
     def apply_changes(self):
-        """Apply all parameter changes to the file"""
+        """Apply changes to the selected descriptor only"""
         if not self.file_path or not self.file_content:
             messagebox.showerror("Error", "No file loaded")
             return
         
-        # Create modified content with regex replacements
-        modified_content = self.file_content
+        if not hasattr(self, 'descriptors') or len(self.descriptors) == 0:
+            messagebox.showerror("Error", "No particle descriptors found")
+            return
         
-        # COLOR TAB PARAMETERS
-        # Get RGB values from color sliders
-        red = f"{self.red_var.get():.6f}"
-        green = f"{self.green_var.get():.6f}"
-        blue = f"{self.blue_var.get():.6f}"
-        alpha = f"{self.alpha_var.get():.6f}"
+        # Get selected descriptor
+        selected = self.descriptor_var.get()
+        idx = int(selected.split(':')[0])
+        descriptor = self.descriptors[idx]
         
-        # Replace Red values
-        modified_content = re.sub(
+        # Modify only this descriptor's content
+        modified_section = descriptor['content']
+        
+        # Get START color values
+        start_red = f"{self.start_red_var.get():.6f}"
+        start_green = f"{self.start_green_var.get():.6f}"
+        start_blue = f"{self.start_blue_var.get():.6f}"
+        start_alpha = f"{self.start_alpha_var.get():.6f}"
+        
+        # Get END color values
+        end_red = f"{self.end_red_var.get():.6f}"
+        end_green = f"{self.end_green_var.get():.6f}"
+        end_blue = f"{self.end_blue_var.get():.6f}"
+        end_alpha = f"{self.end_alpha_var.get():.6f}"
+        
+        # Get TRANSITION color values
+        transition_red = f"{self.transition_red_var.get():.6f}"
+        transition_green = f"{self.transition_green_var.get():.6f}"
+        transition_blue = f"{self.transition_blue_var.get():.6f}"
+        transition_alpha = f"{self.transition_alpha_var.get():.6f}"
+        
+        # Replace START color values
+        modified_section = re.sub(
             r'(Start_Red NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + red,
-            modified_content
+            r'\g<1>' + start_red,
+            modified_section
         )
-        
-        modified_content = re.sub(
-            r'(End_Red NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + red,
-            modified_content
-        )
-        
-        modified_content = re.sub(
-            r'(Transition_Red NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + red,
-            modified_content
-        )
-        
-        # Replace Green values
-        modified_content = re.sub(
+        modified_section = re.sub(
             r'(Start_Green NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + green,
-            modified_content
+            r'\g<1>' + start_green,
+            modified_section
         )
-        
-        modified_content = re.sub(
-            r'(End_Green NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + green,
-            modified_content
-        )
-        
-        modified_content = re.sub(
-            r'(Transition_Green NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + green,
-            modified_content
-        )
-        
-        # Replace Blue values
-        modified_content = re.sub(
+        modified_section = re.sub(
             r'(Start_Blue NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + blue,
-            modified_content
+            r'\g<1>' + start_blue,
+            modified_section
         )
-        
-        modified_content = re.sub(
-            r'(End_Blue NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + blue,
-            modified_content
-        )
-        
-        modified_content = re.sub(
-            r'(Transition_Blue NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + blue,
-            modified_content
-        )
-        
-        # Replace Alpha values
-        modified_content = re.sub(
+        modified_section = re.sub(
             r'(Start_Alpha NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + alpha,
-            modified_content
+            r'\g<1>' + start_alpha,
+            modified_section
         )
         
-        modified_content = re.sub(
+        # Replace END color values
+        modified_section = re.sub(
+            r'(End_Red NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
+            r'\g<1>' + end_red,
+            modified_section
+        )
+        modified_section = re.sub(
+            r'(End_Green NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
+            r'\g<1>' + end_green,
+            modified_section
+        )
+        modified_section = re.sub(
+            r'(End_Blue NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
+            r'\g<1>' + end_blue,
+            modified_section
+        )
+        modified_section = re.sub(
             r'(End_Alpha NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + alpha,
-            modified_content
+            r'\g<1>' + end_alpha,
+            modified_section
         )
         
-        modified_content = re.sub(
+        # Replace TRANSITION color values
+        modified_section = re.sub(
+            r'(Transition_Red NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
+            r'\g<1>' + transition_red,
+            modified_section
+        )
+        modified_section = re.sub(
+            r'(Transition_Green NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
+            r'\g<1>' + transition_green,
+            modified_section
+        )
+        modified_section = re.sub(
+            r'(Transition_Blue NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
+            r'\g<1>' + transition_blue,
+            modified_section
+        )
+        modified_section = re.sub(
             r'(Transition_Alpha NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-            r'\g<1>' + alpha,
-            modified_content
+            r'\g<1>' + transition_alpha,
+            modified_section
         )
         
-        # SIZE TAB PARAMETERS
-        # Replace Radius values
-        if hasattr(self, 'radius_var'):
-            modified_content = re.sub(
-                r'(Radius NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-                f'\\g<1>{self.radius_var.get():.6f}',
-                modified_content
-            )
+        # Update the descriptor
+        descriptor['content'] = modified_section
         
-        # Replace Final_Radius values
-        if hasattr(self, 'final_radius_var'):
-            modified_content = re.sub(
-                r'(Final_Radius )\d+\.\d+',
-                f'\\g<1>{self.final_radius_var.get():.6f}',
-                modified_content
-            )
+        # Rebuild the full file
+        rebuilt_content = []
+        for d in self.descriptors:
+            rebuilt_content.append(d['content'])
+            rebuilt_content.append(d['separator'])
         
-        # Replace Width values
-        if hasattr(self, 'width_var'):
-            modified_content = re.sub(
-                r'(Width )\d+\.\d+',
-                f'\\g<1>{self.width_var.get():.6f}',
-                modified_content
-            )
-            
-            # Also update Start_Width if it exists
-            modified_content = re.sub(
-                r'(Start_Width )\d+\.\d+',
-                f'\\g<1>{self.width_var.get():.6f}',
-                modified_content
-            )
+        modified_content = ''.join(rebuilt_content)
         
-        # EMISSION TAB PARAMETERS
-        # Replace Emit_Per_Turn values
-        if hasattr(self, 'emit_rate_var'):
-            modified_content = re.sub(
-                r'(Emit_Per_Turn NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-                f'\\g<1>{self.emit_rate_var.get():.6f}',
-                modified_content
-            )
-        
-        # Replace Life values
-        if hasattr(self, 'life_var'):
-            modified_content = re.sub(
-                r'(Life )(-?\d+)',
-                f'\\g<1>{int(self.life_var.get())}',
-                modified_content
-            )
-        
-        # MOVEMENT TAB PARAMETERS
-        # Replace Initial_Velocity values
-        if hasattr(self, 'velocity_x_var'):
-            modified_content = re.sub(
-                r'(Initial_Velocity_X NUMBER_VERSION_2\n\*\*\*\*1: )-?\d+\.\d+',
-                f'\\g<1>{self.velocity_x_var.get():.6f}',
-                modified_content
-            )
-        
-        if hasattr(self, 'velocity_y_var'):
-            modified_content = re.sub(
-                r'(Initial_Velocity_Y NUMBER_VERSION_2\n\*\*\*\*1: )-?\d+\.\d+',
-                f'\\g<1>{self.velocity_y_var.get():.6f}',
-                modified_content
-            )
-        
-        if hasattr(self, 'velocity_z_var'):
-            modified_content = re.sub(
-                r'(Initial_Velocity_Z NUMBER_VERSION_2\n\*\*\*\*1: )-?\d+\.\d+',
-                f'\\g<1>{self.velocity_z_var.get():.6f}',
-                modified_content
-            )
-        
-        # Replace Velocity_Randomness
-        if hasattr(self, 'velocity_random_var'):
-            modified_content = re.sub(
-                r'(Velocity_Randomness NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-                f'\\g<1>{self.velocity_random_var.get():.6f}',
-                modified_content
-            )
-        
-        # Replace GravityScalar and GravityPC values
-        if hasattr(self, 'gravity_var'):
-            modified_content = re.sub(
-                r'(GravityScalar )-?\d+\.\d+',
-                f'\\g<1>{self.gravity_var.get():.6f}',
-                modified_content
-            )
-            
-            modified_content = re.sub(
-                r'(GravityPC NUMBER_VERSION_2\n\*\*\*\*1: )-?\d+\.\d+',
-                f'\\g<1>{self.gravity_var.get():.6f}',
-                modified_content
-            )
-        
-        # VISUAL TAB PARAMETERS
-        # Replace Blend_Mode
-        if hasattr(self, 'blend_mode_var'):
-            blend_value = int(self.blend_mode_var.get().split(' - ')[0])
-            modified_content = re.sub(
-                r'(Blend_Mode )\d+',
-                f'\\g<1>{blend_value}',
-                modified_content
-            )
-        
-        # Replace Anim_Speed
-        if hasattr(self, 'anim_speed_var'):
-            modified_content = re.sub(
-                r'(Anim_Speed )\d+\.\d+',
-                f'\\g<1>{self.anim_speed_var.get():.6f}',
-                modified_content
-            )
-        
-        # Replace Cylinder_Length
-        if hasattr(self, 'cylinder_length_var'):
-            modified_content = re.sub(
-                r'(Cylinder_Length NUMBER_VERSION_2\n\*\*\*\*1: )\d+\.\d+',
-                f'\\g<1>{self.cylinder_length_var.get():.6f}',
-                modified_content
-            )
-        
-        # TRAIL TAB PARAMETERS
-        # Replace Num_Points
-        if hasattr(self, 'num_points_var'):
-            modified_content = re.sub(
-                r'(Num_Points )\d+',
-                f'\\g<1>{int(self.num_points_var.get())}',
-                modified_content
-            )
-        
-        # Replace Wiggle_Factor
-        if hasattr(self, 'wiggle_var'):
-            modified_content = re.sub(
-                r'(Wiggle_Factor )\d+\.\d+',
-                f'\\g<1>{self.wiggle_var.get():.6f}',
-                modified_content
-            )
-        
-        # Replace Disperse_Rate
-        if hasattr(self, 'disperse_var'):
-            modified_content = re.sub(
-                r'(Disperse_Rate )\d+\.\d+',
-                f'\\g<1>{self.disperse_var.get():.6f}',
-                modified_content
-            )
-        
-        # Save the modified content back to the file
+        # Save
         try:
             with open(self.file_path, 'w') as file:
                 file.write(modified_content)
             
-            # Update the displayed file content
             self.file_content = modified_content
             self.display_file_content()
-            self.extract_editable_values()  # Update displayed color values
             
-            messagebox.showinfo("SUCCESS", f"Changes deployed to {os.path.basename(self.file_path)}")
-            self.status_var.set(f"MISSION COMPLETE: {os.path.basename(self.file_path)} UPDATED")
+            # Re-parse to update the display
+            self.parse_particle_descriptors()
+            
+            messagebox.showinfo("SUCCESS", f"Updated descriptor: {descriptor['name']}")
+            self.status_var.set(f"UPDATED: {descriptor['name']}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to apply changes: {str(e)}")
+            messagebox.showerror("Error", f"Failed to save: {str(e)}")
