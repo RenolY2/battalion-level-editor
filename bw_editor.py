@@ -1,7 +1,7 @@
 import cProfile
 import pstats
 import traceback
-__version__ = '2.2.1.1'
+__version__ = '2.3.0.0'
 
 import os
 import multiprocessing
