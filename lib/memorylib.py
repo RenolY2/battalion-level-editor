@@ -210,7 +210,18 @@ class Dolphin(object):
     
     def write_ram(self, offset, data):
         self.memory.buf[offset:offset+len(data)] = data
-    
+
+    def read_bytestring(self, addr, size):
+        if addr >= 0x90000000:
+            value = self.read_ram(self.mem1offset+addr-0x90000000, size)
+        else:
+            value = self.read_ram(addr-0x80000000, size)
+
+        if not value:
+            return None
+        else:
+            return value
+
     def read_uint32(self, addr):
         assert addr >= 0x80000000
         if addr >= 0x90000000:
@@ -241,6 +252,18 @@ class Dolphin(object):
             return None
         else:
             return unpack(">f", value)[0]
+
+    def read_double(self, addr):
+        assert addr >= 0x80000000
+        if addr >= 0x90000000:
+            value = self.read_ram(self.mem1offset + addr - 0x90000000, 4)
+        else:
+            value = self.read_ram(addr - 0x80000000, 4)
+
+        if not value:
+            return None
+        else:
+            return unpack(">d", value)[0]
 
     def write_float(self, addr, val):
         assert addr >= 0x80000000

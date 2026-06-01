@@ -1,3 +1,6 @@
+import struct
+import lib.luastructs as luastructs
+
 from PyQt6 import QtWidgets, QtGui
 from PyQt6.QtCore import pyqtSignal, QTimer
 
@@ -14,6 +17,7 @@ from lib.vectors import Vector3
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import bw_widgets
+
 
 EVERYTHING_OK = 0
 DOLPHIN_FOUND_NO_GAME = 1
@@ -342,6 +346,14 @@ class Game(object):
                     objectsnotfound += 1
 
         return objectsfound, objectsnotfound
+
+    def readstruct(self, struct, addr, i=0, typeunpack=False):
+        data = self.dolphin.read_bytestring(addr+i*struct.size, struct.size)
+
+        if typeunpack:
+            return struct.type_unpack(data)
+        else:
+            return struct.unpack(data)
 
 
 class LevelFileDummy(object):
@@ -770,6 +782,103 @@ class DebugInfoWIndow(QtWidgets.QMdiSubWindow):
         self.closing.emit()
 
 
+
+NIL = 0
+BOOLEAN = 1
+LIGHTUSERDATA = 2
+NUMBER = 3
+STRING = 4
+TABLE = 5
+FUNCTION = 6
+USERDATA = 7
+THREAD = 8
+
+TYPE = {0: "NIL",
+        1: "BOOLEAN",
+        2: "LIGHT USER DATA",
+        3: "NUMBER",
+        4: "STRING",
+        5: "TABLE",
+        6: "FUNCTION",
+        7: "USERDATA",
+        8: "THREAD"}
+
+def parse_string(game, data):
+    if data.type == LIGHTUSERDATA:
+        offset = 0
+        while True:
+            char = game.dolphin.read_bytestring(data.value + offset, 1)
+            if char == b"\x00":
+                break
+            else:
+                offset += 1
+        string = game.dolphin.read_bytestring(data.value, offset)
+        #print(i + 1, TYPE[data.type], bytes(string))
+        return bytes(string)
+    elif data.type == STRING:
+        stringptr = data.value
+        stringobj = game.readstruct(luastructs.TString, stringptr)
+        string = game.dolphin.read_bytestring(stringptr + 16, stringobj.length)
+        #print(i + 1, TYPE[data.type], bytes(string))
+        return bytes(string)
+
+    raise RuntimeError("not a string or light user data")
+
+
+class LuaTable(object):
+    def __init__(self, game, offset):
+        self.game = game
+        self.offset = offset
+
+        self.tabledata = tabledata = game.readstruct(luastructs.Table, offset)
+        self.table = {}
+        self.type = {}
+        itercount = (1 << tabledata.lsizenode) - 1
+        print("Table has", itercount, "base nodes")
+        for i in range(itercount):
+            offset = tabledata.node + i * luastructs.Node.size
+            nextnode = game.readstruct(luastructs.Node, offset)
+            if nextnode.key_type in (STRING, LIGHTUSERDATA):
+                keydata = game.readstruct(luastructs.TObject, offset, typeunpack=True)
+                keyname = parse_string(game, keydata)
+                valuedata = game.readstruct(luastructs.TObject, offset, 1, typeunpack=True)
+                if valuedata.type == STRING:
+                    valuename = parse_string(game, valuedata)
+                    self.table[keyname] = valuename
+                    self.type[keyname] = valuedata.type
+                elif valuedata.type in (NUMBER, BOOLEAN, TABLE, LIGHTUSERDATA, FUNCTION, THREAD):
+                    self.table[keyname] = valuedata.value
+                    self.type[keyname] = valuedata.type
+
+                while True:
+                    next = nextnode.next
+                    if next == 0:
+                        break
+                    else:
+                        nextnode = game.readstruct(luastructs.Node, next)
+
+                        keydata = game.readstruct(luastructs.TObject,offset, typeunpack=True)
+
+                        keyname = parse_string(game, keydata)
+
+                        valuedata = game.readstruct(luastructs.TObject, offset, 1, typeunpack=True)
+                        if valuedata.type == STRING:
+                            valuename = parse_string(game, valuedata)
+                            self.table[keyname] = valuename
+                            self.type[keyname] = valuedata.type
+                        elif valuedata.type in (NUMBER, BOOLEAN, TABLE, LIGHTUSERDATA, FUNCTION, THREAD):
+                            self.table[keyname] = valuedata.value
+                            self.type[keyname] = valuedata.type
+
+            else:
+                assert(nextnode.next == 0)
+
+class LuaViewer(object):
+    def __init__(self, game):
+        self.game = game
+
+        #self.game.
+
 if __name__ == "__main__":
 
     bwgame = Game()
@@ -786,13 +895,117 @@ if __name__ == "__main__":
     import time
     from binascii import unhexlify, hexlify
     offset = 0
-    while True:
-        value = bwgame.dolphin.read_ram(offset, 16)
 
-        if value[:4] == unhexlify("029F0010"):
-            print(hex(offset))
-            print(hexlify(value))
-        offset += 16
-        #time.sleep(1)
-        #val = bwgame.dolphin.read_float(ptr+0x60)
-        #bwgame.dolphin.write_float(ptr+0x60, val+1)
+    static = 0x803C1708
+
+    import time
+
+
+    # define LUA_TNIL	0
+    # define LUA_TBOOLEAN	1
+    # define LUA_TLIGHTUSERDATA	2
+    # define LUA_TNUMBER	3
+    # define LUA_TSTRING	4
+    # define LUA_TTABLE	5
+    # define LUA_TFUNCTION	6
+    # define LUA_TUSERDATA	7
+    # define LUA_TTHREAD	8
+
+
+    def get_obj(game: Game, base, i):
+        data = game.readstruct(luastructs.TObject, base, i, typeunpack=True)
+        if data.type == LIGHTUSERDATA:
+            offset = 0
+            while True:
+                char = game.dolphin.read_bytestring(data.value+offset, 1)
+                if char == b"\x00":
+                    break
+                else:
+                    offset += 1
+            string = game.dolphin.read_bytestring(data.value, offset)
+            print(i + 1, TYPE[data.type], bytes(string))
+        elif data.type == STRING:
+            stringptr = data.value
+            stringobj = game.readstruct(luastructs.TString, stringptr)
+            string = game.dolphin.read_bytestring(stringptr+16, stringobj.length)
+            print(i+1, TYPE[data.type], bytes(string))
+        elif data.type == TABLE:
+            luatable = LuaTable(game, data.value)
+            print(luatable.table)
+            """print(i + 1, TYPE[data.type], hex(data.value))
+            tableptr = data.value
+            tabledata = game.readstruct(luastructs.Table, tableptr)
+            print(tabledata.sizearray)
+            print(hex(tabledata.node), hex(tabledata.firstfree), hex(tabledata.metatable))
+            flat = []
+            for i in range((1 << tabledata.lsizenode)-1):
+                offset = tabledata.node+i*luastructs.Node.size
+                nextnode = game.readstruct(luastructs.Node, offset)
+                flat.append((offset, nextnode))
+                while True:
+                    next = nextnode.next
+                    if next == 0:
+                        break
+                    else:
+                        nextnode = game.readstruct(luastructs.Node, next)
+                        flat.append((next, nextnode))
+            print("total nodes:", len(flat))
+            for offset, node in flat:
+                if node.key_type != NIL:
+                    print(node.value_type)
+                    if node.value_type in (BOOLEAN, STRING, NUMBER):
+                        get_obj(game, offset, 0)
+                        get_obj(game, offset, 1)"""
+
+            """print("node", i, node.key_type, node.key_value)
+                val = luastructs.TObject.static_unpack(node.key_type, node.key_value)
+                get_obj(game, offset, 0)"""
+            """while True:
+                print(hex(tabledata.node))
+
+                node = game.readstruct(luastructs.Node, tabledata.node)
+                if node.i_key != 0:
+                    print(node.i_key, node.i_val)
+                    key = game.readstruct(luastructs.TObject, node.i_key, typeunpack=True)
+                    print(key.type, key.value)
+
+                if node.next > 0:
+                    node = game.readstruct(luastructs.Node, node.next)
+                else:
+                    break"""
+        elif data.type == NUMBER:
+            print(i + 1, TYPE[data.type], data.value)
+        else:
+            print(i+1, TYPE[data.type], hex(data.value))
+    import traceback
+    while True:
+        result = input("Input ptr for object info, or type stack for stack info.\n> ")
+
+        if result == "stack":
+        #get_obj(bwgame, 0x80e6a7d0, 0)
+        #time.sleep(0.5)
+        #continue
+            ptr = bwgame.deref(static)
+            luastate = bwgame.deref(ptr+0xC)
+            top = bwgame.deref(luastate+0x8)
+            base = bwgame.deref(luastate+0xC)
+            stacksize = (top-base)//16
+            for i in range(stacksize):
+                get_obj(bwgame, base, i)
+        elif result == "global":
+            ptr = bwgame.deref(static)
+            luastate = bwgame.deref(ptr + 0xC)
+            obj = bwgame.readstruct(luastructs.TObject, luastate+0x40, 0, typeunpack=True)
+            table = LuaTable(bwgame, obj.value)
+            print(table.table)
+            realtable = LuaTable(bwgame, table.table[b"realtable"])
+            for k in sorted(realtable.table.keys()):
+                if realtable.type[k] in (STRING, NUMBER, BOOLEAN):
+                    print(k, realtable.table[k])
+        else:
+            try:
+                value = int(result, 16)
+                get_obj(bwgame, value, 0)
+            except Exception as er:
+                traceback.print_exc()
+                print(er)
