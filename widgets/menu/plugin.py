@@ -31,6 +31,11 @@ class PluginWidgetEntry(QtWidgets.QWidget):
         self.widget_layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self.widget_layout)
 
+        self.tabname = ""
+
+    def set_tab_name(self, name):
+        self.tabname = name
+
     def add_widget(self, widget):
         self.widget_layout.addWidget(widget)
         return widget
@@ -83,7 +88,7 @@ class PluginHandler(object):
         return self.plugin_menu
 
     def create_plugin_sidewidget(self, parent):
-        self.plugin_sidewidget = PluginHolderWidget(parent)
+        self.plugin_sidewidget = PluginTabHolder(parent)
         return self.plugin_sidewidget
 
     def hot_reload(self, editor):
@@ -213,10 +218,45 @@ class PluginHandler(object):
         self.plugin_menu.clear_menu_actions()
 
 
+class PluginTabHolder(QtWidgets.QTabWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.plugin_widgets = {}
+
+    def is_empty(self):
+        print("Are we empty?", len(self.plugin_widgets))
+        return len(self.plugin_widgets) == 0
+
+    def remove_plugin_widget(self, pluginname):
+        if pluginname in self.plugin_widgets:
+            widget = self.plugin_widgets[pluginname]
+            index = self.indexOf(widget)
+            self.removeTab(index)
+            widget.setParent(None)
+            widget.deleteLater()
+            del self.plugin_widgets[pluginname]
+
+            return index
+
+    def add_plugin_widget(self, pluginname, widget):
+        print("Adding plugin widget for", pluginname)
+        if pluginname not in self.plugin_widgets:
+            scrollplug = PluginHolderWidget(self)
+            scrollplug.add_plugin_widget(pluginname, widget)
+            self.plugin_widgets[pluginname] = scrollplug
+            self.addTab(scrollplug, widget.tabname)
+        else:
+            i = self.remove_plugin_widget(pluginname)
+            scrollplug = PluginHolderWidget(self)
+            scrollplug.add_plugin_widget(pluginname, widget)
+            self.plugin_widgets[pluginname] = scrollplug
+            self.addTab(scrollplug, widget.tabname)
+
+
 class PluginHolderWidget(QtWidgets.QScrollArea):
     def __init__(self, parent):
         super().__init__(parent)
-        self.setMinimumWidth(200)
+        #self.setMinimumWidth(200)
 
         self.setWidgetResizable(True)
         #policy = self.scroll_area.sizePolicy()

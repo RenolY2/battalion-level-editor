@@ -1160,6 +1160,7 @@ class Plugin(object):
 
     def setup_widget(self, editor: "bw_editor.LevelEditor", widget: "plugin.PluginWidgetEntry"):
         print("Setting up widget...")
+        widget.set_tab_name("PFD")
         self.section = widget.add_widget(QtWidgets.QLabel(widget, text="BW1 Pathfind Data (PFD) Tools:"))
 
 

@@ -279,6 +279,8 @@ class Plugin(object):
         editor.level_view.do_redraw()
 
     def setup_widget(self, editor: "bw_editor.LevelEditor", widget: "plugin.PluginWidgetEntry"):
+        widget.set_tab_name("BW2 GUI")
+        
         self.section = widget.add_widget(QtWidgets.QLabel(widget, text="BW2 GUI Rendering:"))
 
         self.button_add_point = widget.add_widget(PFDPluginButton(

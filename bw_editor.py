@@ -463,15 +463,23 @@ class LevelEditor(QMainWindow):
         self.horizontalLayout.addWidget(self.vertical_holder)# Widget(self.leveldatatreeview)
         self.horizontalLayout.addWidget(self.level_view)
         plugin_sidewidget = self.plugin_handler.create_plugin_sidewidget(self.centralwidget)
-        self.horizontalLayout.addWidget(plugin_sidewidget)
+        #self.horizontalLayout.addWidget(plugin_sidewidget)
+
+
+        self.sidewidget_tab = QtWidgets.QTabWidget(self)
+        self.horizontalLayout.addWidget(self.sidewidget_tab)
 
 
         self.leveldatatreeview.resize(200, self.leveldatatreeview.height())
-        spacerItem = QSpacerItem(10, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        #spacerItem = QSpacerItem(10, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         #self.horizontalLayout.addItem(spacerItem)
 
+
+
         self.pik_control = PikminSideWidget(self)
-        self.horizontalLayout.addWidget(self.pik_control)
+
+
+        #self.horizontalLayout.addWidget(self.pik_control)
         #QtGui.QShortcut(Qt.Key.Key_G, self).activated.connect(self.action_ground_objects)
         self.add_shortcut = QtGui.QShortcut("Ctrl+A", self)
         self.add_shortcut.activated.connect(self.shortcut_open_add_item_window)
@@ -480,6 +488,9 @@ class LevelEditor(QMainWindow):
         self.statusbar = QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
         self.setStatusBar(self.statusbar)
+
+        self.sidewidget_tab.addTab(self.pik_control, "Main")
+        self.sidewidget_tab.addTab(plugin_sidewidget, "Plugins")
 
         self.connect_actions()
 
