@@ -293,6 +293,8 @@ class EditorMenuBar(QtWidgets.QMenuBar):
         self.editor.level_view.indicator.reset()
         self.editor.level_view.do_redraw(force=True)
 
+        self.editor.plugin_handler.execute_event("on_dolphin_unhook", self.editor)
+
     def reset_hook_with_error_message(self):
         self.reset_hook()
         open_error_dialog("Level was changed or the game has been closed. Dolphin hook has been shut down.", None)
@@ -313,6 +315,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
                 self.hook_game_view_action.setChecked(False)
                 self.apply_live_positions_action.setEnabled(False)
                 self.editor.level_view.indicator.set_live_edit()
+                self.editor.plugin_handler.execute_event("on_dolphin_hook", self.editor)
             else:
                 open_error_dialog(failure, None)
                 self.hook_game_action.setChecked(False)
@@ -331,6 +334,7 @@ class EditorMenuBar(QtWidgets.QMenuBar):
             for objid, obj in self.editor.level_file.objects_with_positions.items():
                 obj.set_mtx_override(None)
             self.editor.level_view.do_redraw(force=True)
+            self.editor.plugin_handler.execute_event("on_dolphin_unhook", self.editor)
         self.editor.update_3d()
 
     def hook_game_visualize(self):

@@ -61,6 +61,8 @@ class PluginHandler(object):
         self.add_event("plugin_init", "LevelEditor")
         self.add_event("select_update", "LevelEditor")
         self.add_event("before_save", "LevelEditor")
+        self.add_event("on_dolphin_hook", "LevelEditor")
+        self.add_event("on_dolphin_unhook", "LevelEditor")
         self.add_event("before_load")
         self.add_event("after_load")
         self.add_event("render_post", "BolMapViewer")
