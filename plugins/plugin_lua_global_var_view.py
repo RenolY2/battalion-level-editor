@@ -30,7 +30,9 @@ if TYPE_CHECKING:
                 elif gameid == b"RBWJ":  # JP BW2
                     self.region = gameid"""
 
-LUATABLEOFFSETS = {b"G8WP": 0x803C1708}
+LUATABLEOFFSETS = {b"G8WP": 0x803C1708,
+                   b"G8WE": 0x803BB318,
+                   b"G8WJ": 0x803C0790}
 
 
 class Plugin(object):
@@ -102,7 +104,7 @@ class Plugin(object):
             newtable = True
 
         if self.luatable is None:
-            newtable = True 
+            newtable = True
 
         if newtable:
             self.addr = luastate
