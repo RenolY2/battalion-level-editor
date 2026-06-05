@@ -833,6 +833,7 @@ class LuaTable(object):
         self.tabledata = tabledata = game.readstruct(luastructs.Table, offset)
         self.table = {}
         self.type = {}
+        self.voffsets = {}
         itercount = (1 << tabledata.lsizenode) - 1
         print("Table has", itercount, "base nodes")
         for i in range(itercount):
@@ -842,13 +843,16 @@ class LuaTable(object):
                 keydata = game.readstruct(luastructs.TObject, offset, typeunpack=True)
                 keyname = parse_string(game, keydata)
                 valuedata = game.readstruct(luastructs.TObject, offset, 1, typeunpack=True)
+
                 if valuedata.type == STRING:
                     valuename = parse_string(game, valuedata)
                     self.table[keyname] = valuename
                     self.type[keyname] = valuedata.type
+                    self.voffsets[keyname] = offset
                 elif valuedata.type in (NUMBER, BOOLEAN, TABLE, LIGHTUSERDATA, FUNCTION, THREAD):
                     self.table[keyname] = valuedata.value
                     self.type[keyname] = valuedata.type
+                    self.voffsets[keyname] = offset
 
                 while True:
                     next = nextnode.next
@@ -857,7 +861,7 @@ class LuaTable(object):
                     else:
                         nextnode = game.readstruct(luastructs.Node, next)
 
-                        keydata = game.readstruct(luastructs.TObject,offset, typeunpack=True)
+                        keydata = game.readstruct(luastructs.TObject, offset, typeunpack=True)
 
                         keyname = parse_string(game, keydata)
 
@@ -866,18 +870,38 @@ class LuaTable(object):
                             valuename = parse_string(game, valuedata)
                             self.table[keyname] = valuename
                             self.type[keyname] = valuedata.type
+                            self.voffsets[keyname] = offset
                         elif valuedata.type in (NUMBER, BOOLEAN, TABLE, LIGHTUSERDATA, FUNCTION, THREAD):
                             self.table[keyname] = valuedata.value
                             self.type[keyname] = valuedata.type
+                            self.voffsets[keyname] = offset
 
             else:
                 assert(nextnode.next == 0)
+
+    def update_values(self, all=False):
+        game = self.game
+        for keyname in self.table:
+            offset = self.voffsets[keyname]
+            valuedata = game.readstruct(luastructs.TObject, offset, 1, typeunpack=True)
+            if valuedata.type == STRING:
+                valuename = parse_string(game, valuedata)
+                self.table[keyname] = valuename
+                self.type[keyname] = valuedata.type
+            if all and (NUMBER, BOOLEAN, TABLE, LIGHTUSERDATA, FUNCTION, THREAD):
+                self.table[keyname] = valuedata.value
+                self.type[keyname] = valuedata.type
+            elif valuedata.type in (NUMBER, BOOLEAN):#, TABLE, LIGHTUSERDATA, FUNCTION, THREAD):
+                self.table[keyname] = valuedata.value
+                self.type[keyname] = valuedata.type
+
 
 class LuaViewer(object):
     def __init__(self, game):
         self.game = game
 
         #self.game.
+
 
 if __name__ == "__main__":
 

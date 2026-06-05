@@ -45,6 +45,7 @@ class Plugin(object):
         self.luatable = None
         self.luatable_filtered = []
         self.addr = None
+        self.force_refresh = False
 
     def testfunc(self, editor: "bw_editor.LevelEditor"):
         print("This is a test function")
@@ -86,16 +87,40 @@ class Plugin(object):
         offset = LUATABLEOFFSETS[self.bwgame.region]
         ptr = self.bwgame.deref(offset)
 
-        if self.addr is not None and self.addr != ptr:
+        if ptr <= 0x80000000:
+            return
+
+        try:
+            luastate = self.bwgame.deref(ptr + 0xC)
+        except:
+            return
+
+        if luastate <= 0x80000000:
+            return
+
+        if self.addr is not None and self.addr != luastate:
             newtable = True
 
+        if self.luatable is None:
+            newtable = True 
+
         if newtable:
-            self.addr = ptr
-            luastate = self.bwgame.deref(ptr + 0xC)
+            self.addr = luastate
+
             obj = self.bwgame.readstruct(luastructs.TObject, luastate + 0x40, 0, typeunpack=True)
-            table = LuaTable(self.bwgame, obj.value)
+            try:
+                table = LuaTable(self.bwgame, obj.value)
+
+            except:
+                self.luatable = None
+                return
+
             print(table.table)
-            self.luatable = LuaTable(self.bwgame, table.table[b"realtable"])
+            try:
+                self.luatable = LuaTable(self.bwgame, table.table[b"realtable"])
+            except:
+                self.luatable = None
+                return
             self.luatable_filtered = []
 
             for k in self.luatable.table.keys():
@@ -104,7 +129,11 @@ class Plugin(object):
             self.luatable_filtered.sort()
         else:
             offset = LUATABLEOFFSETS[self.bwgame.region]
-            self.luatable.update_values()
+            try:
+                self.luatable.update_values()
+            except:
+                self.luatable = None
+                return
 
         rowcount = len(self.luatable_filtered)
         self.table.setRowCount(rowcount)
