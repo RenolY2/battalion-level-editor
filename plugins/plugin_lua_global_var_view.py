@@ -32,7 +32,12 @@ if TYPE_CHECKING:
 
 LUATABLEOFFSETS = {b"G8WP": 0x803C1708,
                    b"G8WE": 0x803BB318,
-                   b"G8WJ": 0x803C0790}
+                   b"G8WJ": 0x803C0790,
+                   b"RBWE": 0x805fe508,  # Reference: code at 0x800d114c
+                   b"RBWJ": 0x806005D0,
+                   b"RBWP": 0x80600088}
+
+BW2OFFSET = (b"RBWE", b"RBWP", b"RBWJ")
 
 
 class Plugin(object):
@@ -93,7 +98,10 @@ class Plugin(object):
             return
 
         try:
-            luastate = self.bwgame.deref(ptr + 0xC)
+            if self.bwgame.region in BW2OFFSET:
+                luastate = self.bwgame.deref(ptr + 0x10)
+            else:
+                luastate = self.bwgame.deref(ptr + 0xC)
         except:
             return
 
