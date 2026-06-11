@@ -1,0 +1,232 @@
+ParticleSystemEd_File_(C)2004_Kuju_Ltd
+File_Version 2.000000
+Num_Particle_Descriptors 8
+Particle_Descriptor_Type 5
+Particle_Descriptor_Name 205_(colour range) mid grey
+Start_Red NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Green NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Blue NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Start_Alpha NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Red NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Green NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Blue NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+End_Alpha NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Red NUMBER_VERSION_2
+****1: 0.300000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Green NUMBER_VERSION_2
+****1: 0.600000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Blue NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transition_Alpha NUMBER_VERSION_2
+****1: 0.250000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Use_End 1
+Use_Transition 1
+Transition_Point 0.400000
+*****************************************************************
+Particle_Descriptor_Type 2
+Particle_Descriptor_Name 205_(emitter) flash
+Emit_Per_Turn NUMBER_VERSION_2
+****1: 0.300000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Life -2
+Particle_Descriptor 205_(particle) flash
+Initial_Velocity_X NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Y NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Initial_Velocity_Z NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Velocity_Randomness NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Transmit_Life 0
+Transmit_FoR 0
+Transmit_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Interpolated_Emission 0
+Transmit_FoR_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Shape NONE
+Pass_Num_Particles 0
+Outward_Velocity NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Mover NONE
+*****************************************************************
+Particle_Descriptor_Type 10
+Particle_Descriptor_Name 205_(function) fixed random
+Param_A NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_B NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_C NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_D NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Param_Function 8
+Clip 0
+*****************************************************************
+Particle_Descriptor_Type 1
+Particle_Descriptor_Name 205_(particle) flash
+Radius NUMBER_VERSION_2
+****1: 1.000000 205_(function) fixed random
+****2: 0 100.000000 0 1.000000 0 0.000000
+Final_Radius 2.000000
+Life 10
+Life_Pct 1.000000
+GravityScalar 0.000000
+Blend_Mode 0
+Texture SFX_solar_beam.ace
+Bounce 0
+Fade_Col 1
+Modifier NONE
+Colour_Range NONE
+Texture_Number 3
+Texture_Size 3
+Velocity_Damp 1.000000
+Axis_Aligned 0
+Anim_Type 0
+End_Frame 0
+Anim_Speed 1.000000
+Random_Start_Frame 0
+Length NUMBER_VERSION_2
+****1: 1.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+2D 0
+Rotation NUMBER_VERSION_2
+****1: 3.141590 205_(function) fixed random
+****2: 0 100.000000 0 1.000000 0 0.000000
+Position_From_Bottom 0
+Sorted 0
+Render_Order 0
+LOD_Bias 1.000000
+*****************************************************************
+Particle_Descriptor_Type 4
+Particle_Descriptor_Name 205_(selector) ammo
+Particle_Descriptor_0 205_(trail) ammo 1
+Particle_Descriptor_1 205_(trail) ammo 2
+Particle_Descriptor_2 NONE
+Particle_Descriptor_3 NONE
+Probability_0 85
+Probability_1 15
+Probability_2 0
+Probability_3 0
+*****************************************************************
+Particle_Descriptor_Type 8
+Particle_Descriptor_Name 205_(trail) ammo 1
+Blend_Mode 0
+Texture SFX_solar_beam.ace
+Width 0.300000
+Start_Width 0.300000
+Num_Points 12
+Colour_Range 205_(colour range) mid grey
+Wiggle_Factor 0.000000
+Disperse_Rate 0.000000
+Gravity 0
+Life -2
+Taper_Start 0
+Width_With_Life 0
+Type 0
+Impact_Spawnee NONE
+Transmit_FoR 1
+Fade_Point 0
+Use_Segment_Length 0
+SegmentLength 10.000000
+Manual_Wiggle_Enabled 0
+Wiggle_Length NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Yaw_Length NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Flat 0
+Fade_Tail 0
+Trail_Tile 0
+X_Frame_Num 1
+X_Frame_Start 0
+X_Frame_Count 1
+Y_Frame_Num 4
+Y_Frame_Start 0
+Y_Frame_Count 1
+Anim_Speed 1.000000
+Sorted 0
+Render_Order 0
+*****************************************************************
+Particle_Descriptor_Type 8
+Particle_Descriptor_Name 205_(trail) ammo 2
+Blend_Mode 0
+Texture SFX_solar_beam.ace
+Width 0.300000
+Start_Width 0.300000
+Num_Points 12
+Colour_Range 205_(colour range) mid grey
+Wiggle_Factor 0.000000
+Disperse_Rate 0.000000
+Gravity 0
+Life -2
+Taper_Start 0
+Width_With_Life 0
+Type 0
+Impact_Spawnee NONE
+Transmit_FoR 1
+Fade_Point 0
+Use_Segment_Length 0
+SegmentLength 10.000000
+Manual_Wiggle_Enabled 0
+Wiggle_Length NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Yaw_Length NUMBER_VERSION_2
+****1: 0.000000 NONE
+****2: 0 100.000000 0 1.000000 0 0.000000
+Flat 0
+Fade_Tail 0
+Trail_Tile 0
+X_Frame_Num 1
+X_Frame_Start 0
+X_Frame_Count 1
+Y_Frame_Num 4
+Y_Frame_Start 1
+Y_Frame_Count 1
+Anim_Speed 1.000000
+Sorted 0
+Render_Order 0
+*****************************************************************
+Particle_Descriptor_Type 6
+Particle_Descriptor_Name 205_Chain Ammo Trail S
+Num_Entries 1
+Sorted 0
+Render_Order 0
+Particle_Descriptor 205_(selector) ammo
+Time 0
+Transmit_FoR 1
+*****************************************************************
