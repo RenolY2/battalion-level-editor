@@ -212,6 +212,9 @@ class Dolphin(object):
         self.memory.buf[offset:offset+len(data)] = data
 
     def read_bytestring(self, addr, size):
+        if size == 0:
+            return b""
+
         if addr >= 0x90000000:
             value = self.read_ram(self.mem1offset+addr-0x90000000, size)
         else:
@@ -271,6 +274,13 @@ class Dolphin(object):
             return self.write_ram(self.mem1offset + addr - 0x90000000, pack(">f", val))
         else:
             return self.write_ram(addr - 0x80000000, pack(">f", val))
+
+    def write_double(self, addr, val):
+        assert addr >= 0x80000000
+        if addr >= 0x90000000:
+            return self.write_ram(self.mem1offset + addr - 0x90000000, pack(">d", val))
+        else:
+            return self.write_ram(addr - 0x80000000, pack(">d", val))
 
     
 """with open("ctypes.txt", "w") as f:

@@ -10,7 +10,7 @@ from lib.render.model_renderingv2 import QuadDrawing, LineDrawing
 from OpenGL.GL import *
 from math import cos, sin, radians
 from widgets.edit_window import SelectableLabel
-from lib.game_visualizer import MiniHook, LevelFileDummy, LuaTable, Item
+from lib.game_visualizer import MiniHook, LevelFileDummy, LuaTable, Item, BOOLEAN, NUMBER
 
 if TYPE_CHECKING:
     import bw_editor
@@ -54,6 +54,10 @@ class Plugin(object):
         self.addr = None
         self.force_refresh = False
 
+        self.scheduled_changes = {}
+        self.table_lock = threading.RLock()
+        self.dontupdate = False
+
     def testfunc(self, editor: "bw_editor.LevelEditor"):
         print("This is a test function")
         print("More")
@@ -90,80 +94,117 @@ class Plugin(object):
             #self.toggle_button.setChecked(False)
             self.toggle_button.setText("Activate Live Variable View")
 
+    def tablechange(self, item: QtWidgets.QTableWidgetItem):
+        data = item.text()
+        if item.column() == 0: return
+        key = self.table.item(item.row(), 0)
+
+        if self.luatable is not None:
+            print("lock acquired 2")
+            with self.table_lock:
+                byteskey = bytes(key.text(), "ascii")
+                offset = self.luatable.voffsets[byteskey]
+                vtype = self.luatable.type[byteskey]
+                if vtype == NUMBER:
+                    print("Written a double")
+                    self.bwgame.dolphin.write_double(offset+8+16, float(data))
+                elif vtype == BOOLEAN:
+                    val = int(data)
+                    if val != 0:
+                        val = 1
+                    print("Written a boolean")
+                    self.bwgame.dolphin.write_uint32(offset+8+16, val)
+            print("lock released 2")
+
     def table_refresh(self, newtable=False):
-        offset = LUATABLEOFFSETS[self.bwgame.region]
-        ptr = self.bwgame.deref(offset)
-
-        if ptr <= 0x80000000:
-            return
-
+        print("gonna refresh")
+        self.table_lock.acquire()
+        print("acquired lock")
         try:
-            if self.bwgame.region in BW2OFFSET:
-                luastate = self.bwgame.deref(ptr + 0x10)
-            else:
-                luastate = self.bwgame.deref(ptr + 0xC)
-        except:
-            return
-
-        if luastate <= 0x80000000:
-            return
-
-        if self.addr is not None and self.addr != luastate:
-            newtable = True
-
-        if self.luatable is None:
-            newtable = True
-
-        if newtable:
-            self.addr = luastate
-
-            obj = self.bwgame.readstruct(luastructs.TObject, luastate + 0x40, 0, typeunpack=True)
-            try:
-                table = LuaTable(self.bwgame, obj.value)
-
-            except:
-                self.luatable = None
-                return
-
-            print(table.table)
-            try:
-                self.luatable = LuaTable(self.bwgame, table.table[b"realtable"])
-            except:
-                self.luatable = None
-                return
-            self.luatable_filtered = []
-
-            for k in self.luatable.table.keys():
-                if self.luatable.type[k] in (1, 3, 4):
-                    self.luatable_filtered.append(k)
-            self.luatable_filtered.sort()
-        else:
             offset = LUATABLEOFFSETS[self.bwgame.region]
-            try:
-                self.luatable.update_values()
-            except:
-                self.luatable = None
+            ptr = self.bwgame.deref(offset)
+
+            if ptr <= 0x80000000:
                 return
 
-        rowcount = len(self.luatable_filtered)
-        self.table.setRowCount(rowcount)
-        for i, k in enumerate(self.luatable_filtered):
-            keyitem = self.table.item(i, 0)
-            valueitem = self.table.item(i, 1)
-            value = self.luatable.table[k]
+            try:
+                if self.bwgame.region in BW2OFFSET:
+                    luastate = self.bwgame.deref(ptr + 0x10)
+                else:
+                    luastate = self.bwgame.deref(ptr + 0xC)
+            except:
+                return
 
-            if keyitem is not None:
-                keyitem.setText(str(k, encoding="ascii"))
+            if luastate <= 0x80000000:
+                return
+
+            if self.addr is not None and self.addr != luastate:
+                newtable = True
+
+            if self.luatable is None:
+                newtable = True
+
+            if newtable:
+                self.addr = luastate
+
+                obj = self.bwgame.readstruct(luastructs.TObject, luastate + 0x40, 0, typeunpack=True)
+                try:
+                    table = LuaTable(self.bwgame, obj.value)
+
+                except:
+                    self.luatable = None
+                    return
+
+                print(table.table)
+                try:
+                    self.luatable = LuaTable(self.bwgame, table.table[b"realtable"])
+                except:
+                    self.luatable = None
+                    return
+                self.luatable_filtered = []
+
+                for k in self.luatable.table.keys():
+                    if self.luatable.type[k] in (1, 3, 4):
+                        self.luatable_filtered.append(k)
+                self.luatable_filtered.sort()
             else:
-                self.table.setItem(i, 0, Item(str(k, encoding="ascii")))
+                offset = LUATABLEOFFSETS[self.bwgame.region]
+                try:
+                    self.luatable.update_values()
+                except:
+                    self.luatable = None
+                    return
 
-            if valueitem is not None:
-                valueitem.setText(str(value))
-            else:
-                self.table.setItem(i, 1, Item(str(value)))
+            rowcount = len(self.luatable_filtered)
+            self.table.setRowCount(rowcount)
 
-        if newtable:
-            self.table.resizeColumnsToContents()
+            for i, k in enumerate(self.luatable_filtered):
+                keyitem = self.table.item(i, 0)
+                valueitem = self.table.item(i, 1)
+                value = self.luatable.table[k]
+
+
+                if keyitem is not None:
+                    keyitem.setText(str(k, encoding="ascii"))
+                else:
+                    self.table.setItem(i, 0, Item(str(k, encoding="ascii")))
+
+                print(k, value)
+                self.table.blockSignals(True)
+                if valueitem is not None:
+                    valueitem.setText(str(value))
+                else:
+                    self.table.setItem(i, 1, Item(str(value)))
+                self.table.blockSignals(False)
+                self.dontupdate = False
+        except Exception as err:
+            self.table.blockSignals(False)
+            self.table_lock.release()
+            print("exception happen")
+            raise
+        else:
+            if newtable:
+                self.table.resizeColumnsToContents()
 
     def button_pressed(self):
         if self.toggle_button.isChecked():
@@ -199,6 +240,7 @@ class Plugin(object):
 
         self.table = widget.add_widget(QtWidgets.QTableWidget(widget))
         self.table: QtWidgets.QTableWidget
+        self.table.itemChanged.connect(self.tablechange)
 
         self.table.setColumnCount(2)
         self.table.setRowCount(10)

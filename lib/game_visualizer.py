@@ -803,6 +803,8 @@ TYPE = {0: "NIL",
         7: "USERDATA",
         8: "THREAD"}
 
+NUMBERTYPES = (BOOLEAN, NUMBER)
+
 def parse_string(game, data):
     if data.type == LIGHTUSERDATA:
         offset = 0
@@ -903,6 +905,17 @@ class LuaViewer(object):
         #self.game.
 
 
+# To find address start at function 0x800317cc in BW2 US
+def get_bw2_luastate(game: MiniHook):
+    """ptr = 0x805023ac
+    ptr2 = game.deref(ptr+4)
+    if not ptr: return None
+    ptr3 = game.deref(ptr2+0x18)"""
+    ptr = 0x805fe50  # this one is at around 0x800d1158 in BW2 US
+
+
+
+
 if __name__ == "__main__":
 
     bwgame = Game()
@@ -920,8 +933,9 @@ if __name__ == "__main__":
     from binascii import unhexlify, hexlify
     offset = 0
 
-    static = 0x803C1708
-
+    static = 0x805fe508 # BW1 PAL0x803C1708
+    # Contains lua state: 812ba538+0x10
+    # Lua state: 81040650
     import time
 
 
@@ -1018,7 +1032,7 @@ if __name__ == "__main__":
                 get_obj(bwgame, base, i)
         elif result == "global":
             ptr = bwgame.deref(static)
-            luastate = bwgame.deref(ptr + 0xC)
+            luastate = bwgame.deref(ptr + 0x10)#0xC)
             obj = bwgame.readstruct(luastructs.TObject, luastate+0x40, 0, typeunpack=True)
             table = LuaTable(bwgame, obj.value)
             print(table.table)
