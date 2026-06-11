@@ -696,7 +696,10 @@ class BattalionObject(object):
                     else:
                         if subnode.text not in level.objects:
                             if other is None or subnode.text not in other.objects:
-                                raise RuntimeError("ID {0} not found in level or preload".format(subnode.text))
+                                raise RuntimeError(
+                                    ("Error on resolving IDs for object {1}:\n"
+                                     "ID {0} not found in level or preload").format(subnode.text, self.id)
+                                )
                             else:
                                 obj = other.objects[subnode.text]
                                 obj.add_reference(self)
