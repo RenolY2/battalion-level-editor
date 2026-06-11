@@ -1087,8 +1087,6 @@ class Plugin(object):
                 open_message_dialog(message,
                                     parent=editor)
 
-
-
     def importobject(self, editor: "bw_editor.LevelEditor"):
         self.initiate_object_folder(editor)
 
@@ -1136,7 +1134,7 @@ class Plugin(object):
 
         for id, obj in bundle.objects.items():
             replace_references(obj, reference_remap)
-
+            obj.update_xml()
         visited = []
         to_visit = []
         roots = []
@@ -1182,9 +1180,9 @@ class Plugin(object):
 
         for obj in to_add:
             assert not obj.is_preload(), "Preload Object Import not supported"
-
-            if obj.calc_hash_recursive() in hashed_objects:
-                print(obj.name, "has already been added")
+            objhash = obj.calc_hash_recursive()
+            if objhash in hashed_objects and obj.id in editor.level_file.objects:
+                print(obj.name, obj.id, "has already been added")
 
                 resource = None
                 if obj.type == "cAnimationResource":
