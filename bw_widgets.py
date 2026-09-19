@@ -1093,6 +1093,14 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
             click_x, click_y, clickwidth, clickheight, shiftpressed, do_gizmo = self.selectionqueue.queue_pop()
             print(click_x, click_y, clickwidth, clickheight)
 
+            dpr = self.devicePixelRatioF()
+            read_x = int(click_x * dpr)
+            fb_height = int(self.height() * dpr)
+            read_y = int(fb_height - 1 - (click_y * dpr))
+            fb_width = int(self.width() * dpr)
+            read_x = max(0, min(read_x, fb_width - 1))
+            read_y = max(0, min(read_y, fb_height - 1))
+
             original_click_y = click_y
             click_y = height - click_y
             hit = 0xFF
@@ -1104,7 +1112,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                                                   is3d=self.mode == MODE_3D,
                                                   translation_visible=self.translation_visible,
                                                   rotation_visible=self.rotation_visible)
-                pixels = glReadPixels(click_x, click_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
+                pixels = glReadPixels(read_x, read_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
                 self.selectdebug.record_view("Gizmo", int(click_x), int(click_y))
                 #print(pixels)
                 hit = pixels[2]
@@ -1181,7 +1189,7 @@ class BolMapViewer(QtOpenGLWidgets.QOpenGLWidget):
                     else:
                         objlist = list(self.level_file.objects_with_positions.values())
                         self.graphics.render_select(objlist)
-                        pixels = glReadPixels(click_x, click_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
+                        pixels = glReadPixels(read_x, read_y, clickwidth, clickheight, GL_RGB, GL_UNSIGNED_BYTE)
                         self.selectdebug.record_view("3DSelect", click_x, click_y)
                         #print(pixels, click_x, click_y, clickwidth, clickheight)
 
